@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Radio Presets Widget</string>
+    <string name="esr">Electro Swing Revolution</string>
+    <string name="menu_settings">Settings</string>
+    <string name="jr">Jazz Radio</string>
+    <string name="stop">Stop</string>
+    <string name="copy">Copy Logs</string>
+    <string name="clear">Clear Logs</string>
+    <string name="uninitialized">Uninitialized</string>
+
+</resources>
