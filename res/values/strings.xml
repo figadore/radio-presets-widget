@@ -9,5 +9,6 @@
     <string name="copy">Copy Logs</string>
     <string name="clear">Clear Logs</string>
     <string name="uninitialized">Uninitialized</string>
+    <string name="stations">com.shinymayhem.radiopresetswidget.stations_file_key</string>
 
 </resources>

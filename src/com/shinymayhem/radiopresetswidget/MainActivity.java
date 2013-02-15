@@ -17,9 +17,12 @@ package com.shinymayhem.radiopresetswidget;
 
 import android.app.Activity;
 import android.content.ComponentName;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -28,21 +31,69 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import com.shinymayhem.radiopresetswidget.RadioDbContract.StationsDbHelper;
 import com.shinymayhem.radiopresetswidget.RadioPlayer.LocalBinder;
 
 public class MainActivity extends Activity {
 
+	//string-extra key for intent
 	public final static String URL = "com.shinymayhem.radiopresetswidget.URL";
+	//url passed in through dynamic button
+	protected String url;
+	protected final int BUTTON_LIMIT = 6;
 	
 	protected boolean mBound = false;
+	protected StationsDbHelper dbHelper;
 	protected RadioPlayer mService;
+	
+	protected Context getContext()
+	{
+		return this;
+	}
+	
+	protected String getUrl()
+	{
+		return this.url;
+	}
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		Log.i(getClass().toString(), "creating main activity");
+		
+		
+		//get stations from preferences
+		/*SharedPreferences stations = this.getSharedPreferences(getString(R.string.stations), Context.MODE_PRIVATE);
+		Map<String, ?> stationsMap = stations.getAll();
+		if (stationsMap.size()>0)
+		{
+			Iterator<?> iterator = stationsMap.entrySet().iterator();
+			while (iterator.hasNext())
+			{
+				Map.Entry<String, String> pairs = (Map.Entry<String, String>)iterator.next();
+				String key = (String)pairs.getKey();
+				Set<String> strings = (Set<String>)pairs.getValue();
+				String title = (String) strings.toArray()[0];
+				String url = (String) strings.toArray()[1];
+				url = url;
+			}
+		}
+		else //no saved stations
+		{
+			Set<String> esrRadio = new HashSet<String>(Arrays.asList("ElectroSwing Revolution", "http://streamplus17.leonex.de:39060"));
+			Set<String> jazzRadio = new HashSet<String>(Arrays.asList("Jazz Radio", "http://jazz-wr04.ice.infomaniak.ch/jazz-wr04-128.mp3"));
+			SharedPreferences.Editor editor = stations.edit();
+			editor.putStringSet("1", esrRadio); 
+			editor.putStringSet("2", jazzRadio);
+			editor.commit();
+		}*/
+		
+		//add buttons dynamically with onclick listeners
+		
+		
 		setContentView(R.layout.activity_main);
 	}
 
@@ -52,7 +103,7 @@ public class MainActivity extends Activity {
 		getMenuInflater().inflate(R.menu.activity_main, menu);
 		return true;
 	}
-	
+	/*
 	public void start(View view)
 	{
 		if (!mBound)
@@ -75,6 +126,7 @@ public class MainActivity extends Activity {
 		}
 		else
 		{
+			
 			int id = view.getId();
 			Button esr = (Button) findViewById(R.id.esr_button);
 			Button jr = (Button) findViewById(R.id.jr_button);
@@ -91,17 +143,95 @@ public class MainActivity extends Activity {
 			mService.play(url);
 		}
 		
-	}
+	}*/
 	
 	@Override
 	protected void onStart()
 	{
 		super.onStart();
 		Log.d(getClass().toString(), "starting main activity");
-		Intent intent = new Intent(this, RadioPlayer.class);
+		bindRadioPlayer();
 		
-		//intent.putExtra(URL, url);
-		Log.v(getClass().toString(), "binding");
+		//get view
+		LinearLayout stationsLayout = (LinearLayout)this.findViewById(R.id.stations); //TODO not created yet?
+				
+		//get stations from sqlite
+		dbHelper  = new StationsDbHelper(getContext());
+		SQLiteDatabase db = dbHelper.getReadableDatabase();
+		String[] projection = {
+				RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER,
+				RadioDbContract.StationEntry.COLUMN_NAME_TITLE,
+				RadioDbContract.StationEntry.COLUMN_NAME_URL
+		};
+		
+		String sortOrder = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER + " ASC";
+		
+		Cursor cursor = db.query(RadioDbContract.StationEntry.TABLE_NAME, projection, null, null, null, null, sortOrder, Integer.toString(BUTTON_LIMIT));
+		if (!cursor.moveToFirst())
+		{
+			//no rows found
+			db.close();
+			db = dbHelper.getWritableDatabase();
+			ContentValues values = new ContentValues();
+			values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, 1);
+			values.put(RadioDbContract.StationEntry.COLUMN_NAME_TITLE, "ElectroSwing Revolution");
+			values.put(RadioDbContract.StationEntry.COLUMN_NAME_URL, "http://streamplus17.leonex.de:39060");
+			db.insertOrThrow(RadioDbContract.StationEntry.TABLE_NAME, null, values);
+			values = new ContentValues();
+			values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, 2);
+			values.put(RadioDbContract.StationEntry.COLUMN_NAME_TITLE, "Jazz Radio");
+			values.put(RadioDbContract.StationEntry.COLUMN_NAME_URL, "http://jazz-wr04.ice.infomaniak.ch/jazz-wr04-128.mp3");
+			db.insertOrThrow(RadioDbContract.StationEntry.TABLE_NAME, null, values);
+			
+		}
+		else
+		{
+			while (!cursor.isAfterLast())
+			{
+				long presetNumber = cursor.getLong(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER));
+				String title = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_TITLE));
+				String url = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));
+				//TODO move onClick to this
+				this.url = url; //put in a place that listener class can access
+				cursor.moveToNext();
+				Button button = new Button(this);
+				button.setText(title);
+				button.setId((int) presetNumber);
+				//final int id = button.getId();
+				
+				//Button btn = ((Button) findViewById(id));
+				
+				button.setOnClickListener(new View.OnClickListener() {
+					
+					@Override
+					public void onClick(View view) {
+						ConnectivityManager network = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+						NetworkInfo info = network.getActiveNetworkInfo();
+						if (info == null || info.isConnected() == false)
+						{
+							//TextView status = (TextView) findViewById(R.id.status);
+							//status.setText("No network");
+							Toast.makeText(getContext(), "No network", Toast.LENGTH_SHORT).show();
+							Log.i(getClass().toString(), "no network, can't do anything");
+							return;
+						}
+						else
+						{
+							mService.play(getUrl());
+						}
+						
+					}
+				});
+				stationsLayout.addView(button);
+			}
+		}
+		db.close();
+	}
+	
+	protected void bindRadioPlayer()
+	{
+		Log.v(getClass().toString(), "binding radio player");
+		Intent intent = new Intent(this, RadioPlayer.class);
 		startService(intent);
 		bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
 	}
@@ -116,15 +246,6 @@ public class MainActivity extends Activity {
 	{
 		super.onResume();
 		Log.d(getClass().toString(), "resuming main activity");
-		if (!mBound)
-		{
-			Log.v(getClass().toString(), "not bound, rebinding");
-			Intent intent = new Intent(this, RadioPlayer.class);
-			
-			//intent.putExtra(URL, url);
-			startService(intent);
-			bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-		}
 	}
 	
 	@Override
