@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:id="@+id/station_entry" >	
+    <ImageView
+		    xmlns:android="http://schemas.android.com/apk/res/android"
+		    android:src="@android:drawable/ic_media_pause"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:layout_alignParentLeft="true"
+		    android:layout_centerVertical="true"
+		    android:contentDescription="@string/drag"
+		    android:paddingLeft="7dp"
+		    android:paddingRight="7dp"
+		    android:paddingBottom="7dp"
+		    android:paddingTop="7dp" 
+		    android:clickable="true"
+		    android:id="@+id/station_drag" />
+	
+	<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:layout_centerVertical="true"
+		android:layout_toRightOf="@id/station_drag"
+	    android:padding="15dp"
+	    android:textSize="22sp"
+	    android:clickable="true"
+	    android:longClickable="true"
+	    android:hapticFeedbackEnabled="true"
+		android:soundEffectsEnabled="true"
+	    android:id="@+id/station_title" >
+	    
+	
+	</TextView>
+</RelativeLayout>

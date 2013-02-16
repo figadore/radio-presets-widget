@@ -15,6 +15,11 @@
 */
 package com.shinymayhem.radiopresetswidget;
 
+import java.io.FileOutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
+
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.ContentValues;
@@ -30,8 +35,10 @@ import android.os.IBinder;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
+
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import com.shinymayhem.radiopresetswidget.RadioDbContract.StationsDbHelper;
@@ -62,9 +69,83 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		Log.i(getClass().toString(), "creating main activity");
+		log("creating main activity", "d");
+
+		//set content view first so findViewById works
+		setContentView(R.layout.activity_main);
 		
 		
+
+		String sortOrder = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER + " ASC";
+		
+		Cursor cursor = db.query(RadioDbContract.StationEntry.TABLE_NAME, projection, null, null, null, null, sortOrder, Integer.toString(BUTTON_LIMIT));
+		RadioCursorAdapter adapter = new RadioCursorAdapter(this, cursor, RadioCursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
+		stationsLayout.setAdapter(adapter);
+		//startManagingCursor(cursor);
+		/*String[] fromColumns = {RadioDbContract.StationEntry.COLUMN_NAME_TITLE};
+		int[] toViews = {R.id.station_title};
+		String titleColumn = RadioDbContract.StationEntry.COLUMN_NAME_TITLE;
+		String urlColumn = RadioDbContract.StationEntry.COLUMN_NAME_URL;*/ 
+		
+		//SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, R.layout.station_entry, cursor, fromColumns, toViews, 0); 
+		
+		/*
+		if (!cursor.moveToFirst())
+		{
+			//no rows found
+			db.close();
+			db = mDbHelper.getWritableDatabase();
+			ContentValues values = new ContentValues();
+			values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, 1);
+			values.put(RadioDbContract.StationEntry.COLUMN_NAME_TITLE, "ElectroSwing Revolution");
+			values.put(RadioDbContract.StationEntry.COLUMN_NAME_URL, "http://streamplus17.leonex.de:39060");
+			db.insertOrThrow(RadioDbContract.StationEntry.TABLE_NAME, null, values);
+			values = new ContentValues();
+			values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, 2);
+			values.put(RadioDbContract.StationEntry.COLUMN_NAME_TITLE, "Jazz Radio");
+			values.put(RadioDbContract.StationEntry.COLUMN_NAME_URL, "http://jazz-wr04.ice.infomaniak.ch/jazz-wr04-128.mp3");
+			db.insertOrThrow(RadioDbContract.StationEntry.TABLE_NAME, null, values);
+			
+		}
+		else
+		{
+			while (!cursor.isAfterLast())
+			{
+				long presetNumber = cursor.getLong(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER));
+				String title = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_TITLE));
+				final String url = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));
+				cursor.moveToNext();
+				Button button = new Button(this);
+				button.setText(title);
+				button.setId((int) presetNumber);
+				final int id = button.getId();
+				stationsLayout.addView(button);
+				Button btn = ((Button) findViewById(id));
+				btn.setOnClickListener(new View.OnClickListener() {
+					
+					@Override
+					public void onClick(View view) {
+						ConnectivityManager network = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+						NetworkInfo info = network.getActiveNetworkInfo();
+						if (info == null || info.isConnected() == false)
+						{
+							//TextView status = (TextView) findViewById(R.id.status);
+							//status.setText("No network");
+							Toast.makeText(getContext(), "No network", Toast.LENGTH_SHORT).show();
+							log("no network, can't do anything");
+							return;
+						}
+						else
+						{
+							mService.play(url);
+						}
+						
+					}
+				});
+			}
+		}*/
+		db.close();
+
 		//get stations from preferences
 		/*SharedPreferences stations = this.getSharedPreferences(getString(R.string.stations), Context.MODE_PRIVATE);
 		Map<String, ?> stationsMap = stations.getAll();
@@ -121,7 +202,7 @@ public class MainActivity extends Activity {
 			//TextView status = (TextView) findViewById(R.id.status);
 			//status.setText("No network");
 			Toast.makeText(this, "No network", Toast.LENGTH_SHORT).show();
-			Log.i(getClass().toString(), "no network, can't do anything");
+			log("no network, can't do anything");
 			return;
 		}
 		else
@@ -144,6 +225,11 @@ public class MainActivity extends Activity {
 		}
 		
 	}*/
+	public void play(String url)
+	{
+		Log.d(getClass().toString(), "Play button received");
+		mService.play(url);
+	}
 	
 	@Override
 	protected void onStart()
@@ -251,7 +337,7 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onStop()
 	{
-		Log.i(getClass().toString(), "stopping main activity");
+		log("stopping main activity", "d");
 		if (mService.isPlaying() == false)
 		{
 			mService.stop();
@@ -289,14 +375,14 @@ public class MainActivity extends Activity {
 	@Override
 	public void onPause()
 	{
-		Log.i(getClass().toString(), "pausing main activity");
+		log("pausing main activity", "d");
 		super.onPause();
 		
 	}
 	
 	public void onDestroy()
 	{
-		Log.i(getClass().toString(), "destroying main activity");
+		log("destroying main activity", "d");
 		super.onDestroy();
 	}
 	
@@ -305,7 +391,7 @@ public class MainActivity extends Activity {
 		@Override
 		public void onServiceConnected(ComponentName className, IBinder service)
 		{
-			Log.i(getClass().toString(), "service connected");
+			log("service connected", "d");
 			LocalBinder binder = (LocalBinder) service;
 			mService = binder.getService();
 			mBound = true;
@@ -313,9 +399,68 @@ public class MainActivity extends Activity {
 		@Override
 		public void onServiceDisconnected(ComponentName arg0)
 		{
-			Log.i(getClass().toString(), "service disconnected");
+			log("service disconnected", "d");
 			mBound = false;
 		}
 	};
+	
+
+	private void log(String text, String level)
+	{
+		String str = "MainActivity\t\t" + text;
+		FileOutputStream file;
+		if (level == "v")
+		{
+			str = "VERBOSE:\t\t" + str;
+			Log.v("MainActivity", str);
+		}
+		else if (level == "d")
+		{
+			str = "DEBUG:\t\t" + str;
+			Log.d("MainActivity", str);
+		}
+		else if (level == "i")
+		{
+			str = "INFO:\t\t" + str;
+			Log.i("MainActivity", str);
+		}
+		else if (level == "w")
+		{
+			str = "WARN:\t\t" + str;
+			Log.w("MainActivity", str);
+		}
+		else if (level == "e")
+		{
+			str = "ERROR:\t\t" + str;
+			Log.e("MainActivity", str);
+		}
+		else
+		{
+			Toast.makeText(this, "new log level", Toast.LENGTH_SHORT).show();
+			Log.e(getPackageName(), "new log level");
+			str = level + str;
+			Log.e(getPackageName(), str);
+		}
+		
+		try {
+			Calendar cal = Calendar.getInstance();
+	    	cal.getTime();
+	    	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+	    	str += "\n";
+	    	str = sdf.format(cal.getTime()) + "\t\t" + str;
+			file = openFileOutput(RadioPlayer.LOG_FILENAME, Context.MODE_APPEND);
+			file.write(str.getBytes());
+			file.flush();
+			file.close();
+			//file = File.createTempFile(fileName, null, this.getCacheDir());
+			//file.
+		}
+		catch (Exception e)
+		{
+	    	Toast.makeText(this, "error writing to log file", Toast.LENGTH_SHORT).show();
+	    	e.printStackTrace();
+		}
+	}
+	
 
 }
