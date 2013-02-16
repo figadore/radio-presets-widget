@@ -99,8 +99,12 @@ public class MainActivity extends Activity {
 	
 	public void play(String url)
 	{
-		Log.d(getClass().toString(), "Play button received");
-		mService.play(url);
+		Log.d(getClass().toString(), "Play button received, sending play intent");
+		Intent intent = new Intent(this, RadioPlayer.class);
+		intent.setAction(RadioPlayer.ACTION_PLAY);
+		intent.putExtra(URL, url);
+		startService(intent);
+		//mService.play(url);
 	}
 	
 	@Override
