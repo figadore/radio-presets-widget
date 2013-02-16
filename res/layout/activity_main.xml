@@ -1,17 +1,18 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context=".MainActivity" >
    
-	<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	<ListView xmlns:android="http://schemas.android.com/apk/res/android"
 	    xmlns:tools="http://schemas.android.com/tools"
 	    android:layout_width="match_parent"
-	    android:layout_height="wrap_content"
+	    android:layout_height="match_parent"
 	    android:orientation="vertical"
+	    android:layout_alignParentTop="true"
 	    android:id="@+id/stations" >	
-	</LinearLayout>
+	</ListView>
 	    <!--  <Button
 	        android:id="@+id/esr_button"
 	        android:layout_width="wrap_content"
@@ -25,13 +26,32 @@
 	        android:text="@string/jr" 
 	        android:onClick="start" />
 	        -->
-	    <Button
+
+	    <ImageButton
 	        android:id="@+id/stop_button"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
-	        android:text="@string/stop" 
+	        android:layout_centerHorizontal="true"
+	        android:layout_alignParentBottom="true"
+	        
+	        android:padding="5dp"
+	        android:contentDescription="@string/stop"
+	        style="?android:attr/borderlessButtonStyle"
+	        android:src="@drawable/stop_icon"
 	        android:onClick="stop" />
-	     <Button
+	    <ImageView
+		    xmlns:android="http://schemas.android.com/apk/res/android"
+		    android:src="@android:drawable/divider_horizontal_dark"
+		    android:layout_width="fill_parent"
+		    android:layout_height="wrap_content"
+		    android:contentDescription="@string/divider"
+		    android:scaleType="fitXY"
+		    android:paddingLeft="5dp"
+		    android:paddingRight="5dp"
+		    android:paddingBottom="2dp"
+		    android:paddingTop="2dp" 
+		    android:layout_alignTop="@id/stop_button"/>
+	  <!--    <Button
 	        android:id="@+id/copy_button"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
@@ -42,8 +62,9 @@
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
 	        android:text="@string/clear" 
+	        style="?android:attr/borderlessButtonStyle"
 	        android:onClick="clear" />
-
+ -->
 	    
 <!--
 	</LinearLayout>
@@ -64,4 +85,4 @@
     	</TextView>
 	</ScrollView>
 	-->
-</LinearLayout>
+</RelativeLayout>

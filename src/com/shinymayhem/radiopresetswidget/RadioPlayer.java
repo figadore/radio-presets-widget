@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Reese Wilson | Shiny Mayhem
+ * Copyright (C) 2013 Reese Wilson | Shiny Mayhem
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -67,17 +67,15 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	public final static String STATE_STOPPED = "Stopped";
 	public final static String STATE_COMPLETE = "Complete";
 	public final static String STATE_END = "Ended";
-	protected final String WIRELESS_STATE_WIFI = "Wifi";
-	protected final String WIRELESS_STATE_MOBILE = "Mobile";
-	protected final String WIRELESS_STATE_NONE = "None";
-	protected NetworkInfo networkInfo;
-	protected int networkState;
-	protected MediaPlayer mediaPlayer;
-	protected MediaPlayer nextPlayer;
-	private NetworkReceiver receiver = new NetworkReceiver();
-	private NoisyAudioStreamReceiver noisyReceiver = new NoisyAudioStreamReceiver(); 
-	protected String url;
-	protected boolean interrupted = false;
+	public final static int NETWORK_STATE_DISCONNECTED = -1;
+	protected NetworkInfo mNetworkInfo;
+	protected int mNetworkState;
+	protected MediaPlayer mMediaPlayer;
+	protected MediaPlayer mNextPlayer;
+	private NetworkReceiver mReceiver = new NetworkReceiver();
+	private NoisyAudioStreamReceiver mNoisyReceiver = new NoisyAudioStreamReceiver(); 
+	protected String mUrl;
+	protected boolean mInterrupted = false;
 	private final IBinder mBinder = new LocalBinder();
 	protected boolean mBound = false;
 	
@@ -109,7 +107,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			log("mediaPlayer.start()", "v");
 			mediaPlayer.start();
 			state = RadioPlayer.STATE_PLAYING;
-			interrupted = false;
+			mInterrupted = false;
 
 			NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
 				.setContentTitle("Radio Presets")
@@ -189,7 +187,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		//mediaPlayer.release();
 		log("onCompletion()", "d");
 		state = RadioPlayer.STATE_COMPLETE;
-		if (interrupted)
+		if (mInterrupted)
 		{
 			Toast.makeText(this, "Playback completed after interruption", Toast.LENGTH_SHORT).show();	
 			log("Playback completed after interruption, should restart when network connects again", "i");
@@ -202,16 +200,16 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			//restart();
 			play();
 		}
-		if (nextPlayer != null)
+		if (mNextPlayer != null)
 		{
 			log("swapping players", "v");
 			mediaPlayer.release();
-			mediaPlayer = nextPlayer;
-			nextPlayer = null;
+			mediaPlayer = mNextPlayer;
+			mNextPlayer = null;
 			if (mediaPlayer.isPlaying())
 			{
 				state = RadioPlayer.STATE_PLAYING;
-				interrupted = false;
+				mInterrupted = false;
 				log("new player playing", "i");
 				//TODO update notification to indicate resumed playback
 			}
@@ -277,10 +275,10 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	{
 		log("onCreate()", "d");
 		IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-		receiver = new NetworkReceiver();
+		mReceiver = new NetworkReceiver();
         //Log.i(getPackageName(), "creating service, registering broadcast receiver");
         log("registering network change broadcast receiver", "v");
-		this.registerReceiver(receiver, filter);
+		this.registerReceiver(mReceiver, filter);
 	}
 	
 	@Override
@@ -337,7 +335,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	protected void play()
 	{
 		log("play()", "d");
-		if (this.url == null)
+		if (this.mUrl == null)
 		{
 			log("url not set", "e");
 			//Log.e(getPackageName(), "url not set");
@@ -345,11 +343,11 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		else
 		{
 			String str = "url:";
-			str += this.url;
+			str += this.mUrl;
 			log(str, "v");
 			//Log.i(getPackageName(), str);
 		}
-		this.play(this.url);
+		this.play(this.mUrl);
 	}
 	
 	//called from bound ui, possibly notification action, if implemented
@@ -362,30 +360,35 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		if (isConnected())
 		{
 			log("setting network type", "v");
-			networkState = this.getConnectionType();
+			mNetworkState = this.getConnectionType();
 		}
 		else
 		{
-			log("no network, should be handled by ui?", "e");
+			
+			log("setting network state to disconnected", "v");
+			mNetworkState = RadioPlayer.NETWORK_STATE_DISCONNECTED;
 			Toast.makeText(this, "tried to play with no network", Toast.LENGTH_SHORT).show();
+			log("no network, should be handled by ui? returning", "e");
+			
+			return;
 		}
 		//get url from param, fallback to instance variable
 		if (url != null)
 		{
-			this.url = url;	
+			this.mUrl = url;	
 		}
-		else if (this.url != null && url == null)
+		else if (this.mUrl != null && url == null)
 		{
-			url = this.url;
+			url = this.mUrl;
 		}
-		else if(this.url == null && url == null)
+		else if(this.mUrl == null && url == null)
 		{
 			log("trouble: url not set", "e");
 		}
 		
 		//begin listen for headphones unplugged
 		IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
-		registerReceiver(noisyReceiver, intentFilter);
+		registerReceiver(mNoisyReceiver, intentFilter);
 		log("register noisy receiver", "v");
 		
 		
@@ -403,22 +406,23 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			Toast.makeText(this, "Play state wrong", Toast.LENGTH_SHORT).show();
 			playing = true;
 		}*/
-		if (mediaPlayer != null)
+		if (mMediaPlayer != null)
 		{
-			mediaPlayer.release();
-			mediaPlayer = null;
+			log("releasing old media player", "v");
+			mMediaPlayer.release();
+			mMediaPlayer = null;
 		}
 		log("creating new media player", "v");
-		this.mediaPlayer = new MediaPlayer();
+		this.mMediaPlayer = new MediaPlayer();
 		
-		mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);	
+		mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);	
 		
 		String str = "setting data source: ";
 		str += url;
 		log(str, "v");
 		try
 		{
-			mediaPlayer.setDataSource(url);
+			mMediaPlayer.setDataSource(url);
 		}
 		catch (IOException e) 
 		{
@@ -427,11 +431,11 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			Toast.makeText(this, "Setting data source failed", Toast.LENGTH_SHORT).show();
 			e.printStackTrace();
 		}
-		initializePlayer(mediaPlayer); 
+		initializePlayer(mMediaPlayer); 
 
 		state = RadioPlayer.STATE_PREPARING;
 	
-		mediaPlayer.prepareAsync(); // might take long! (for buffering, etc)
+		mMediaPlayer.prepareAsync(); // might take long! (for buffering, etc)
 		log("preparing async", "d");
 		Toast.makeText(this, "Preparing", Toast.LENGTH_SHORT).show();
 	}
@@ -469,14 +473,14 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	{
 		log("stop()", "d");
 		//stop command called, reset interrupted flag
-		interrupted = false;
-		if (state == RadioPlayer.STATE_STOPPED || state == RadioPlayer.STATE_END)
+		mInterrupted = false;
+		if (state == RadioPlayer.STATE_STOPPED || state == RadioPlayer.STATE_END || state == RadioPlayer.STATE_UNINITIALIZED)
 		{
 			log("already stopped", "v");
 			return;
 		}
 		state = RadioPlayer.STATE_STOPPING;
-		if (mediaPlayer == null)
+		if (mMediaPlayer == null)
 		{
 			log("null media player", "e");
 		}
@@ -485,15 +489,15 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			log("stopping playback", "v");
 			Toast.makeText(this, "Stopping playback", Toast.LENGTH_SHORT).show();
 			stopForeground(true);
-			mediaPlayer.stop();
+			mMediaPlayer.stop();
 			//mediaPlayer.reset();
-			mediaPlayer.release();
-			mediaPlayer = null;
+			mMediaPlayer.release();
+			mMediaPlayer = null;
 				
 		}
 		try
 		{
-			unregisterReceiver(noisyReceiver);
+			unregisterReceiver(mNoisyReceiver);
 			log("unregistering noisyReceiver", "v");
 		}
 		catch (IllegalArgumentException e)
@@ -511,23 +515,23 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		log("restart()", "d");
 		state = RadioPlayer.STATE_RESTARTING;
 		
-		if (nextPlayer != null)
+		if (mNextPlayer != null)
 		{
 			log("nextPlayer not null","e");
-			nextPlayer.release();
-			nextPlayer = null;
+			mNextPlayer.release();
+			mNextPlayer = null;
 		}
 		
-		this.nextPlayer = new MediaPlayer();
+		this.mNextPlayer = new MediaPlayer();
 		
-		nextPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);	
+		mNextPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);	
 		
 		String str = "setting nextPlayer data source: ";
-		str += url;
+		str += mUrl;
 		log(str, "v");
 		try
 		{
-			nextPlayer.setDataSource(url);
+			mNextPlayer.setDataSource(mUrl);
 		}
 		catch (IOException e) 
 		{
@@ -536,12 +540,12 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			Toast.makeText(this, "Setting data source failed", Toast.LENGTH_SHORT).show();
 			e.printStackTrace();
 		}
-		initializePlayer(nextPlayer); 
+		initializePlayer(mNextPlayer); 
 		//TODO handle older versions
 		//check for errors or invalid states
 		try
 		{
-			mediaPlayer.stop();
+			mMediaPlayer.stop();
 		}
 		catch (IllegalStateException e)
 		{
@@ -550,7 +554,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		
 		try
 		{
-			boolean playing = mediaPlayer.isPlaying();
+			boolean playing = mMediaPlayer.isPlaying();
 			if (playing)
 			{
 				log("old player playing, new player ready to set", "i");
@@ -573,7 +577,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		}
 		try
 		{
-			mediaPlayer.setNextMediaPlayer(nextPlayer);
+			mMediaPlayer.setNextMediaPlayer(mNextPlayer);
 			log("nextplayer set", "i");
 		}
 		catch (IllegalStateException e)
@@ -626,7 +630,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	{
 		ConnectivityManager network = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 		NetworkInfo info = network.getActiveNetworkInfo();
-		networkInfo = info;
+		mNetworkInfo = info;
 		if (info == null)
 		{
 			return false;
@@ -637,7 +641,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	protected int getConnectionType()
 	{
 		String str = "";
-		int newState = networkInfo.getType();
+		int newState = mNetworkInfo.getType();
 		switch (newState)
 		{
 			case ConnectivityManager.TYPE_WIFI:
@@ -724,9 +728,9 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		this.stop();
 		Toast.makeText(this, "Stopping service", Toast.LENGTH_SHORT).show();
 		//don't need to listen for network changes anymore
-		if (receiver != null) {
+		if (mReceiver != null) {
 			log("unregister network receiver", "v");
-            this.unregisterReceiver(receiver);
+            this.unregisterReceiver(mReceiver);
         }
 		else
 		{
@@ -754,37 +758,42 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		public void onReceive(Context context, Intent intent) {
 			log("received network change broadcast", "i");
 			//Log.i(getPackageName(), "received network change broadcast");
-			/*if (mediaPlayer == null)
+			if (mMediaPlayer == null && state == RadioPlayer.STATE_PREPARING)
 			{
-				log("no media player, don't care about connection updates", "v");
+				log("recover from disconnect while preparing", "v");
 				//Log.i(getPackageName(), "no media player, don't care about connection updates");
+				play();
 				return;
-			}*/
+			}
+			else if (mMediaPlayer == null && state != RadioPlayer.STATE_UNINITIALIZED)
+			{
+				log("media player null, will cause problems if connected", "e");
+			}
 			String str = "";
 			if (isConnected())
 			{
 				int newState = getConnectionType();
-				if (networkState != newState)
+				if (mNetworkState != newState)
 				{
 					
 					str = "network type changed";
-					if (interrupted == false)
+					if (mInterrupted == false)
 					{
 						str += " and now interrupted";
-						interrupted = true;	
+						mInterrupted = true;	
 					}
 					else
 					{
 						str += " but previously interrupted";
 					
 					}
-					str += "old:" + networkState;
+					str += "old:" + mNetworkState;
 					str += ", new:" + newState;
 					log(str, "v");
-					//can't set nextplayer after complete, so just start fresh
+					
 					
 					log("setting network state ivar", "v");
-					networkState = newState;
+					mNetworkState = newState;
 					
 					//if uninitialized, no url set yet. 
 					if (state == RadioPlayer.STATE_UNINITIALIZED)
@@ -795,21 +804,24 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 					boolean start = false;
 					try 
 					{
-						mediaPlayer.isPlaying();
+						mMediaPlayer.isPlaying();
 					}
 					catch (IllegalStateException e)
 					{
 						log("illegal state detected, can't restart, start from scratch instead", "e");
 						start = true;
 					}
+					//can't set nextplayer after complete, so just start fresh
 					if (state == RadioPlayer.STATE_COMPLETE || start)
 					{
+						log("complete or start=true", "v");
 						play();
 					}
 					//network interrupted playback but isn't done playing from buffer yet
 					//set nextplayer and wait for current player to complete
 					else  
 					{
+						log("!complete && start!=true", "v");
 						play();
 						//TODO figure out if this is possible, or too buggy
 						//restart();
@@ -824,15 +836,43 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			}
 			else
 			{
-				str = "not connected";
+				str = "";
+				if (mNetworkState == RadioPlayer.NETWORK_STATE_DISCONNECTED)
+				{
+					str = "still ";
+				}
+				str += "not connected. ";
+				str += "old:" + mNetworkState;
+				str += ", new:" + Integer.toString(RadioPlayer.NETWORK_STATE_DISCONNECTED);
+				log(str, "v");
+				
 				log(str, "w");
+				
+				log("setting network state ivar to disconnected", "v");
+				mNetworkState = RadioPlayer.NETWORK_STATE_DISCONNECTED;
+				
+
 				//TODO figure out the best thing to do for each state
 				if (state == RadioPlayer.STATE_PREPARING) //this will lead to a mediaioerror when it reaches prepared
 				{
-					mediaPlayer.release();
-					mediaPlayer = null;
+					mMediaPlayer.release();
+					mMediaPlayer = null;
 					log("-------------------------------", "d");
-					log("experimental, does it break, or work?", "d");
+					log("network connection lost while preparing? set null mediaplayer", "d");
+					log("-------------------------------", "d");
+				}
+				else if (state == RadioPlayer.STATE_ERROR)
+				{
+					mMediaPlayer.release();
+					mMediaPlayer = null;
+					log("-------------------------------", "d");
+					log("not sure what to do, how did we get here?", "d");
+					log("-------------------------------", "d");
+				}
+				else
+				{
+					log("-------------------------------", "d");
+					log("other state", "i");
 					log("-------------------------------", "d");
 				}
 			}
