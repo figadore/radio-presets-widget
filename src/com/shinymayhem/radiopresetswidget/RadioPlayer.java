@@ -52,7 +52,8 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	
 	public final static int ONGOING_NOTIFICATION = 1;
 	public final static String ACTION = "com.shinymayhem.radiopresetswidget.ACTION";
-	public final static String STOP = "Stop";
+	public final static String ACTION_STOP = "Stop";
+	public final static String ACTION_PLAY = "Play";
 	public final static String LOG_FILENAME = "log.txt";
 	public String state = STATE_UNINITIALIZED;
 	public final static String STATE_UNINITIALIZED = "Uninitialized";
@@ -89,7 +90,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	
 	protected PendingIntent getStopIntent()
 	{
-		Intent intent = new Intent(this, RadioPlayer.class).setAction(STOP);
+		Intent intent = new Intent(this, RadioPlayer.class).setAction(ACTION_STOP);
 		return PendingIntent.getService(this, 0, intent, 0);
 			 
 	}
@@ -298,9 +299,18 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			if (action == null)
 			{
 				log("no action specified", "v");
+				//return flag indicating no further action needed if service is stopped by system and later resumes
+				return START_STICKY;
 				//Log.i(getPackageName(), "No action specified");
 			}
-			else if (action.equals(STOP.toString()))
+			else if (action.equals(ACTION_PLAY.toString()))
+			{
+				log("PLAY action in intent", "i");
+				String url = intent.getStringExtra(MainActivity.URL);
+				//Log.i(getPackageName(), "STOP");	
+				play(url);
+			}
+			else if (action.equals(ACTION_STOP.toString()))
 			{
 				log("STOP action in intent", "i");
 				//Log.i(getPackageName(), "STOP");	

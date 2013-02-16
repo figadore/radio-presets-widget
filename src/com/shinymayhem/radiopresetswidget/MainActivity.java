@@ -177,44 +177,13 @@ public class MainActivity extends Activity {
 	/*
 	public void start(View view)
 	{
-		if (!mBound)
-		{
-			Intent intent = new Intent(this, RadioPlayer.class);
-			
-			//intent.putExtra(URL, url);
-			startService(intent);
-			bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-		}
-		ConnectivityManager network = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-		NetworkInfo info = network.getActiveNetworkInfo();
-		if (info == null || info.isConnected() == false)
-		{
-			//TextView status = (TextView) findViewById(R.id.status);
-			//status.setText("No network");
-			Toast.makeText(this, "No network", Toast.LENGTH_SHORT).show();
-			Log.i(getClass().toString(), "no network, can't do anything");
-			return;
-		}
-		else
-		{
-			
-			int id = view.getId();
-			Button esr = (Button) findViewById(R.id.esr_button);
-			Button jr = (Button) findViewById(R.id.jr_button);
-			String url = "";
-			if (id == esr.getId())
-			{
-				url = "http://streamplus17.leonex.de:39060";
-				
-			}
-			else if (id == jr.getId())
-			{
-				url = "http://jazz-wr04.ice.infomaniak.ch/jazz-wr04-128.mp3";
-			}
-			mService.play(url);
-		}
-		
-	}*/
+		Log.d(getClass().toString(), "Play button received, sending play intent");
+		Intent intent = new Intent(this, RadioPlayer.class);
+		intent.setAction(RadioPlayer.ACTION_PLAY);
+		intent.putExtra(URL, url);
+		startService(intent);
+		//mService.play(url);
+	}
 	
 	@Override
 	protected void onStart()
