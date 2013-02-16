@@ -494,6 +494,12 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		{
 			log("null media player", "e");
 		}
+		else if (state == RadioPlayer.STATE_PREPARING)
+		{
+			log("stop called while preparing", "v");
+			mMediaPlayer.release();
+			mMediaPlayer = null;
+		}
 		else
 		{
 			log("stopping playback", "v");
