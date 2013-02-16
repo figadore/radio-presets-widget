@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Reese Wilson | Shiny Mayhem
+ * Copyright (C) 2013 Reese Wilson | Shiny Mayhem
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -17,22 +17,19 @@ package com.shinymayhem.radiopresetswidget;
 
 import android.app.Activity;
 import android.content.ComponentName;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
-import android.widget.LinearLayout;
-import android.widget.Toast;
+import android.widget.ListView;
+import android.widget.SimpleCursorAdapter;
 
 import com.shinymayhem.radiopresetswidget.RadioDbContract.StationsDbHelper;
 import com.shinymayhem.radiopresetswidget.RadioPlayer.LocalBinder;
@@ -41,12 +38,11 @@ public class MainActivity extends Activity {
 
 	//string-extra key for intent
 	public final static String URL = "com.shinymayhem.radiopresetswidget.URL";
-	//url passed in through dynamic button
-	protected String url;
+
 	protected final int BUTTON_LIMIT = 6;
 	
 	protected boolean mBound = false;
-	protected StationsDbHelper dbHelper;
+	protected StationsDbHelper mDbHelper;
 	protected RadioPlayer mService;
 	
 	protected Context getContext()
@@ -54,17 +50,93 @@ public class MainActivity extends Activity {
 		return this;
 	}
 	
-	protected String getUrl()
-	{
-		return this.url;
-	}
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		Log.i(getClass().toString(), "creating main activity");
+
+		//set content view first so findViewById works
+		setContentView(R.layout.activity_main);
 		
+		//get view
+		ListView stationsLayout = (ListView)this.findViewById(R.id.stations); //TODO not created yet?
+				
+		//get stations from sqlite
+		mDbHelper  = new StationsDbHelper(getContext());
+		SQLiteDatabase db = mDbHelper.getReadableDatabase();
+		String[] projection = {
+				"_id",
+				RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER,
+				RadioDbContract.StationEntry.COLUMN_NAME_TITLE,
+				RadioDbContract.StationEntry.COLUMN_NAME_URL
+		};
 		
+		String sortOrder = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER + " ASC";
+		
+		Cursor cursor = db.query(RadioDbContract.StationEntry.TABLE_NAME, projection, null, null, null, null, sortOrder, Integer.toString(BUTTON_LIMIT));
+		//startManagingCursor(cursor);
+		String[] fromColumns = {RadioDbContract.StationEntry.COLUMN_NAME_TITLE};
+		int[] toViews = {R.id.station_title};
+		//TODO extend SimpleCursorAdapter, add data row to constructor, put url in view with setTag, and onclick listeners 
+		SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, R.layout.station_entry, cursor, fromColumns, toViews, 0); 
+		stationsLayout.setAdapter(adapter);
+		/*
+		if (!cursor.moveToFirst())
+		{
+			//no rows found
+			db.close();
+			db = mDbHelper.getWritableDatabase();
+			ContentValues values = new ContentValues();
+			values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, 1);
+			values.put(RadioDbContract.StationEntry.COLUMN_NAME_TITLE, "ElectroSwing Revolution");
+			values.put(RadioDbContract.StationEntry.COLUMN_NAME_URL, "http://streamplus17.leonex.de:39060");
+			db.insertOrThrow(RadioDbContract.StationEntry.TABLE_NAME, null, values);
+			values = new ContentValues();
+			values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, 2);
+			values.put(RadioDbContract.StationEntry.COLUMN_NAME_TITLE, "Jazz Radio");
+			values.put(RadioDbContract.StationEntry.COLUMN_NAME_URL, "http://jazz-wr04.ice.infomaniak.ch/jazz-wr04-128.mp3");
+			db.insertOrThrow(RadioDbContract.StationEntry.TABLE_NAME, null, values);
+			
+		}
+		else
+		{
+			while (!cursor.isAfterLast())
+			{
+				long presetNumber = cursor.getLong(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER));
+				String title = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_TITLE));
+				final String url = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));
+				cursor.moveToNext();
+				Button button = new Button(this);
+				button.setText(title);
+				button.setId((int) presetNumber);
+				final int id = button.getId();
+				stationsLayout.addView(button);
+				Button btn = ((Button) findViewById(id));
+				btn.setOnClickListener(new View.OnClickListener() {
+					
+					@Override
+					public void onClick(View view) {
+						ConnectivityManager network = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+						NetworkInfo info = network.getActiveNetworkInfo();
+						if (info == null || info.isConnected() == false)
+						{
+							//TextView status = (TextView) findViewById(R.id.status);
+							//status.setText("No network");
+							Toast.makeText(getContext(), "No network", Toast.LENGTH_SHORT).show();
+							Log.i(getClass().toString(), "no network, can't do anything");
+							return;
+						}
+						else
+						{
+							mService.play(url);
+						}
+						
+					}
+				});
+			}
+		}*/
+		db.close();
 		//get stations from preferences
 		/*SharedPreferences stations = this.getSharedPreferences(getString(R.string.stations), Context.MODE_PRIVATE);
 		Map<String, ?> stationsMap = stations.getAll();
@@ -94,7 +166,6 @@ public class MainActivity extends Activity {
 		//add buttons dynamically with onclick listeners
 		
 		
-		setContentView(R.layout.activity_main);
 	}
 
 	@Override
@@ -151,81 +222,6 @@ public class MainActivity extends Activity {
 		super.onStart();
 		Log.d(getClass().toString(), "starting main activity");
 		bindRadioPlayer();
-		
-		//get view
-		LinearLayout stationsLayout = (LinearLayout)this.findViewById(R.id.stations); //TODO not created yet?
-				
-		//get stations from sqlite
-		dbHelper  = new StationsDbHelper(getContext());
-		SQLiteDatabase db = dbHelper.getReadableDatabase();
-		String[] projection = {
-				RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER,
-				RadioDbContract.StationEntry.COLUMN_NAME_TITLE,
-				RadioDbContract.StationEntry.COLUMN_NAME_URL
-		};
-		
-		String sortOrder = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER + " ASC";
-		
-		Cursor cursor = db.query(RadioDbContract.StationEntry.TABLE_NAME, projection, null, null, null, null, sortOrder, Integer.toString(BUTTON_LIMIT));
-		if (!cursor.moveToFirst())
-		{
-			//no rows found
-			db.close();
-			db = dbHelper.getWritableDatabase();
-			ContentValues values = new ContentValues();
-			values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, 1);
-			values.put(RadioDbContract.StationEntry.COLUMN_NAME_TITLE, "ElectroSwing Revolution");
-			values.put(RadioDbContract.StationEntry.COLUMN_NAME_URL, "http://streamplus17.leonex.de:39060");
-			db.insertOrThrow(RadioDbContract.StationEntry.TABLE_NAME, null, values);
-			values = new ContentValues();
-			values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, 2);
-			values.put(RadioDbContract.StationEntry.COLUMN_NAME_TITLE, "Jazz Radio");
-			values.put(RadioDbContract.StationEntry.COLUMN_NAME_URL, "http://jazz-wr04.ice.infomaniak.ch/jazz-wr04-128.mp3");
-			db.insertOrThrow(RadioDbContract.StationEntry.TABLE_NAME, null, values);
-			
-		}
-		else
-		{
-			while (!cursor.isAfterLast())
-			{
-				long presetNumber = cursor.getLong(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER));
-				String title = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_TITLE));
-				String url = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));
-				//TODO move onClick to this
-				this.url = url; //put in a place that listener class can access
-				cursor.moveToNext();
-				Button button = new Button(this);
-				button.setText(title);
-				button.setId((int) presetNumber);
-				//final int id = button.getId();
-				
-				//Button btn = ((Button) findViewById(id));
-				
-				button.setOnClickListener(new View.OnClickListener() {
-					
-					@Override
-					public void onClick(View view) {
-						ConnectivityManager network = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-						NetworkInfo info = network.getActiveNetworkInfo();
-						if (info == null || info.isConnected() == false)
-						{
-							//TextView status = (TextView) findViewById(R.id.status);
-							//status.setText("No network");
-							Toast.makeText(getContext(), "No network", Toast.LENGTH_SHORT).show();
-							Log.i(getClass().toString(), "no network, can't do anything");
-							return;
-						}
-						else
-						{
-							mService.play(getUrl());
-						}
-						
-					}
-				});
-				stationsLayout.addView(button);
-			}
-		}
-		db.close();
 	}
 	
 	protected void bindRadioPlayer()
@@ -272,18 +268,20 @@ public class MainActivity extends Activity {
 		mService.stop();
 	}
 	
-	public void copy(View view)
+	public boolean copy(MenuItem item)
 	{
 		//Intent intent = new Intent(this, RadioPlayer.class);
 		//stopService(intent);
 		mService.copyLog();
+		return true;
 	}
 	
-	public void clear(View view)
+	public boolean clear(MenuItem item)
 	{
 		//Intent intent = new Intent(this, RadioPlayer.class);
 		//stopService(intent);
 		mService.clearLog();
+		return true;
 	}
 	
 	@Override
