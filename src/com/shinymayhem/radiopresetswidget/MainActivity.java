@@ -34,7 +34,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
-import android.widget.SimpleCursorAdapter;
 import android.widget.Toast;
 
 import com.shinymayhem.radiopresetswidget.RadioDbContract.StationsDbHelper;
@@ -84,130 +83,9 @@ public class MainActivity extends Activity {
 		Cursor cursor = db.query(RadioDbContract.StationEntry.TABLE_NAME, projection, null, null, null, null, sortOrder, Integer.toString(BUTTON_LIMIT));
 		RadioCursorAdapter adapter = new RadioCursorAdapter(this, cursor, RadioCursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
 		stationsLayout.setAdapter(adapter);
-		//startManagingCursor(cursor);
-		//String[] fromColumns = {RadioDbContract.StationEntry.COLUMN_NAME_TITLE};
-		//int[] toViews = {R.id.station_title};
-		//String titleColumn = RadioDbContract.StationEntry.COLUMN_NAME_TITLE;
-		//String urlColumn = RadioDbContract.StationEntry.COLUMN_NAME_URL; 
 		
-		//SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, R.layout.station_entry, cursor, fromColumns, toViews, 0); 
-		/*
-
-		Log.i(getClass().toString(), "creating main activity");
-
-		//set content view first so findViewById works
-		setContentView(R.layout.activity_main);
-		
-		//get view
-		ListView stationsLayout = (ListView)this.findViewById(R.id.stations); //TODO not created yet?
-				
-		//get stations from sqlite
-		mDbHelper  = new StationsDbHelper(getContext());
-		SQLiteDatabase db = mDbHelper.getReadableDatabase();
-		String[] projection = {
-				"_id",
-				RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER,
-				RadioDbContract.StationEntry.COLUMN_NAME_TITLE,
-				RadioDbContract.StationEntry.COLUMN_NAME_URL
-		};
-		
-		String sortOrder = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER + " ASC";
-		
-		Cursor cursor = db.query(RadioDbContract.StationEntry.TABLE_NAME, projection, null, null, null, null, sortOrder, Integer.toString(BUTTON_LIMIT));
-		//startManagingCursor(cursor);
-		String[] fromColumns = {RadioDbContract.StationEntry.COLUMN_NAME_TITLE};
-		int[] toViews = {R.id.station_title};
-		//TODO extend SimpleCursorAdapter, add data row to constructor, put url in view with setTag, and onclick listeners 
-		SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, R.layout.station_entry, cursor, fromColumns, toViews, 0); 
-		stationsLayout.setAdapter(adapter);
-*/
-
-		
-		/*
-		if (!cursor.moveToFirst())
-		{
-			//no rows found
-			db.close();
-			db = mDbHelper.getWritableDatabase();
-			ContentValues values = new ContentValues();
-			values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, 1);
-			values.put(RadioDbContract.StationEntry.COLUMN_NAME_TITLE, "ElectroSwing Revolution");
-			values.put(RadioDbContract.StationEntry.COLUMN_NAME_URL, "http://streamplus17.leonex.de:39060");
-			db.insertOrThrow(RadioDbContract.StationEntry.TABLE_NAME, null, values);
-			values = new ContentValues();
-			values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, 2);
-			values.put(RadioDbContract.StationEntry.COLUMN_NAME_TITLE, "Jazz Radio");
-			values.put(RadioDbContract.StationEntry.COLUMN_NAME_URL, "http://jazz-wr04.ice.infomaniak.ch/jazz-wr04-128.mp3");
-			db.insertOrThrow(RadioDbContract.StationEntry.TABLE_NAME, null, values);
-			
-		}
-		else
-		{
-			while (!cursor.isAfterLast())
-			{
-				long presetNumber = cursor.getLong(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER));
-				String title = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_TITLE));
-				final String url = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));
-				cursor.moveToNext();
-				Button button = new Button(this);
-				button.setText(title);
-				button.setId((int) presetNumber);
-				final int id = button.getId();
-				stationsLayout.addView(button);
-				Button btn = ((Button) findViewById(id));
-				btn.setOnClickListener(new View.OnClickListener() {
-					
-					@Override
-					public void onClick(View view) {
-						ConnectivityManager network = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-						NetworkInfo info = network.getActiveNetworkInfo();
-						if (info == null || info.isConnected() == false)
-						{
-							//TextView status = (TextView) findViewById(R.id.status);
-							//status.setText("No network");
-							Toast.makeText(getContext(), "No network", Toast.LENGTH_SHORT).show();
-
-							log("no network, can't do anything");
-							return;
-						}
-						else
-						{
-							mService.play(url);
-						}
-						
-					}
-				});
-			}
-		}*/
 		db.close();
 
-		//get stations from preferences
-		/*SharedPreferences stations = this.getSharedPreferences(getString(R.string.stations), Context.MODE_PRIVATE);
-		Map<String, ?> stationsMap = stations.getAll();
-		if (stationsMap.size()>0)
-		{
-			Iterator<?> iterator = stationsMap.entrySet().iterator();
-			while (iterator.hasNext())
-			{
-				Map.Entry<String, String> pairs = (Map.Entry<String, String>)iterator.next();
-				String key = (String)pairs.getKey();
-				Set<String> strings = (Set<String>)pairs.getValue();
-				String title = (String) strings.toArray()[0];
-				String url = (String) strings.toArray()[1];
-				url = url;
-			}
-		}
-		else //no saved stations
-		{
-			Set<String> esrRadio = new HashSet<String>(Arrays.asList("ElectroSwing Revolution", "http://streamplus17.leonex.de:39060"));
-			Set<String> jazzRadio = new HashSet<String>(Arrays.asList("Jazz Radio", "http://jazz-wr04.ice.infomaniak.ch/jazz-wr04-128.mp3"));
-			SharedPreferences.Editor editor = stations.edit();
-			editor.putStringSet("1", esrRadio); 
-			editor.putStringSet("2", jazzRadio);
-			editor.commit();
-		}*/
-		
-		//add buttons dynamically with onclick listeners
 		
 		
 	}
@@ -218,47 +96,7 @@ public class MainActivity extends Activity {
 		getMenuInflater().inflate(R.menu.activity_main, menu);
 		return true;
 	}
-	/*
-	public void start(View view)
-	{
-		if (!mBound)
-		{
-			Intent intent = new Intent(this, RadioPlayer.class);
-			
-			//intent.putExtra(URL, url);
-			startService(intent);
-			bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-		}
-		ConnectivityManager network = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-		NetworkInfo info = network.getActiveNetworkInfo();
-		if (info == null || info.isConnected() == false)
-		{
-			//TextView status = (TextView) findViewById(R.id.status);
-			//status.setText("No network");
-			Toast.makeText(this, "No network", Toast.LENGTH_SHORT).show();
-			log("no network, can't do anything");
-			return;
-		}
-		else
-		{
-			
-			int id = view.getId();
-			Button esr = (Button) findViewById(R.id.esr_button);
-			Button jr = (Button) findViewById(R.id.jr_button);
-			String url = "";
-			if (id == esr.getId())
-			{
-				url = "http://streamplus17.leonex.de:39060";
-				
-			}
-			else if (id == jr.getId())
-			{
-				url = "http://jazz-wr04.ice.infomaniak.ch/jazz-wr04-128.mp3";
-			}
-			mService.play(url);
-		}
-		
-	}*/
+	
 	public void play(String url)
 	{
 		Log.d(getClass().toString(), "Play button received");
