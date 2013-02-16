@@ -67,6 +67,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	public final static String STATE_STOPPED = "Stopped";
 	public final static String STATE_COMPLETE = "Complete";
 	public final static String STATE_END = "Ended";
+	public final static int NETWORK_STATE_DISCONNECTED = -1;
 	protected NetworkInfo mNetworkInfo;
 	protected int mNetworkState;
 	protected MediaPlayer mMediaPlayer;
@@ -363,8 +364,13 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		}
 		else
 		{
-			log("no network, should be handled by ui?", "e");
+			
+			log("setting network state to disconnected", "v");
+			mNetworkState = RadioPlayer.NETWORK_STATE_DISCONNECTED;
 			Toast.makeText(this, "tried to play with no network", Toast.LENGTH_SHORT).show();
+			log("no network, should be handled by ui? returning", "e");
+			
+			return;
 		}
 		//get url from param, fallback to instance variable
 		if (url != null)
@@ -752,12 +758,17 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		public void onReceive(Context context, Intent intent) {
 			log("received network change broadcast", "i");
 			//Log.i(getPackageName(), "received network change broadcast");
-			/*if (mediaPlayer == null)
+			if (mMediaPlayer == null && state == RadioPlayer.STATE_PREPARING)
 			{
-				log("no media player, don't care about connection updates", "v");
+				log("recover from disconnect while preparing", "v");
 				//Log.i(getPackageName(), "no media player, don't care about connection updates");
+				play();
 				return;
-			}*/
+			}
+			else if (mMediaPlayer == null && state != RadioPlayer.STATE_UNINITIALIZED)
+			{
+				log("media player null, will cause problems if connected", "e");
+			}
 			String str = "";
 			if (isConnected())
 			{
@@ -779,7 +790,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 					str += "old:" + mNetworkState;
 					str += ", new:" + newState;
 					log(str, "v");
-					//can't set nextplayer after complete, so just start fresh
+					
 					
 					log("setting network state ivar", "v");
 					mNetworkState = newState;
@@ -800,14 +811,17 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 						log("illegal state detected, can't restart, start from scratch instead", "e");
 						start = true;
 					}
+					//can't set nextplayer after complete, so just start fresh
 					if (state == RadioPlayer.STATE_COMPLETE || start)
 					{
+						log("complete or start=true", "v");
 						play();
 					}
 					//network interrupted playback but isn't done playing from buffer yet
 					//set nextplayer and wait for current player to complete
 					else  
 					{
+						log("!complete && start!=true", "v");
 						play();
 						//TODO figure out if this is possible, or too buggy
 						//restart();
@@ -822,15 +836,43 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			}
 			else
 			{
-				str = "not connected";
+				str = "";
+				if (mNetworkState == RadioPlayer.NETWORK_STATE_DISCONNECTED)
+				{
+					str = "still ";
+				}
+				str += "not connected. ";
+				str += "old:" + mNetworkState;
+				str += ", new:" + Integer.toString(RadioPlayer.NETWORK_STATE_DISCONNECTED);
+				log(str, "v");
+				
 				log(str, "w");
+				
+				log("setting network state ivar to disconnected", "v");
+				mNetworkState = RadioPlayer.NETWORK_STATE_DISCONNECTED;
+				
+
 				//TODO figure out the best thing to do for each state
 				if (state == RadioPlayer.STATE_PREPARING) //this will lead to a mediaioerror when it reaches prepared
 				{
 					mMediaPlayer.release();
 					mMediaPlayer = null;
 					log("-------------------------------", "d");
-					log("experimental, does it break, or work?", "d");
+					log("network connection lost while preparing? set null mediaplayer", "d");
+					log("-------------------------------", "d");
+				}
+				else if (state == RadioPlayer.STATE_ERROR)
+				{
+					mMediaPlayer.release();
+					mMediaPlayer = null;
+					log("-------------------------------", "d");
+					log("not sure what to do, how did we get here?", "d");
+					log("-------------------------------", "d");
+				}
+				else
+				{
+					log("-------------------------------", "d");
+					log("other state", "i");
 					log("-------------------------------", "d");
 				}
 			}
