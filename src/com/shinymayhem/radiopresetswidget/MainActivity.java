@@ -33,6 +33,10 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemLongClickListener;
+import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -83,6 +87,62 @@ public class MainActivity extends Activity {
 		Cursor cursor = db.query(RadioDbContract.StationEntry.TABLE_NAME, projection, null, null, null, null, sortOrder, Integer.toString(BUTTON_LIMIT));
 		RadioCursorAdapter adapter = new RadioCursorAdapter(this, cursor, RadioCursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
 		stationsLayout.setAdapter(adapter);
+		stationsLayout.setOnItemSelectedListener(new OnItemSelectedListener()
+		{
+
+			@Override
+			public void onItemSelected(AdapterView<?> adapter, View view, int position,
+					long id) {
+				// TODO Auto-generated method stub
+				String str= "item selected, view position:";
+				str += Integer.toString(position);
+				str += ", row id:";
+				str += Long.toString(id);
+				log(str, "v");
+				//Toast.makeText(getContext(), str, Toast.LENGTH_SHORT).show();
+			}
+
+			@Override
+			public void onNothingSelected(AdapterView<?> adapter) {
+				// TODO Auto-generated method stub
+				String str = "nothing selected";
+				log(str, "v");
+				//Toast.makeText(getContext(), "nothing selected", Toast.LENGTH_SHORT).show();
+				
+			}
+			
+		});
+		
+		stationsLayout.setOnItemClickListener(new OnItemClickListener() {
+
+			@Override
+			public void onItemClick(AdapterView<?> adapter, View view, int position,
+					long id) {
+				// TODO Auto-generated method stub
+				String str= "item clicked, view position:";
+				str += Integer.toString(position);
+				str += ", row id:";
+				str += Long.toString(id);
+				log(str, "v");
+				
+			}
+		});
+		
+		stationsLayout.setOnItemLongClickListener(new OnItemLongClickListener() {
+
+			@Override
+			public boolean onItemLongClick(AdapterView<?> adapter, View view, int position,
+					long id) {
+				// TODO Auto-generated method stub
+				String str= "item long clicked, view position:";
+				str += Integer.toString(position);
+				str += ", row id:";
+				str += Long.toString(id);
+				log(str, "v");
+				//Toast.makeText(getContext(), str, Toast.LENGTH_SHORT).show();
+				return true;
+			}
+		});
 		
 		db.close();
 
