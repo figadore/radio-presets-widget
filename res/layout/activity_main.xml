@@ -5,84 +5,38 @@
     android:orientation="vertical"
     tools:context=".MainActivity" >
    
-	<ListView xmlns:android="http://schemas.android.com/apk/res/android"
+	<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	    xmlns:tools="http://schemas.android.com/tools"
 	    android:layout_width="match_parent"
 	    android:layout_height="match_parent"
-	    android:orientation="vertical"
 	    android:layout_alignParentTop="true"
-	    android:id="@+id/stations" >	
-	</ListView>
-	    <!--  <Button
-	        android:id="@+id/esr_button"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:text="@string/esr" 
-	        android:onClick="start" />
-	    <Button
-	        android:id="@+id/jr_button"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:text="@string/jr" 
-	        android:onClick="start" />
-	        -->
+	    android:id="@+id/fragment_container" >	
+	</FrameLayout>
 
-	    <ImageButton
-	        android:id="@+id/stop_button"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_centerHorizontal="true"
-	        android:layout_alignParentBottom="true"
-	        
-	        android:padding="5dp"
-	        android:contentDescription="@string/stop"
-	        style="?android:attr/borderlessButtonStyle"
-	        android:src="@drawable/stop_icon"
-	        android:onClick="stop" />
-	    <ImageView
-		    xmlns:android="http://schemas.android.com/apk/res/android"
-		    android:src="@android:drawable/divider_horizontal_dark"
-		    android:layout_width="fill_parent"
-		    android:layout_height="wrap_content"
-		    android:contentDescription="@string/divider"
-		    android:scaleType="fitXY"
-		    android:paddingLeft="5dp"
-		    android:paddingRight="5dp"
-		    android:paddingBottom="2dp"
-		    android:paddingTop="2dp" 
-		    android:layout_alignTop="@id/stop_button"/>
-	  <!--    <Button
-	        android:id="@+id/copy_button"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:text="@string/copy" 
-	        android:onClick="copy" />
-	     <Button
-	        android:id="@+id/clear_button"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:text="@string/clear" 
-	        style="?android:attr/borderlessButtonStyle"
-	        android:onClick="clear" />
- -->
-	    
-<!--
-	</LinearLayout>
 
-	   <ScrollView
-	    android:id="@+id/scrollView1"
-	    android:layout_width="match_parent"
-	    android:layout_height="wrap_content" >
-
-	    <TextView
-        android:id="@+id/status"
-        android:layout_width="match_parent"
+    <ImageButton
+        android:id="@+id/stop_button"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:inputType="none"
-        android:text="@string/uninitialized"
-        >
-
-    	</TextView>
-	</ScrollView>
-	-->
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        
+        android:padding="5dp"
+        android:contentDescription="@string/stop"
+        style="?android:attr/borderlessButtonStyle"
+        android:src="@drawable/av_stop"
+        android:onClick="stop" />
+    <ImageView
+	    xmlns:android="http://schemas.android.com/apk/res/android"
+	    android:src="@android:drawable/divider_horizontal_dark"
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:contentDescription="@string/divider"
+	    android:scaleType="fitXY"
+	    android:paddingLeft="5dp"
+	    android:paddingRight="5dp"
+	    android:paddingBottom="2dp"
+	    android:paddingTop="2dp" 
+	    android:layout_alignTop="@id/stop_button"/>
+	
 </RelativeLayout>

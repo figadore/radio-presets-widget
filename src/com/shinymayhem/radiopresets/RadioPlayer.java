@@ -14,7 +14,7 @@
    limitations under the License.
 */
 
-package com.shinymayhem.radiopresetswidget;
+package com.shinymayhem.radiopresets;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -22,9 +22,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Locale;
 
 import android.annotation.SuppressLint;
 import android.app.PendingIntent;
@@ -45,16 +42,14 @@ import android.net.NetworkInfo;
 import android.os.Binder;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
-import android.util.Log;
 import android.widget.Toast;
 
 public class RadioPlayer extends Service implements OnPreparedListener, OnInfoListener, OnCompletionListener, OnErrorListener {
 	
 	public final static int ONGOING_NOTIFICATION = 1;
-	public final static String ACTION = "com.shinymayhem.radiopresetswidget.ACTION";
+	public final static String ACTION = "com.shinymayhem.radiopresets.ACTION";
 	public final static String ACTION_STOP = "Stop";
 	public final static String ACTION_PLAY = "Play";
-	public final static String LOG_FILENAME = "log.txt";
 	public String state = STATE_UNINITIALIZED;
 	public final static String STATE_UNINITIALIZED = "Uninitialized";
 	public final static String STATE_INITIALIZING = "Initializing";
@@ -79,6 +74,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	protected boolean mInterrupted = false;
 	private final IBinder mBinder = new LocalBinder();
 	protected boolean mBound = false;
+	protected Logger mLogger = new Logger();
 	
 	public class LocalBinder extends Binder
 	{
@@ -348,14 +344,12 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		if (this.mUrl == null)
 		{
 			log("url not set", "e");
-			//Log.e(getPackageName(), "url not set");
 		}
 		else
 		{
 			String str = "url:";
 			str += this.mUrl;
 			log(str, "v");
-			//Log.i(getPackageName(), str);
 		}
 		this.play(this.mUrl);
 	}
@@ -401,21 +395,6 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		registerReceiver(mNoisyReceiver, intentFilter);
 		log("register noisy receiver", "v");
 		
-		
-		//Toast.makeText(this, "Initializing", Toast.LENGTH_SHORT).show();
-		/*
-		if (playing && mediaPlayer.isPlaying() == false)
-		{
-			log("play state wrong, class says it is playing but it isn't", "v");
-			Toast.makeText(this, "Play state wrong", Toast.LENGTH_SHORT).show();
-			playing = false;
-		}
-		else if (playing && mediaPlayer.isPlaying() == true)
-		{
-			log("play state wrong2, class says it isn't playing but it is", "v");
-			Toast.makeText(this, "Play state wrong", Toast.LENGTH_SHORT).show();
-			playing = true;
-		}*/
 		if (mMediaPlayer != null)
 		{
 			log("releasing old media player", "v");
@@ -698,20 +677,6 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		log(str, "i");
 		return newState;
 	}
-	/*
-		if (networkInfo.getType() == ConnectivityManager.TYPE_WIFI)
-		{
-			return this.WIRELESS_STATE_WIFI;
-		}
-		else if (info != null && info.getType() == ConnectivityManager.T)
-		if (info == null || info.isConnected() == false)
-		{
-			Toast.makeText(this, "No network", Toast.LENGTH_SHORT).show();
-			log("no network, can't do anything", "v");
-			return false;
-		}
-		return true;
-	}*/
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -897,84 +862,14 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			}
 			
 			
-			/*
-		    String state;
-		    String player;
-		    String interrupt;
-		    if (mediaPlayer.isPlaying())
-		    {
-		    	player = "mediaPlayer: playing";
-		    }
-		    else
-		    {
-		    	player = "mediaPlayer: not playing";
-		    }
-		    if (isPlaying())
-		    {
-		    	state= "state: playing";
-		    }
-		    else
-		    {
-		    	state = "state: not playing";
-		    }
-		    if (interrupted)
-	    	{
-		    	interrupt = "interrupted, restarting";
-	    	}
-	    	else
-	    	{
-	    		interrupt = "not interrupted";
-	    	}
-		    //String str;
-		    if (networkInfo != null && networkInfo.getType() == ConnectivityManager.TYPE_WIFI) {
-		    	 str = "wifi type detected";
-		    	
-		    	
-		    	
-		    // If the setting is ANY network and there is a network connection
-		    // (which by process of elimination would be mobile)
-		    } else if (networkInfo != null) {
-		    	str = "mobile type detected";
-		    	
-		    // Otherwise, the app can't download content--either because there is no network
-		    // connection (mobile or Wi-Fi)
-		    } else {
-		    	str = "no network detected";
-		    	//log("no network", "v");
-
-		        if (isPlaying())
-		        {
-		        	if (interrupted == false)
-		        	{
-		        		interrupted = true;
-		        		interrupt += " until now";	
-		        	}
-		        	
-		        	//Toast.makeText(context, "no network, interrupt", Toast.LENGTH_SHORT).show();
-		        	//log("no network, interrupt", "e");
-		        }
-		        else
-		        {
-		        	//Toast.makeText(context, "no network, not interrupted", Toast.LENGTH_SHORT).show();
-		        	//log("no network, not interrupted", "e");
-		        }
-		    }
-		    str += ", ";
-		    str += state;
-		    str += ", ";
-		    str += player;
-		    str += ", ";
-		    str += interrupt;
-		    log(str, "v");
-		    if (interrupted && state != RadioPlayer.STATE_PAUSED)
-		    {
-		    	restart();
-		    }
-		    */
 		}
 	}
 	
-
+	private void log(String text, String level)
+	{
+		mLogger.log(this, "State:" + state + ":\t\t\t\t" + text, level);
+	}
+	/*
 	private void log(String text, String level)
 	{
 		String str = "State:";
@@ -1033,12 +928,12 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	    	Toast.makeText(this, "error writing to log file", Toast.LENGTH_SHORT).show();
 	    	e.printStackTrace();
 		}
-	}
+	}*/
 	
 	public void clearLog()
 	{
 		//File file = getFileStreamPath(LOG_FILENAME);
-		deleteFile(LOG_FILENAME);
+		deleteFile(MainActivity.LOG_FILENAME);
 		//logging something should recreate the log file
 		log("log file deleted", "i");
 	}
@@ -1048,8 +943,8 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		//String path = Environment.getExternalStorageDirectory().getAbsolutePath();
 		String path = getExternalFilesDir(null).getAbsolutePath();
 		
-		File src = getFileStreamPath(LOG_FILENAME); 
-		File dst = new File(path + File.separator + LOG_FILENAME);
+		File src = getFileStreamPath(MainActivity.LOG_FILENAME); 
+		File dst = new File(path + File.separator + MainActivity.LOG_FILENAME);
 		try {
 			if (dst.createNewFile())
 			{
@@ -1088,7 +983,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		{
 			in.transferTo(0, in.size(), out);
 			String str = "log file copied to ";
-			str += path + File.separator + LOG_FILENAME;
+			str += path + File.separator + MainActivity.LOG_FILENAME;
 			log(str, "i");
 			if (in != null)
 			{

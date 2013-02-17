@@ -14,12 +14,13 @@
    limitations under the License.
 */
 
-package com.shinymayhem.radiopresetswidget;
+package com.shinymayhem.radiopresets;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.provider.BaseColumns;
+import android.util.Log;
 
 public class RadioDbContract {
 	
@@ -59,7 +60,7 @@ public class RadioDbContract {
 		@Override
 		public void onCreate(SQLiteDatabase db) {
 			db.execSQL(SQL_CREATE_STATIONS);
-
+			Log.i(getClass().toString(), "Created database");
 		}
 
 		@Override

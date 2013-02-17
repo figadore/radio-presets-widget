@@ -1,10 +1,16 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
 
-    <item
+    
+    <item 
         android:id="@+id/copy_logs"
         android:orderInCategory="100"
         android:showAsAction="never"
-        android:title="@string/copy" android:onClick="copy"/>
-    <item android:id="@+id/clear_logs" android:onClick="clear" android:title="@string/clear" android:orderInCategory="101" android:showAsAction="never"></item>
+        android:title="@string/copy" 
+        android:onClick="copy"/>
+    <item android:id="@+id/clear_logs" 
+        android:onClick="clear" 
+        android:title="@string/clear" 
+        android:orderInCategory="101"  
+        android:showAsAction="never"></item>
 
 </menu>
