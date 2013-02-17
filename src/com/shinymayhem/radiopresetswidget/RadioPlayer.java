@@ -489,19 +489,22 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			log("already stopped", "v");
 			return;
 		}
-		state = RadioPlayer.STATE_STOPPING;
+		
 		if (mMediaPlayer == null)
 		{
+			state = RadioPlayer.STATE_STOPPING;
 			log("null media player", "e");
 		}
 		else if (state == RadioPlayer.STATE_PREPARING)
 		{
+			state = RadioPlayer.STATE_STOPPING;
 			log("stop called while preparing", "v");
 			mMediaPlayer.release();
 			mMediaPlayer = null;
 		}
 		else
 		{
+			state = RadioPlayer.STATE_STOPPING;
 			log("stopping playback", "v");
 			Toast.makeText(this, "Stopping playback", Toast.LENGTH_SHORT).show();
 			stopForeground(true);
