@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.shinymayhem.radiopresetswidget"
+    package="com.shinymayhem.radiopresets"
     android:versionCode="1"
     android:versionName="1.0" >
 
@@ -20,7 +20,7 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name="com.shinymayhem.radiopresetswidget.MainActivity"
+            android:name="com.shinymayhem.radiopresets.MainActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -30,7 +30,7 @@
         </activity>
 
         <service
-            android:name="com.shinymayhem.radiopresetswidget.RadioPlayer"
+            android:name="com.shinymayhem.radiopresets.RadioPlayer"
             android:enabled="true"
             android:permission="android.permission.INTERNET"
             android:exported="true" >

@@ -14,7 +14,7 @@
    limitations under the License.
 */
 
-package com.shinymayhem.radiopresetswidget;
+package com.shinymayhem.radiopresets;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -25,6 +25,8 @@ import java.nio.channels.FileChannel;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
+
+import com.shinymayhem.radiopresets.R;
 
 import android.annotation.SuppressLint;
 import android.app.PendingIntent;
@@ -51,7 +53,7 @@ import android.widget.Toast;
 public class RadioPlayer extends Service implements OnPreparedListener, OnInfoListener, OnCompletionListener, OnErrorListener {
 	
 	public final static int ONGOING_NOTIFICATION = 1;
-	public final static String ACTION = "com.shinymayhem.radiopresetswidget.ACTION";
+	public final static String ACTION = "com.shinymayhem.radiopresets.ACTION";
 	public final static String ACTION_STOP = "Stop";
 	public final static String ACTION_PLAY = "Play";
 	public final static String LOG_FILENAME = "log.txt";

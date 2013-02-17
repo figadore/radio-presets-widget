@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">Radio Presets Widget</string>
+    <string name="app_name">Radio Presets</string>
     <string name="esr">Electro Swing Revolution</string>
     <string name="menu_settings">Settings</string>
     <string name="jr">Jazz Radio</string>
     <string name="stop">Stop</string>
+    <string name="add_station">Add Station</string>
     <string name="copy">Copy Logs</string>
     <string name="clear">Clear Logs</string>
     <string name="uninitialized">Uninitialized</string>
     <string name="divider">Divider</string>
     <string name="drag">Drag and drop</string>
-    <string name="stations">com.shinymayhem.radiopresetswidget.stations_file_key</string>
+    <string name="stations">com.shinymayhem.radiopresets.stations_file_key</string>
     <color name="white">#AAFFFFFF</color>
     <color name="blue">#ff0000ff</color>
     <color name="red">#ffff0000</color>

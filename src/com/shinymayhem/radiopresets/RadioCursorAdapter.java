@@ -1,4 +1,6 @@
-package com.shinymayhem.radiopresetswidget;
+package com.shinymayhem.radiopresets;
+
+import com.shinymayhem.radiopresets.R;
 
 import android.app.Activity;
 import android.content.Context;

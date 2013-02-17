@@ -13,7 +13,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */
-package com.shinymayhem.radiopresetswidget;
+package com.shinymayhem.radiopresets;
 
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
@@ -40,13 +40,14 @@ import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.shinymayhem.radiopresetswidget.RadioDbContract.StationsDbHelper;
-import com.shinymayhem.radiopresetswidget.RadioPlayer.LocalBinder;
+import com.shinymayhem.radiopresets.RadioDbContract.StationsDbHelper;
+import com.shinymayhem.radiopresets.RadioPlayer.LocalBinder;
+import com.shinymayhem.radiopresets.R;
 
 public class MainActivity extends Activity {
 
 	//string-extra key for intent
-	public final static String URL = "com.shinymayhem.radiopresetswidget.URL";
+	public final static String URL = "com.shinymayhem.radiopresets.URL";
 
 	protected final int BUTTON_LIMIT = 6;
 	
@@ -157,9 +158,14 @@ public class MainActivity extends Activity {
 		return true;
 	}
 	
+	public void add(MenuItem item)
+	{
+		log("add button pressed", "d");
+	}
+	
 	public void play(String url)
 	{
-		Log.d(getClass().toString(), "Play button received, sending play intent");
+		log("Play button received, sending play intent", "d");
 		Intent intent = new Intent(this, RadioPlayer.class);
 		intent.setAction(RadioPlayer.ACTION_PLAY);
 		intent.putExtra(URL, url);
@@ -171,13 +177,13 @@ public class MainActivity extends Activity {
 	protected void onStart()
 	{
 		super.onStart();
-		Log.d(getClass().toString(), "starting main activity");
+		log("starting main activity", "d");
 		bindRadioPlayer();
 	}
 	
 	protected void bindRadioPlayer()
 	{
-		Log.v(getClass().toString(), "binding radio player");
+		log("binding radio player", "d");
 		Intent intent = new Intent(this, RadioPlayer.class);
 		startService(intent);
 		bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
@@ -186,13 +192,13 @@ public class MainActivity extends Activity {
 	protected void onRestart()
 	{
 		super.onRestart();
-		Log.d(getClass().toString(), "restarting main activity");
+		log("restarting main activity", "d");
 	}
 	
 	protected void onResume()
 	{
 		super.onResume();
-		Log.d(getClass().toString(), "resuming main activity");
+		log("resuming main activity", "d");
 	}
 	
 	@Override
@@ -270,27 +276,27 @@ public class MainActivity extends Activity {
 
 	private void log(String text, String level)
 	{
-		String str = "MainActivity\t\t" + text;
+		String str = "MainActivity:\t\t" + text;
 		FileOutputStream file;
 		if (level == "v")
 		{
 			str = "VERBOSE:\t\t" + str;
-			Log.v("MainActivity", str);
+			Log.v("MainActivity:", str);
 		}
 		else if (level == "d")
 		{
 			str = "DEBUG:\t\t" + str;
-			Log.d("MainActivity", str);
+			Log.d("MainActivity:", str);
 		}
 		else if (level == "i")
 		{
 			str = "INFO:\t\t" + str;
-			Log.i("MainActivity", str);
+			Log.i("MainActivity:", str);
 		}
 		else if (level == "w")
 		{
 			str = "WARN:\t\t" + str;
-			Log.w("MainActivity", str);
+			Log.w("MainActivity:", str);
 		}
 		else if (level == "e")
 		{
