@@ -10,6 +10,13 @@ import android.view.LayoutInflater;
 
 public class AddDialogFragment extends DialogFragment {
 
+	
+	@Override
+	public void onCreate(Bundle savedInstanceState)
+	{
+		super.onCreate(savedInstanceState);
+	}
+	
 	public interface AddDialogListener
 	{
 		public void onDialogPositiveClick(DialogFragment dialog);
