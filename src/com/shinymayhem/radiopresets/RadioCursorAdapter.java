@@ -31,7 +31,7 @@ public class RadioCursorAdapter extends CursorAdapter {
 	@Override
 	public void bindView(View view, Context context, Cursor cursor) {
 		TextView titleView = (TextView)view.findViewById(R.id.station_title);
-		
+
 		//ListViewItem item = (ListViewItem)titleView.getParent().getParent();
 		final String url = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));
 		final Context c = context;
@@ -49,6 +49,7 @@ public class RadioCursorAdapter extends CursorAdapter {
 			@Override
 			public void onClick(View view) {
 				Log.i(getClass().toString(), "titleView.onClick()");
+				//TODO see if this still works, or if context is something else now, in fragment
 				MainActivity activity = (MainActivity) view.getContext();
 				ConnectivityManager network = (ConnectivityManager) activity.getSystemService(Context.CONNECTIVITY_SERVICE);
 				NetworkInfo info = network.getActiveNetworkInfo();
@@ -63,6 +64,7 @@ public class RadioCursorAdapter extends CursorAdapter {
 				else
 				{
 					Log.i(getClass().toString(), "play");
+					//TODO have the fragment handle this? or send straight to service? 
 					activity.play(url);
 				}
 				ListView parent = (ListView)view.getParent().getParent();
@@ -99,9 +101,9 @@ public class RadioCursorAdapter extends CursorAdapter {
 		
 		TitleListener titleListener = new TitleListener();
 		titleView.setOnLongClickListener(titleListener);
-		titleView.setOnDragListener(titleListener);
-		titleView.setOnGenericMotionListener(titleListener);
-		titleView.setOnTouchListener(titleListener);
+		//titleView.setOnDragListener(titleListener);
+		//titleView.setOnGenericMotionListener(titleListener);
+		//titleView.setOnTouchListener(titleListener);
 		titleView.setOnClickListener(titleListener);
 	}
 
@@ -117,6 +119,7 @@ public class RadioCursorAdapter extends CursorAdapter {
 	public void onContentChanged()
 	{
 		//called if flag is set
+		Log.e("CursorAdapter", "content changed, so something");
 	}
 
 }

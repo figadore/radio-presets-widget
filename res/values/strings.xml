@@ -6,9 +6,13 @@
     <string name="menu_settings">Settings</string>
     <string name="jr">Jazz Radio</string>
     <string name="stop">Stop</string>
-    <string name="add_station">Add Station</string>
+    <string name="add_station">Add</string>
+    <string name="cancel">Cancel</string>
+    <string name="title">Title</string>
+    <string name="url">URL</string>
     <string name="copy">Copy Logs</string>
     <string name="clear">Clear Logs</string>
+    <string name="no_stations">No stations saved</string>
     <string name="uninitialized">Uninitialized</string>
     <string name="divider">Divider</string>
     <string name="drag">Drag and drop</string>

@@ -4,11 +4,11 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="horizontal"
-    android:descendantFocusability="blocksDescendants"
+    android:descendantFocusability="beforeDescendants"
     android:id="@+id/station_entry" >	
     <ImageView
 		    xmlns:android="http://schemas.android.com/apk/res/android"
-		    android:src="@android:drawable/ic_media_pause"
+		    android:src="@drawable/content_import_export"
 		    android:layout_width="wrap_content"
 		    android:layout_height="wrap_content"
 		    android:layout_alignParentLeft="true"
@@ -21,15 +21,14 @@
 		    android:paddingTop="7dp" 
 		    
 		    android:id="@+id/station_drag" />
-	
-	<!--  <TextView xmlns:android="http://schemas.android.com/apk/res/android"
+	<!--
+	  <TextView xmlns:android="http://schemas.android.com/apk/res/android"
 	    android:layout_width="fill_parent"
 	    android:layout_height="wrap_content"
 	    android:layout_centerVertical="true"
 		android:layout_toRightOf="@id/station_drag"
 	    android:padding="15dp"
 	    android:textSize="22sp"
-	    android:descendantFocusability="blocksDescendants"
 	    android:id="@+id/station_title" >
 	    
 	
