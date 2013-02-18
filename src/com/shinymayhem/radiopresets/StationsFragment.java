@@ -2,9 +2,12 @@ package com.shinymayhem.radiopresets;
 
 import android.app.DialogFragment;
 import android.app.ListFragment;
+import android.app.LoaderManager.LoaderCallbacks;
 import android.content.Context;
+import android.content.CursorLoader;
+import android.content.Loader;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -12,19 +15,16 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
-import android.widget.AdapterView.OnItemLongClickListener;
-import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ListView;
 
 import com.shinymayhem.radiopresets.RadioDbContract.StationsDbHelper;
 
-public class StationsFragment extends ListFragment {
+public class StationsFragment extends ListFragment implements LoaderCallbacks<Cursor> {
 
 	protected StationsDbHelper mDbHelper;
 	protected Context mContext;
 	protected Logger mLogger = new Logger();
+	RadioCursorAdapter mAdapter;
 	
 	protected Context getContext()
 	{
@@ -33,8 +33,9 @@ public class StationsFragment extends ListFragment {
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-		setHasOptionsMenu(true);
 		super.onCreate(savedInstanceState);
+		setHasOptionsMenu(true);
+		getLoaderManager().initLoader(MainActivity.LOADER_STATIONS, null, this);
 		
 	}
 	
@@ -65,9 +66,13 @@ public class StationsFragment extends ListFragment {
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
 	{
 		//return inflater.inflate(R.layout.stations_fragment, container, false);
+		mAdapter = new RadioCursorAdapter(this.getActivity(), null, RadioCursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
+		this.setListAdapter(mAdapter);
 		mContext = container.getContext();
+		
+		
 		//get view
-		View inflated = inflater.inflate(R.layout.stations_fragment, null, false);
+		/*View inflated = inflater.inflate(R.layout.stations_fragment, null, false);
 		ListView stationsLayout;
 		if (inflated instanceof ListView)
 		{
@@ -76,10 +81,13 @@ public class StationsFragment extends ListFragment {
 		else
 		{
 			stationsLayout = (ListView)inflated.findViewById(android.R.id.list);
-		}
+		}*/
 		 //= (ListView)inflater.inflate(R.layout.stations_fragment, container, false);
 				//this.findViewById(R.layout.stations_fragment); 
 
+
+		
+		/*
 		//get stations from sqlite
 		mDbHelper  = new StationsDbHelper(getContext());
 		SQLiteDatabase db = mDbHelper.getReadableDatabase();
@@ -93,9 +101,11 @@ public class StationsFragment extends ListFragment {
 		String sortOrder = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER + " ASC";
 		
 		Cursor cursor = db.query(RadioDbContract.StationEntry.TABLE_NAME, projection, null, null, null, null, sortOrder, Integer.toString(MainActivity.BUTTON_LIMIT));
-		RadioCursorAdapter adapter = new RadioCursorAdapter(this.getActivity(), cursor, RadioCursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
-		stationsLayout.setAdapter(adapter);
-		stationsLayout.setOnItemSelectedListener(new OnItemSelectedListener()
+		mAdapter = new RadioCursorAdapter(this.getActivity(), cursor, RadioCursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
+		this.setListAdapter(mAdapter);
+		*/
+		
+		/*this.setOnListItemSelectedListener(new OnItemSelectedListener()
 		{
 
 			@Override
@@ -150,10 +160,30 @@ public class StationsFragment extends ListFragment {
 				//Toast.makeText(getContext(), str, Toast.LENGTH_SHORT).show();
 				return true;
 			}
-		});
+		});*/
 		
-		db.close();
-		return inflated;
+		//db.close();
+		return super.onCreateView(inflater, container, savedInstanceState);
+		//return (View)this;
+		//return inflated;
+	}
+	
+	@Override
+	public void onViewCreated(View view, Bundle savedInstanceState)
+	{
+		super.onViewCreated(view, savedInstanceState);
+		this.registerForContextMenu(this.getListView());
+	}
+	
+	@Override
+	public void onListItemClick(ListView l, View v, int position, long id)
+	{
+		super.onListItemClick(l, v, position, id);
+		String str= "list item clicked, view position:";
+		str += Integer.toString(position);
+		str += ", row id:";
+		str += Long.toString(id);
+		log(str, "v");
 	}
 	
 	private void log(String text, String level)
@@ -216,4 +246,38 @@ public class StationsFragment extends ListFragment {
 		}
 	}
 */
+
+	@Override
+	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+		String[] projection = {
+				"_id",
+				RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER,
+				RadioDbContract.StationEntry.COLUMN_NAME_TITLE,
+				RadioDbContract.StationEntry.COLUMN_NAME_URL
+		};
+		
+		String sortOrder = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER + " ASC";
+		Uri uri = RadioContentProvider.CONTENT_URI_STATIONS;
+		return new CursorLoader(this.getActivity().getApplicationContext(), uri, projection, null, null, sortOrder);
+	}
+
+	@Override
+	public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+		switch(loader.getId())
+		{
+			case MainActivity.LOADER_STATIONS:
+				mAdapter.swapCursor((Cursor)cursor);
+				break;
+		}
+	}
+
+	@Override
+	public void onLoaderReset(Loader<Cursor> loader) {
+		switch(loader.getId())
+		{
+			case MainActivity.LOADER_STATIONS:
+				mAdapter.swapCursor(null);
+				break;
+		}
+	}
 }

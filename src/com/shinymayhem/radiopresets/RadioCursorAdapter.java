@@ -1,7 +1,5 @@
 package com.shinymayhem.radiopresets;
 
-import com.shinymayhem.radiopresets.R;
-
 import android.app.Activity;
 import android.content.Context;
 import android.database.Cursor;
@@ -31,11 +29,24 @@ public class RadioCursorAdapter extends CursorAdapter {
 	@Override
 	public void bindView(View view, Context context, Cursor cursor) {
 		TextView titleView = (TextView)view.findViewById(R.id.station_title);
+		//ImageView imageView = (ImageView)view.findViewById(R.id.station_drag);
+		/*
+		imageView.setOnClickListener(new OnClickListener()
+		{
 
+			@Override
+			public void onClick(View arg0) {
+				Log.i(getClass().toString(), "imageView.onClick()");
+				
+			}
+			
+		});*/
+		
 		//ListViewItem item = (ListViewItem)titleView.getParent().getParent();
 		final String url = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));
 		final Context c = context;
 		titleView.setText(cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_TITLE)));
+		
 		class TitleListener implements View.OnLongClickListener, View.OnDragListener, View.OnGenericMotionListener, View.OnClickListener, View.OnTouchListener
 		{
 
@@ -94,7 +105,7 @@ public class RadioCursorAdapter extends CursorAdapter {
 			public boolean onLongClick(View view) {
 				Log.i(getClass().toString(), "titleView.onLongClick()");
 				// TODO Auto-generated method stub
-				return false;
+				return true;
 			}
 			
 		}

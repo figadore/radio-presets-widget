@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="horizontal"
-    android:descendantFocusability="beforeDescendants"
+    android:descendantFocusability="blocksDescendants"
     android:id="@+id/station_entry" >	
     <ImageView
 		    xmlns:android="http://schemas.android.com/apk/res/android"
@@ -19,7 +19,7 @@
 		    android:paddingRight="7dp"
 		    android:paddingBottom="7dp"
 		    android:paddingTop="7dp" 
-		    
+		    android:clickable="false"
 		    android:id="@+id/station_drag" />
 	<!--
 	  <TextView xmlns:android="http://schemas.android.com/apk/res/android"
@@ -28,13 +28,14 @@
 	    android:layout_centerVertical="true"
 		android:layout_toRightOf="@id/station_drag"
 	    android:padding="15dp"
+	    android:clickable="false"
 	    android:textSize="22sp"
 	    android:id="@+id/station_title" >
 	    
 	
 	</TextView>
-	
 	-->
+	
 	<Button xmlns:android="http://schemas.android.com/apk/res/android"
 	    android:layout_width="fill_parent"
 	    android:layout_height="wrap_content"
@@ -43,8 +44,7 @@
 	    android:padding="15dp"
 	    android:textSize="22sp"
 	    android:gravity="left"
-	    android:focusable="false"
-	    android:descendantFocusability="blocksDescendants"
+	    android:clickable="false"
 	    style="?android:attr/borderlessButtonStyle"
 	    android:id="@+id/station_title" >
 	    

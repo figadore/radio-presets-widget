@@ -36,6 +36,13 @@
             android:exported="true" >
             
         </service>
+        <provider
+        android:authorities="com.shinymayhem.radiopresets.contentprovider"
+        android:name="com.shinymayhem.radiopresets.RadioContentProvider"
+        android:exported="false" >
+        
+    	</provider>
     </application>
+    
 
 </manifest>

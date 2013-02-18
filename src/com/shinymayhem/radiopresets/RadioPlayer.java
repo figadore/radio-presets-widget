@@ -446,7 +446,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		stop();
 		if (!mBound)
 		{
-			log("stopping service with stopself", "d");
+			log("not bound, stopping service with stopself", "d");
 			stopSelf();
 			state = RadioPlayer.STATE_END;
 		}

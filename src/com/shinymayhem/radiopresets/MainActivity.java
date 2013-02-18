@@ -41,7 +41,7 @@ public class MainActivity extends Activity implements AddDialogListener {
 	public final static String URL = "com.shinymayhem.radiopresets.URL";
 
 	public static final int BUTTON_LIMIT = 20;
-	
+	public static final int LOADER_STATIONS = 0;
 	public final static String LOG_FILENAME = "log.txt";
 	
 	protected boolean mBound = false;
