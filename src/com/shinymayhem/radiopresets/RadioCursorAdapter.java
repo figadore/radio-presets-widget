@@ -1,20 +1,29 @@
+/*
+ * Copyright (C) 2013 Reese Wilson | Shiny Mayhem
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/
 package com.shinymayhem.radiopresets;
 
 import android.app.Activity;
 import android.content.Context;
 import android.database.Cursor;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.util.Log;
-import android.view.DragEvent;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CursorAdapter;
-import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 public class RadioCursorAdapter extends CursorAdapter {
 
@@ -28,7 +37,10 @@ public class RadioCursorAdapter extends CursorAdapter {
 
 	@Override
 	public void bindView(View view, Context context, Cursor cursor) {
+		//make cursor available to list item, for onlistitemclick or onitemlongclick
+		//view.setTag(cursor);
 		TextView titleView = (TextView)view.findViewById(R.id.station_title);
+		titleView.setText(cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_TITLE)));
 		//ImageView imageView = (ImageView)view.findViewById(R.id.station_drag);
 		/*
 		imageView.setOnClickListener(new OnClickListener()
@@ -42,10 +54,12 @@ public class RadioCursorAdapter extends CursorAdapter {
 			
 		});*/
 		
+		/*
 		//ListViewItem item = (ListViewItem)titleView.getParent().getParent();
 		final String url = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));
 		final Context c = context;
-		titleView.setText(cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_TITLE)));
+		
+		
 		
 		class TitleListener implements View.OnLongClickListener, View.OnDragListener, View.OnGenericMotionListener, View.OnClickListener, View.OnTouchListener
 		{
@@ -112,10 +126,12 @@ public class RadioCursorAdapter extends CursorAdapter {
 		
 		TitleListener titleListener = new TitleListener();
 		titleView.setOnLongClickListener(titleListener);
+		titleView.setOnClickListener(titleListener);
+		*/
 		//titleView.setOnDragListener(titleListener);
 		//titleView.setOnGenericMotionListener(titleListener);
 		//titleView.setOnTouchListener(titleListener);
-		titleView.setOnClickListener(titleListener);
+		
 	}
 
 	@Override

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item
+        android:id="@+id/edit_station"
+        android:orderInCategory="1"
+        android:showAsAction="always|withText"
+        android:title="@string/edit_station" 
+        android:icon="@drawable/content_edit" />
+    <item
+        android:id="@+id/delete_station"
+        android:orderInCategory="1"
+        android:showAsAction="always|withText"
+        android:title="@string/delete_station" 
+        android:icon="@drawable/content_discard" />
+
+</menu>

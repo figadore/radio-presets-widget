@@ -869,66 +869,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	{
 		mLogger.log(this, "State:" + state + ":\t\t\t\t" + text, level);
 	}
-	/*
-	private void log(String text, String level)
-	{
-		String str = "State:";
-		str += state;
-		str += ":\t\t\t\t";
-		str += text;
-		FileOutputStream file;
-		if (level == "v")
-		{
-			str = "VERBOSE:\t\t" + str;
-			Log.v("RadioPlayerService", str);
-		}
-		else if (level == "d")
-		{
-			str = "DEBUG:\t\t" + str;
-			Log.d("RadioPlayerService", str);
-		}
-		else if (level == "i")
-		{
-			str = "INFO:\t\t" + str;
-			Log.i("RadioPlayerService", str);
-		}
-		else if (level == "w")
-		{
-			str = "WARN:\t\t" + str;
-			Log.w("RadioPlayerService", str);
-		}
-		else if (level == "e")
-		{
-			str = "ERROR:\t\t" + str;
-			Log.e("RadioPlayerService", str);
-		}
-		else
-		{
-			Toast.makeText(this, "new log level", Toast.LENGTH_SHORT).show();
-			Log.e(getPackageName(), "new log level");
-			str = level + str;
-			Log.e(getPackageName(), str);
-		}
-		
-		try {
-			Calendar cal = Calendar.getInstance();
-	    	cal.getTime();
-	    	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
-	    	str += "\n";
-	    	str = sdf.format(cal.getTime()) + "\t\t" + str;
-			file = openFileOutput(LOG_FILENAME, Context.MODE_APPEND);
-			file.write(str.getBytes());
-			file.flush();
-			file.close();
-			//file = File.createTempFile(fileName, null, this.getCacheDir());
-			//file.
-		}
-		catch (Exception e)
-		{
-	    	Toast.makeText(this, "error writing to log file", Toast.LENGTH_SHORT).show();
-	    	e.printStackTrace();
-		}
-	}*/
+	
 	
 	public void clearLog()
 	{

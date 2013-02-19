@@ -18,14 +18,11 @@ package com.shinymayhem.radiopresets;
 import android.app.Activity;
 import android.app.DialogFragment;
 import android.app.FragmentManager;
-import android.app.LoaderManager.LoaderCallbacks;
 import android.content.ComponentName;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.content.Loader;
 import android.content.ServiceConnection;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -37,8 +34,9 @@ import android.widget.EditText;
 import com.shinymayhem.radiopresets.AddDialogFragment.AddDialogListener;
 import com.shinymayhem.radiopresets.RadioDbContract.StationsDbHelper;
 import com.shinymayhem.radiopresets.RadioPlayer.LocalBinder;
+import com.shinymayhem.radiopresets.StationsFragment.PlayerListener;
 
-public class MainActivity extends Activity implements AddDialogListener {
+public class MainActivity extends Activity implements AddDialogListener, PlayerListener {
 
 	//string-extra key for intent
 	public final static String URL = "com.shinymayhem.radiopresets.URL";
@@ -81,87 +79,6 @@ public class MainActivity extends Activity implements AddDialogListener {
 					.add(R.id.fragment_container, stationsFragment)
 					.commit();
 		}
-		//init loader manager
-		//getLoaderManager().initLoader(MainActivity.LOADER_STATIONS, null, this);
-		/*
-		//get view
-		ListView stationsLayout = (ListView)this.findViewById(R.layout.stations_fragment); 
-
-		//get stations from sqlite
-		mDbHelper  = new StationsDbHelper(getContext());
-		SQLiteDatabase db = mDbHelper.getReadableDatabase();
-		String[] projection = {
-				"_id",
-				RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER,
-				RadioDbContract.StationEntry.COLUMN_NAME_TITLE,
-				RadioDbContract.StationEntry.COLUMN_NAME_URL
-		};
-		
-		String sortOrder = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER + " ASC";
-		
-		Cursor cursor = db.query(RadioDbContract.StationEntry.TABLE_NAME, projection, null, null, null, null, sortOrder, Integer.toString(BUTTON_LIMIT));
-		RadioCursorAdapter adapter = new RadioCursorAdapter(this, cursor, RadioCursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
-		stationsLayout.setAdapter(adapter);
-		stationsLayout.setOnItemSelectedListener(new OnItemSelectedListener()
-		{
-
-			@Override
-			public void onItemSelected(AdapterView<?> adapter, View view, int position,
-					long id) {
-				// TODO Auto-generated method stub
-				String str= "item selected, view position:";
-				str += Integer.toString(position);
-				str += ", row id:";
-				str += Long.toString(id);
-				log(str, "v");
-				//Toast.makeText(getContext(), str, Toast.LENGTH_SHORT).show();
-			}
-
-			@Override
-			public void onNothingSelected(AdapterView<?> adapter) {
-				// TODO Auto-generated method stub
-				String str = "nothing selected";
-				log(str, "v");
-				//Toast.makeText(getContext(), "nothing selected", Toast.LENGTH_SHORT).show();
-				
-			}
-			
-		});
-		
-		stationsLayout.setOnItemClickListener(new OnItemClickListener() {
-
-			@Override
-			public void onItemClick(AdapterView<?> adapter, View view, int position,
-					long id) {
-				// TODO Auto-generated method stub
-				String str= "item clicked, view position:";
-				str += Integer.toString(position);
-				str += ", row id:";
-				str += Long.toString(id);
-				log(str, "v");
-				
-			}
-		});
-		
-		stationsLayout.setOnItemLongClickListener(new OnItemLongClickListener() {
-
-			@Override
-			public boolean onItemLongClick(AdapterView<?> adapter, View view, int position,
-					long id) {
-				// TODO Auto-generated method stub
-				String str= "item long clicked, view position:";
-				str += Integer.toString(position);
-				str += ", row id:";
-				str += Long.toString(id);
-				log(str, "v");
-				//Toast.makeText(getContext(), str, Toast.LENGTH_SHORT).show();
-				return true;
-			}
-		});
-		
-		db.close();
-
-		*/
 		
 	}
 	
@@ -181,27 +98,8 @@ public class MainActivity extends Activity implements AddDialogListener {
         values.put(RadioDbContract.StationEntry.COLUMN_NAME_URL, url);
 		//CursorLoader var = getLoaderManager().getLoader(MainActivity.LOADER_STATIONS);
 		Uri uri = getContentResolver().insert(RadioContentProvider.CONTENT_URI_STATIONS, values);
-		uri = uri;
-		/*
+		log("uri of addition" + uri, "v");
 		
-		mDbHelper  = new StationsDbHelper(getContext());
-		SQLiteDatabase db = mDbHelper.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, 1);
-        values.put(RadioDbContract.StationEntry.COLUMN_NAME_TITLE, title);
-        values.put(RadioDbContract.StationEntry.COLUMN_NAME_URL, url);
-        db.insertOrThrow(RadioDbContract.StationEntry.TABLE_NAME, null, values);   
-        db.close();
-        */
-        /*values = new ContentValues();
-        values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, 2);
-        values.put(RadioDbContract.StationEntry.COLUMN_NAME_TITLE, "Jazz Radio");
-        values.put(RadioDbContract.StationEntry.COLUMN_NAME_URL, "http://jazz-wr04.ice.infomaniak.ch/jazz-wr04-128.mp3");
-        db.insertOrThrow(RadioDbContract.StationEntry.TABLE_NAME, null, values);*/
-     
-        //getLoaderManager().getLoader(MainActivity.LOADER_STATIONS).onContentChanged();
-        //getLoaderManager().restartLoader(MainActivity.LOADER_STATIONS, null, null);
-        
     }
 
     @Override
@@ -279,64 +177,6 @@ public class MainActivity extends Activity implements AddDialogListener {
 	{
 		mLogger.log(this, text, level);
 	}
-	/*
-	private void log(String text, String level)
-	{
-		String str = "MainActivity:\t\t" + text;
-		FileOutputStream file;
-		if (level == "v")
-		{
-			str = "VERBOSE:\t\t" + str;
-			Log.v("MainActivity:", str);
-		}
-		else if (level == "d")
-		{
-			str = "DEBUG:\t\t" + str;
-			Log.d("MainActivity:", str);
-		}
-		else if (level == "i")
-		{
-			str = "INFO:\t\t" + str;
-			Log.i("MainActivity:", str);
-		}
-		else if (level == "w")
-		{
-			str = "WARN:\t\t" + str;
-			Log.w("MainActivity:", str);
-		}
-		else if (level == "e")
-		{
-			str = "ERROR:\t\t" + str;
-			Log.e("MainActivity", str);
-		}
-		else
-		{
-			Toast.makeText(this, "new log level", Toast.LENGTH_SHORT).show();
-			Log.e(getPackageName(), "new log level");
-			str = level + str;
-			Log.e(getPackageName(), str);
-		}
-		
-		try {
-			Calendar cal = Calendar.getInstance();
-	    	cal.getTime();
-	    	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
-	    	str += "\n";
-	    	str = sdf.format(cal.getTime()) + "\t\t" + str;
-			file = openFileOutput(MainActivity.LOG_FILENAME, Context.MODE_APPEND);
-			file.write(str.getBytes());
-			file.flush();
-			file.close();
-			//file = File.createTempFile(fileName, null, this.getCacheDir());
-			//file.
-		}
-		catch (Exception e)
-		{
-	    	Toast.makeText(this, "error writing to log file", Toast.LENGTH_SHORT).show();
-	    	e.printStackTrace();
-		}
-	}
-	*/
 	
 	@Override
 	protected void onStart()
@@ -370,7 +210,7 @@ public class MainActivity extends Activity implements AddDialogListener {
 	protected void onStop()
 	{
 		log("stopping main activity", "d");
-		if (mService.isPlaying() == false)
+		if (mService != null && mService.isPlaying() == false)
 		{
 			mService.stop();
 		}

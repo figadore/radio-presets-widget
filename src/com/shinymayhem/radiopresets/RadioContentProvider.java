@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2013 Reese Wilson | Shiny Mayhem
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/
 package com.shinymayhem.radiopresets;
 
 import java.util.ArrayList;
@@ -16,6 +31,8 @@ import com.shinymayhem.radiopresets.RadioDbContract.StationsDbHelper;
 
 public class RadioContentProvider extends ContentProvider {
 
+	protected Logger mLogger = new Logger();
+	
 	private static final String AUTHORITY = "com.shinymayhem.radiopresets.contentprovider";
 	private static final int SEGMENT_STATION_ID = 2;
 	private static final int SEGMENT_STATIONS = 1;
@@ -63,6 +80,7 @@ public class RadioContentProvider extends ContentProvider {
 		int deletedCount = db.delete(table, selection, selectionArgs);
 		//notify content resolver of data change
 		getContext().getContentResolver().notifyChange(uri, null);
+		log("delete uri:" + uri + ". " + String.valueOf(deletedCount) + " deleted", "i");
 		return deletedCount;
 		
 	}
@@ -85,6 +103,7 @@ public class RadioContentProvider extends ContentProvider {
 		long id = db.insert(table, null, values);
 		//notify content resolver of data change
 		getContext().getContentResolver().notifyChange(uri, null);
+		log("insert uri:" + uri + ". id of insert:" + String.valueOf(id), "i");
 		return Uri.parse(SEGMENT_STATIONS_BASE + "/" + id);
 		
 		
@@ -124,6 +143,7 @@ public class RadioContentProvider extends ContentProvider {
 				Integer.toString(MainActivity.BUTTON_LIMIT)
 			);
 		cursor.setNotificationUri(getContext().getContentResolver(), uri);
+		log("query uri:" + uri, "i");
 		return cursor;
 	}
 	
@@ -151,6 +171,7 @@ public class RadioContentProvider extends ContentProvider {
 		int updatedCount = db.update(table, values, selection, selectionArgs);
 		//notify content resolver of data change
 		getContext().getContentResolver().notifyChange(uri, null);
+		log("update uri:" + uri + ". " + String.valueOf(updatedCount) + " updated", "i");
 		return updatedCount;
 		
 	}
@@ -182,8 +203,14 @@ public class RadioContentProvider extends ContentProvider {
 	@Override
 	public String getType(Uri uri) {
 		//TODO check if this is right
+		log("getType called", "e");
 		throw new UnsupportedOperationException("getType not supported. if this is seen, return null instead?");
 	}
 
+	private void log(String text, String level)
+	{
+		mLogger.log(getContext(), "RadioContentProvider", "RadioContentProvider:\t\t"+text, level);
+	}
+	
 
 }
