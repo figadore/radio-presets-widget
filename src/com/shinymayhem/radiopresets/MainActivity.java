@@ -18,12 +18,15 @@ package com.shinymayhem.radiopresets;
 import android.app.Activity;
 import android.app.DialogFragment;
 import android.app.FragmentManager;
+import android.app.LoaderManager.LoaderCallbacks;
 import android.content.ComponentName;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.Loader;
 import android.content.ServiceConnection;
-import android.database.sqlite.SQLiteDatabase;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.view.Menu;
@@ -59,7 +62,7 @@ public class MainActivity extends Activity implements AddDialogListener {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
+		
 		log("creating main activity", "d");
 
 		//set content view first so findViewById works
@@ -78,6 +81,8 @@ public class MainActivity extends Activity implements AddDialogListener {
 					.add(R.id.fragment_container, stationsFragment)
 					.commit();
 		}
+		//init loader manager
+		//getLoaderManager().initLoader(MainActivity.LOADER_STATIONS, null, this);
 		/*
 		//get view
 		ListView stationsLayout = (ListView)this.findViewById(R.layout.stations_fragment); 
@@ -166,8 +171,18 @@ public class MainActivity extends Activity implements AddDialogListener {
 		log("add station confirmed", "i");
 		EditText titleView = (EditText)dialog.getDialog().findViewById(R.id.new_station_title);
 		EditText urlView = (EditText)dialog.getDialog().findViewById(R.id.new_station_url);
+		
+		int preset = 1;
 		String title = titleView.getText().toString();
 		String url = urlView.getText().toString();
+		ContentValues values = new ContentValues();
+		values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, preset);
+        values.put(RadioDbContract.StationEntry.COLUMN_NAME_TITLE, title);
+        values.put(RadioDbContract.StationEntry.COLUMN_NAME_URL, url);
+		//CursorLoader var = getLoaderManager().getLoader(MainActivity.LOADER_STATIONS);
+		Uri uri = getContentResolver().insert(RadioContentProvider.CONTENT_URI_STATIONS, values);
+		uri = uri;
+		/*
 		
 		mDbHelper  = new StationsDbHelper(getContext());
 		SQLiteDatabase db = mDbHelper.getWritableDatabase();
@@ -175,14 +190,17 @@ public class MainActivity extends Activity implements AddDialogListener {
         values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, 1);
         values.put(RadioDbContract.StationEntry.COLUMN_NAME_TITLE, title);
         values.put(RadioDbContract.StationEntry.COLUMN_NAME_URL, url);
-        db.insertOrThrow(RadioDbContract.StationEntry.TABLE_NAME, null, values);
+        db.insertOrThrow(RadioDbContract.StationEntry.TABLE_NAME, null, values);   
+        db.close();
+        */
         /*values = new ContentValues();
         values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, 2);
         values.put(RadioDbContract.StationEntry.COLUMN_NAME_TITLE, "Jazz Radio");
         values.put(RadioDbContract.StationEntry.COLUMN_NAME_URL, "http://jazz-wr04.ice.infomaniak.ch/jazz-wr04-128.mp3");
         db.insertOrThrow(RadioDbContract.StationEntry.TABLE_NAME, null, values);*/
-        db.close();
-        
+     
+        //getLoaderManager().getLoader(MainActivity.LOADER_STATIONS).onContentChanged();
+        //getLoaderManager().restartLoader(MainActivity.LOADER_STATIONS, null, null);
         
     }
 
@@ -378,7 +396,6 @@ public class MainActivity extends Activity implements AddDialogListener {
 	{
 		log("destroying main activity", "d");
 		super.onDestroy();
-	}
-	
+	}	
 
 }
