@@ -123,6 +123,7 @@ public class RadioContentProvider extends ContentProvider {
 				sortOrder, 
 				Integer.toString(MainActivity.BUTTON_LIMIT)
 			);
+		cursor.setNotificationUri(getContext().getContentResolver(), uri);
 		return cursor;
 	}
 	

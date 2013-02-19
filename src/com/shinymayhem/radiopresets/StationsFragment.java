@@ -67,6 +67,7 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 	{
 		//return inflater.inflate(R.layout.stations_fragment, container, false);
 		mAdapter = new RadioCursorAdapter(this.getActivity(), null, RadioCursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
+		//mAdapter = new RadioCursorAdapter(this.getActivity(), null, 0);
 		this.setListAdapter(mAdapter);
 		mContext = container.getContext();
 		
