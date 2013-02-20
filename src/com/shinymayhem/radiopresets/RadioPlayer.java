@@ -69,7 +69,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	protected MediaPlayer mMediaPlayer;
 	protected MediaPlayer mNextPlayer;
 	private NetworkReceiver mReceiver = new NetworkReceiver();
-	private NoisyAudioStreamReceiver mNoisyReceiver = new NoisyAudioStreamReceiver(); 
+	private NoisyAudioStreamReceiver mNoisyReceiver; 
 	protected String mUrl;
 	protected boolean mInterrupted = false;
 	private final IBinder mBinder = new LocalBinder();
@@ -407,9 +407,18 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		}
 		
 		//begin listen for headphones unplugged
-		IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
-		registerReceiver(mNoisyReceiver, intentFilter);
-		log("register noisy receiver", "v");
+		if (mNoisyReceiver == null)
+		{
+			mNoisyReceiver = new NoisyAudioStreamReceiver();
+			IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+			registerReceiver(mNoisyReceiver, intentFilter);
+			log("register noisy receiver", "v");	
+		}
+		else
+		{
+			log("noisy receiver already registered", "v");
+		}
+		
 		
 		if (mMediaPlayer != null)
 		{
@@ -527,6 +536,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		try
 		{
 			unregisterReceiver(mNoisyReceiver);
+			mNoisyReceiver = null;
 			log("unregistering noisyReceiver", "v");
 		}
 		catch (IllegalArgumentException e)
@@ -763,7 +773,6 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	    public void onReceive(Context context, Intent intent) {
 	        if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
 	        	log("headphones unplugged", "i");
-				//Log.i(getPackageName(), "headphones unplugged");
 	        	end();
 	        }
 	    }

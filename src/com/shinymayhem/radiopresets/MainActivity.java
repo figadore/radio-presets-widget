@@ -251,7 +251,7 @@ public class MainActivity extends Activity implements AddDialogListener, PlayerL
 	
 	public void onDestroy()
 	{
-		log("destroying main activity", "d");
+		log("onDestroy()", "d");
 		log("another experimental fix, sometimes 'end' isn't called on service unbound", "d");
 		if (!mService.isPlaying())
 		{
