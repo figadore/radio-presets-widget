@@ -142,6 +142,15 @@ public class MainActivity extends Activity implements AddDialogListener, PlayerL
 	}
 	
 	//tell service to copy logs to sd card
+	public void markEvent(MenuItem item)
+	{
+		log("--------------------------------------", "i");
+		log("Event button pressed", "i");
+		log("--------------------------------------", "i");
+		
+	}
+	
+	//tell service to copy logs to sd card
 	public boolean copy(MenuItem item)
 	{
 		//Intent intent = new Intent(this, RadioPlayer.class);

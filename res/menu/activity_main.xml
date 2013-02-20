@@ -1,6 +1,12 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
 
-    
+    <item 
+        android:id="@+id/mark_event"
+        android:orderInCategory="100"
+        android:showAsAction="always|withText"
+        android:icon="@drawable/alerts_and_states_warning"
+        android:title="@string/mark_event" 
+        android:onClick="markEvent"/>
     <item 
         android:id="@+id/copy_logs"
         android:orderInCategory="100"

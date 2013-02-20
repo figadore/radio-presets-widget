@@ -13,6 +13,7 @@
     <string name="title">Title</string>
     <string name="url">URL</string>
     <string name="copy">Copy Logs</string>
+    <string name="mark_event">Mark Event</string>
     <string name="clear">Clear Logs</string>
     <string name="no_stations">No stations saved</string>
     <string name="uninitialized">Uninitialized</string>
