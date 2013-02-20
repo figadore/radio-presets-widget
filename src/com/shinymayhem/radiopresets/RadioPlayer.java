@@ -75,6 +75,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	private final IBinder mBinder = new LocalBinder();
 	protected boolean mBound = false;
 	protected Logger mLogger = new Logger();
+	protected Intent mIntent;
 	
 	public class LocalBinder extends Binder
 	{
@@ -242,10 +243,20 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			}
 			mediaPlayer.release();
 			mediaPlayer = null;
+			mMediaPlayer = null;
 		}
+		String oldState = state;
 		state = RadioPlayer.STATE_ERROR;
 		//TextView status = (TextView) findViewById(R.id.status);
-		String statusString = "Error: ";
+		String statusString = "";
+		if (oldState == "Preparing")
+		{
+			statusString = "An error occurred while trying to connect to the server. ";
+		}
+		else
+		{
+			statusString = "Error:"; 
+		}
 		if (what == MediaPlayer.MEDIA_ERROR_UNKNOWN && extra == MediaPlayer.MEDIA_ERROR_IO)
 		{
 			statusString += "Media IO Error";
@@ -262,7 +273,11 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		}
 		log(statusString, "e");
 		//status.append(statusString);
-		Toast.makeText(this, statusString, Toast.LENGTH_SHORT).show(); 
+		Toast.makeText(this, statusString, Toast.LENGTH_LONG).show();
+		if (oldState == "Preparing")
+		{
+			stop();
+		}
 		return false;
 		
 	}
@@ -281,6 +296,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		// Registers BroadcastReceiver to track network connection changes.
+		mIntent = intent;
 		log("onStartCommand()", "d");
 		//Log.i(getPackageName(), "service start command");
 		if (intent == null)
@@ -294,23 +310,21 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			String action = intent.getAction();
 			if (action == null)
 			{
-				log("no action specified", "v");
+				log("no action specified, probably being bound", "v");
 				//return flag indicating no further action needed if service is stopped by system and later resumes
 				return START_STICKY;
-				//Log.i(getPackageName(), "No action specified");
 			}
 			else if (action.equals(ACTION_PLAY.toString()))
 			{
 				log("PLAY action in intent", "i");
-				String url = intent.getStringExtra(MainActivity.URL);
-				//Log.i(getPackageName(), "STOP");	
+				String url = intent.getStringExtra(MainActivity.URL);	
 				play(url);
 			}
 			else if (action.equals(ACTION_STOP.toString()))
 			{
-				log("STOP action in intent", "i");
-				//Log.i(getPackageName(), "STOP");	
+				log("STOP action in intent", "i");	
 				end();
+				return START_STICKY;
 			}
 			else
 			{
@@ -447,20 +461,35 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		if (!mBound)
 		{
 			log("not bound, stopping service with stopself", "d");
-			stopSelf();
+			//stopSelf();
+			Intent intent = new Intent(this, RadioPlayer.class);
+			//stopSelf();
+			//only stops service intent started with play action? not sure. not even sure if that would work
+			//what should happen is 
+			intent.setAction(RadioPlayer.ACTION_PLAY);
+			this.stopService(intent);
 			state = RadioPlayer.STATE_END;
 		}
 		else
 		{
 			String str = "still bound";
 			log(str, "v");
+			
 		}
+		
 	}
 
 	//called from onDestroy, end
 	protected void stop()
 	{
 		log("stop()", "d");
+		
+		/*
+		log("Stop button received, sending stop intent", "d");
+		Intent intent = new Intent(this, RadioPlayer.class);
+		intent.setAction(RadioPlayer.ACTION_STOP);
+		startService(intent);*/
+		
 		//stop command called, reset interrupted flag
 		mInterrupted = false;
 		if (state == RadioPlayer.STATE_STOPPED || state == RadioPlayer.STATE_END || state == RadioPlayer.STATE_UNINITIALIZED)
@@ -503,6 +532,9 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			log("noisyReceiver already unregistered", "e");
 		}
 		
+		//clear any intents so player isn't started accidentally
+		log("experimental fix for service autostarting, redeliver-intent flag", "v");
+		mIntent.setAction(null);
 		
 		state = RadioPlayer.STATE_STOPPED;
 	}
@@ -761,7 +793,11 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 				{
 					
 					str = "network type changed";
-					if (mInterrupted == false)
+					if (state == RadioPlayer.STATE_UNINITIALIZED)
+					{
+						str += " but uninitialized so it doesn't matter";
+					}
+					else if (mInterrupted == false)
 					{
 						str += " and now interrupted";
 						mInterrupted = true;	
@@ -786,30 +822,44 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 						return;
 					}
 					boolean start = false;
-					try 
+					if (mMediaPlayer == null)
 					{
-						mMediaPlayer.isPlaying();
+						log("-------------------------------", "d");
+						log("find out how we got here", "e");
+						log("trying to play when not connected?", "i");
+						log("disconnected while initializing? ", "i");
+						log("-------------------------------", "d");
 					}
-					catch (IllegalStateException e)
+					else
 					{
-						log("illegal state detected, can't restart, start from scratch instead", "e");
-						start = true;
+						try 
+						{
+							mMediaPlayer.isPlaying();
+						}
+						catch (IllegalStateException e)
+						{
+							log("illegal state detected, can't restart, start from scratch instead", "e");
+							start = true;
+						}
+						//can't set nextplayer after complete, so just start fresh
+						if (state == RadioPlayer.STATE_COMPLETE || start)
+						{
+							log("complete or start=true", "v");
+							
+						}
+						//network interrupted playback but isn't done playing from buffer yet
+						//set nextplayer and wait for current player to complete
+						else  
+						{
+							log("!complete && start!=true", "v");
+							play();
+							//TODO figure out if this is possible, or too buggy
+							//restart();
+							//return;
+						}
+						
 					}
-					//can't set nextplayer after complete, so just start fresh
-					if (state == RadioPlayer.STATE_COMPLETE || start)
-					{
-						log("complete or start=true", "v");
-						play();
-					}
-					//network interrupted playback but isn't done playing from buffer yet
-					//set nextplayer and wait for current player to complete
-					else  
-					{
-						log("!complete && start!=true", "v");
-						play();
-						//TODO figure out if this is possible, or too buggy
-						//restart();
-					}
+					play();
 				}
 				else
 				{
@@ -821,16 +871,15 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			else
 			{
 				str = "";
-				if (mNetworkState == RadioPlayer.NETWORK_STATE_DISCONNECTED)
+				boolean alreadyDisconnected = (mNetworkState == RadioPlayer.NETWORK_STATE_DISCONNECTED);
+				if (alreadyDisconnected)
 				{
 					str = "still ";
 				}
 				str += "not connected. ";
 				str += "old:" + mNetworkState;
 				str += ", new:" + Integer.toString(RadioPlayer.NETWORK_STATE_DISCONNECTED);
-				log(str, "v");
-				
-				log(str, "w");
+				log(str, "i");
 				
 				log("setting network state ivar to disconnected", "v");
 				mNetworkState = RadioPlayer.NETWORK_STATE_DISCONNECTED;
@@ -845,6 +894,18 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 					log("network connection lost while preparing? set null mediaplayer", "d");
 					log("-------------------------------", "d");
 				}
+				else if (state == RadioPlayer.STATE_INITIALIZING)
+				{
+					if (alreadyDisconnected)
+					{
+						log("looks like it was trying to play when not connected", "d");
+					}
+					else
+					{
+						log("disconnected while initializing? this could be bad", "e");
+					}
+					
+				}
 				else if (state == RadioPlayer.STATE_ERROR)
 				{
 					mMediaPlayer.release();
@@ -852,6 +913,18 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 					log("-------------------------------", "d");
 					log("not sure what to do, how did we get here?", "d");
 					log("-------------------------------", "d");
+				}
+				else if (state == RadioPlayer.STATE_STOPPED)
+				{
+					log("disconnected while stopped, don't care", "i");
+				}
+				else if (state == RadioPlayer.STATE_PLAYING)
+				{
+					log("disconnected while playing. should resume when network does", "i");
+				}
+				else if (state == RadioPlayer.STATE_BUFFERING)
+				{
+					log("disconnected while buffering. should resume when network does", "i");
 				}
 				else
 				{

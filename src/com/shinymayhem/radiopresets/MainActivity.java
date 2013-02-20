@@ -132,6 +132,12 @@ public class MainActivity extends Activity implements AddDialogListener, PlayerL
 	{
 		//Intent intent = new Intent(this, RadioPlayer.class);
 		//stopService(intent);
+		/*
+		log("Stop button received, sending stop intent", "d");
+		Intent intent = new Intent(this, RadioPlayer.class);
+		intent.setAction(RadioPlayer.ACTION_STOP);
+		startService(intent);
+		*/
 		mService.stop();
 	}
 	
@@ -235,6 +241,12 @@ public class MainActivity extends Activity implements AddDialogListener, PlayerL
 	public void onDestroy()
 	{
 		log("destroying main activity", "d");
+		log("another experimental fix, sometimes 'end' isn't called on service unbound", "d");
+		if (!mService.isPlaying())
+		{
+			log("mservice.end()", "d");
+			mService.end();
+		}
 		super.onDestroy();
 	}	
 
