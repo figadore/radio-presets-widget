@@ -44,6 +44,7 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 
 import com.shinymayhem.radiopresets.RadioDbContract.StationsDbHelper;
 
@@ -348,7 +349,7 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 	
 	private void editStation(long id, View view)
 	{
-		log("id:" + String.valueOf(id), "i");
+		log("id:" + String.valueOf(id), "i"); 
 		// User touched the dialog's positive button
 		log("edit station confirmed", "i");
 		EditText titleView = (EditText)view.findViewById(R.id.station_title);
@@ -368,18 +369,20 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		log("updated " + updatedCount + " rows.", "v");
 	}
 	
-	//returns first found matching checked item position, -1 on no match
+	//returns last found matching checked item position, -1 on no match
 	private int getSelectedPosition()
 	{
 		SparseBooleanArray positions = mListView.getCheckedItemPositions();
-		for (int i=1; i<=mListView.getCount(); i++)
+		int position = -1;
+		for (int i=0; i<mListView.getCount(); i++)
 		{
-			if (positions.get(i))
+			boolean selected = positions.get(i); 
+			if (selected)
 			{
-				return i;
+				position = i;
 			}
 		}
-		return -1;
+		return position;
 	}
 
 	@Override
@@ -433,7 +436,7 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		//mode.setSubtitle("Subtitle");
 
 		String str = "Position " + String.valueOf(position) + " ";
-		//RelativeLayout item = (RelativeLayout) mListView.getChildAt(position);
+		RelativeLayout item = (RelativeLayout) mListView.getChildAt(position);
 		//item.setActivated(checked);
 		if (checked)
 		{
