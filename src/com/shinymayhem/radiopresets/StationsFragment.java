@@ -16,12 +16,17 @@
 
 package com.shinymayhem.radiopresets;
 
+import java.util.NoSuchElementException;
+
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.DialogFragment;
 import android.app.ListFragment;
 import android.app.LoaderManager.LoaderCallbacks;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.CursorLoader;
+import android.content.DialogInterface;
 import android.content.Loader;
 import android.database.Cursor;
 import android.net.Uri;
@@ -37,8 +42,8 @@ import android.view.ViewGroup;
 import android.widget.AbsListView.MultiChoiceModeListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemLongClickListener;
+import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.RelativeLayout;
 
 import com.shinymayhem.radiopresets.RadioDbContract.StationsDbHelper;
 
@@ -49,6 +54,9 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 	protected Context mContext;
 	protected ListView mListView;
 	protected Logger mLogger = new Logger();
+	protected ActionMode mActionMode;
+	protected int mSelectedCount;
+	
 	RadioCursorAdapter mAdapter;
 	
 	public interface PlayerListener
@@ -260,48 +268,159 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 
 	@Override
 	public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+		boolean handled = false;
 		switch(item.getItemId())
 		{
 			case R.id.delete_station:
-				//todo delete
-				return true;
-			
+				deleteSelected();
+				handled = true;
+				break;
 			case R.id.edit_station:
-				//todo edit
-				return true;
-			
+				editSelected();
+				handled = true;
+				break;
+			default:
+				throw new IllegalArgumentException("Unknown action menu item");
 		}
-		return false;
+		if (handled)
+		{
+			mode.finish();
+			//mActionMode = null;
+		}
+		return handled;
+	}
+	
+	private void deleteSelected()
+	{
+		log("deleting selected", "i");
+		long[] selected = mListView.getCheckedItemIds();
+		String[] values = new String[selected.length];
+		String where = RadioDbContract.StationEntry._ID + " in (";
+		//String[] values = new String[1];
+		//values[0] = String.valueOf(selected[0]);
+		for (int i=0; i<selected.length; i++)
+		{
+			where += "?, ";
+			values[i] = String.valueOf(selected[i]);
+		}
+		where += "'') ";
+		//where= "_id in (?, ?, '')"
+		int deletedCount = getActivity().getContentResolver().delete(RadioContentProvider.CONTENT_URI_STATIONS, where, values);//(RadioContentProvider.CONTENT_URI_STATIONS, selected);
+		log("deleted " + String.valueOf(deletedCount), "v");
+	}
+	
+	private void editSelected()
+	{
+		log("editing selected", "i");
+		int position = getSelectedPosition();
+		if (position == -1) //should never happen
+		{
+			throw new NoSuchElementException("Selected element not found.");
+		}
+		Cursor cursor = (Cursor)mListView.getItemAtPosition(position);
+		String title = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_TITLE));
+		String url = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));
+		url += "";
+		LayoutInflater inflater = LayoutInflater.from(mContext);
+		final View editView = inflater.inflate(R.layout.dialog_station_details, null);
+		final long id = cursor.getLong(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry._ID));
+		((EditText)editView.findViewById(R.id.station_title)).setText(title);
+		((EditText)editView.findViewById(R.id.station_url)).setText(url);
+		AlertDialog.Builder builder = new AlertDialog.Builder(this.getContext());
+		builder.setView(editView);
+		builder.setPositiveButton(R.string.edit_station, new DialogInterface.OnClickListener() {
+			
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				editStation(id, editView);
+			}
+		});
+		builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+			
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				log("edit station cancelled", "i");
+				
+			}
+		});
+		builder.show();
+	}
+	
+	private void editStation(long id, View view)
+	{
+		log("id:" + String.valueOf(id), "i");
+		// User touched the dialog's positive button
+		log("edit station confirmed", "i");
+		EditText titleView = (EditText)view.findViewById(R.id.station_title);
+		EditText urlView = (EditText)view.findViewById(R.id.station_url);
+		
+		//int preset = 1;
+		String title = titleView.getText().toString();
+		String url = urlView.getText().toString();
+		ContentValues values = new ContentValues();
+		//values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, preset);
+        values.put(RadioDbContract.StationEntry.COLUMN_NAME_TITLE, title);
+        values.put(RadioDbContract.StationEntry.COLUMN_NAME_URL, url);
+		//CursorLoader var = getLoaderManager().getLoader(MainActivity.LOADER_STATIONS);
+        //TODO see if there is a better way to do this, like addId or something
+        Uri uri = Uri.parse(RadioContentProvider.CONTENT_URI_STATIONS.toString() + "/" + String.valueOf(id));
+		int updatedCount = this.getActivity().getContentResolver().update(uri, values, null, null);
+		log("updated " + updatedCount + " rows.", "v");
+	}
+	
+	//returns first found matching checked item position, -1 on no match
+	private int getSelectedPosition()
+	{
+		SparseBooleanArray positions = mListView.getCheckedItemPositions();
+		for (int i=1; i<=mListView.getCount(); i++)
+		{
+			if (positions.get(i))
+			{
+				return i;
+			}
+		}
+		return -1;
 	}
 
 	@Override
 	public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+		mSelectedCount=mListView.getCheckedItemCount();;
+		mActionMode = mode;
 		MenuInflater inflater = mode.getMenuInflater();
-		int count = mListView.getCheckedItemCount();
-		if (count == 1)
-		{
-			inflater.inflate(R.menu.station_selected, menu);
-		}
-		else
-		{
-			inflater.inflate(R.menu.stations_selected, menu);
-		}
+		
+		inflater.inflate(R.menu.station_selected, menu);
+		
 		return true;
 	}
 
 	@Override
 	public void onDestroyActionMode(ActionMode mode) {
-		// TODO Auto-generated method stub
-		mode = mode;
+		mActionMode = null;
 	}
 
 	@Override
 	public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
 		// TODO Auto-generated method stub
-		int count = mListView.getCheckedItemCount();
+		int newCount = mListView.getCheckedItemCount();
+		if (mSelectedCount == 1 || newCount == 1)
+		{
+			menu.clear();
+			MenuInflater inflater = mode.getMenuInflater();
+			if (newCount == 1)
+			{
+				inflater.inflate(R.menu.station_selected, menu);
+			}
+			else
+			{
+				inflater.inflate(R.menu.stations_selected, menu);
+			}
+			mSelectedCount = newCount;
+			return true;
+		}
+		
 		//menu.clear();
 		
-		return false;
+		return false; //no change, don't update
 	}
 
 	@Override
@@ -310,12 +429,11 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		// TODO Auto-generated method stub
 		
 		int count = mListView.getCheckedItemCount();
-		if (count == 1)
-		{
-			
-		}
+		mode.setTitle(String.valueOf(count) + " selected");
+		//mode.setSubtitle("Subtitle");
+
 		String str = "Position " + String.valueOf(position) + " ";
-		RelativeLayout item = (RelativeLayout) mListView.getChildAt(position);
+		//RelativeLayout item = (RelativeLayout) mListView.getChildAt(position);
 		//item.setActivated(checked);
 		if (checked)
 		{

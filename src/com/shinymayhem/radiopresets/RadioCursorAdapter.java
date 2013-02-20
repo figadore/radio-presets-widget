@@ -146,7 +146,7 @@ public class RadioCursorAdapter extends CursorAdapter {
 	public void onContentChanged()
 	{
 		//called if flag is set
-		Log.e("CursorAdapter", "content changed, do something");
+		Log.v("CursorAdapter", "onContentChanged()");
 	}
 
 }

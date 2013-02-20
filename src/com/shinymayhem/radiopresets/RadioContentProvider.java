@@ -180,11 +180,11 @@ public class RadioContentProvider extends ContentProvider {
 	//add id to selection string
 	private String addColumn(String column, String selection)
 	{
-		if (selection.isEmpty())
+		if (selection == null || selection.isEmpty())
 		{
-			return column + "= ?";	
+			return column + " = ? ";	
 		}
-		return selection + " and " + column + "= ?";
+		return selection + " and " + column + " = ?";
 	}
 	
 	//add id to selection args
@@ -193,9 +193,13 @@ public class RadioContentProvider extends ContentProvider {
 	{
 		
 		List<String> args = new ArrayList<String>();
-		Collections.addAll(args, selectionArgs);
+		if (selectionArgs != null)
+		{
+			Collections.addAll(args, selectionArgs);	
+		}
 		args.add(String.valueOf(id));
-		selectionArgs = (String[])args.toArray();
+		//selectionArgs = (String[])(args.toArray());
+		selectionArgs = args.toArray(new String[0]);
 		return selectionArgs;
 	}
 

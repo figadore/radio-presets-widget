@@ -4,13 +4,13 @@
     android:layout_height="wrap_content"
     android:orientation="vertical" >
     <EditText
-        android:id="@+id/new_station_title"
+        android:id="@+id/station_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="4dp"
         android:hint="@string/title" />
     <EditText
-        android:id="@+id/new_station_url"
+        android:id="@+id/station_url"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="4dp"

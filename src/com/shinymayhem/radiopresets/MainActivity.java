@@ -86,8 +86,8 @@ public class MainActivity extends Activity implements AddDialogListener, PlayerL
     public void onDialogPositiveClick(DialogFragment dialog) {
         // User touched the dialog's positive button
 		log("add station confirmed", "i");
-		EditText titleView = (EditText)dialog.getDialog().findViewById(R.id.new_station_title);
-		EditText urlView = (EditText)dialog.getDialog().findViewById(R.id.new_station_url);
+		EditText titleView = (EditText)dialog.getDialog().findViewById(R.id.station_title);
+		EditText urlView = (EditText)dialog.getDialog().findViewById(R.id.station_url);
 		
 		int preset = 1;
 		String title = titleView.getText().toString();

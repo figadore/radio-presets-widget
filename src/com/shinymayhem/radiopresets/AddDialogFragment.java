@@ -65,7 +65,7 @@ public class AddDialogFragment extends DialogFragment {
      // Get the layout inflater
         LayoutInflater inflater = getActivity().getLayoutInflater();
         
-        builder.setView(inflater.inflate(R.layout.dialog_add_station, null))
+        builder.setView(inflater.inflate(R.layout.dialog_station_details, null))
                .setPositiveButton(R.string.add_station, new DialogInterface.OnClickListener() {
                    public void onClick(DialogInterface dialog, int id) {
                        // Send the positive button event back to the host activity
@@ -75,7 +75,7 @@ public class AddDialogFragment extends DialogFragment {
                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
                    public void onClick(DialogInterface dialog, int id) {
                        // Send the negative button event back to the host activity
-                       mListener.onDialogPositiveClick(AddDialogFragment.this);
+                       mListener.onDialogNegativeClick(AddDialogFragment.this);
                    }
                });
         return builder.create();
