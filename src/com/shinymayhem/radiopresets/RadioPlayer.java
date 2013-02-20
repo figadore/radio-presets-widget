@@ -286,6 +286,8 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	public void onCreate()
 	{
 		log("onCreate()", "d");
+		//TODO remove pending intents if they exist
+		stopForeground(true);
 		IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
 		mReceiver = new NetworkReceiver();
         //Log.i(getPackageName(), "creating service, registering broadcast receiver");
