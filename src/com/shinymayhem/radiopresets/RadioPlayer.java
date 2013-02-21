@@ -300,6 +300,12 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		// Registers BroadcastReceiver to track network connection changes.
 		mIntent = intent;
+		if ((flags & Service.START_FLAG_REDELIVERY) != 0)
+		{
+			log("------------------------------------------", "v");
+			log("intent redelivery, restarting. maybe handle this with dialog? notification with resume action?", "v");
+			log("------------------------------------------", "v");
+		}
 		log("onStartCommand()", "d");
 		//Log.i(getPackageName(), "service start command");
 		if (intent == null)
@@ -313,9 +319,16 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			String action = intent.getAction();
 			if (action == null)
 			{
-				log("no action specified, probably being bound", "v");
+				log("no action specified, not sure why", "w");
 				//return flag indicating no further action needed if service is stopped by system and later resumes
-				return START_STICKY;
+				return START_NOT_STICKY;
+			}
+			else if (action.equals(Intent.ACTION_RUN))
+			{
+				log("service being started before bound", "i");
+				//String url = intent.getStringExtra(MainActivity.URL);	
+				//play(url);
+				return START_NOT_STICKY;
 			}
 			else if (action.equals(ACTION_PLAY.toString()))
 			{
@@ -331,7 +344,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			}
 			else
 			{
-				String str = "Action:";
+				String str = "Unknown Action:";
 				str += action;
 				log(str, "w");
 				//Log.i(getPackageName(), str);
