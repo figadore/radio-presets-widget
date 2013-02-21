@@ -336,12 +336,13 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 				log("PLAY action in intent", "i");
 				String url = intent.getStringExtra(MainActivity.URL);	
 				play(url);
+				return START_REDELIVER_INTENT;
 			}
 			else if (action.equals(ACTION_STOP.toString()))
 			{
 				log("STOP action in intent", "i");	
 				end();
-				return START_STICKY;
+				return START_NOT_STICKY;
 			}
 			else
 			{
@@ -521,15 +522,15 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		if (!mBound)
 		{
 			log("not bound, stopping service with stopself", "d");
-			//stopSelf();
-			Intent intent = new Intent(this, RadioPlayer.class);
+			stopSelf();
+			//Intent intent = new Intent(this, RadioPlayer.class);
 			//stopSelf();
 			//only stops service intent started with play action? not sure. not even sure if that would work
 			//what should happen is 
-			intent.setAction(RadioPlayer.ACTION_PLAY);
-			this.stopService(intent);
+			//intent.setAction(RadioPlayer.ACTION_PLAY);
+			//this.stopService(intent);
 			state = RadioPlayer.STATE_END;
-		}
+		} 
 		else
 		{
 			String str = "still bound";
