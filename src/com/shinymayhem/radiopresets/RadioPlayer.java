@@ -230,6 +230,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	{
 		log("onError()", "e");
 		//check if mediaPlayer is or needs to be released
+		stopForeground(true);
 		if (mediaPlayer != null)
 		{
 			try
@@ -519,6 +520,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		{
 			state = RadioPlayer.STATE_STOPPING;
 			log("stop called while preparing", "v");
+			stopForeground(true);
 			mMediaPlayer.release();
 			mMediaPlayer = null;
 		}

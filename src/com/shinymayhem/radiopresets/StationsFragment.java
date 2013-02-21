@@ -44,7 +44,6 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.RelativeLayout;
 
 import com.shinymayhem.radiopresets.RadioDbContract.StationsDbHelper;
 
@@ -436,7 +435,7 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		//mode.setSubtitle("Subtitle");
 
 		String str = "Position " + String.valueOf(position) + " ";
-		RelativeLayout item = (RelativeLayout) mListView.getChildAt(position);
+		//RelativeLayout item = (RelativeLayout) mListView.getChildAt(position);
 		//item.setActivated(checked);
 		if (checked)
 		{
