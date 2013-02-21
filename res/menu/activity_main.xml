@@ -6,7 +6,7 @@
         android:showAsAction="always|withText"
         android:icon="@drawable/alerts_and_states_warning"
         android:title="@string/mark_event" 
-        android:onClick="markEvent"/>
+        />
     <item 
         android:id="@+id/copy_logs"
         android:orderInCategory="100"

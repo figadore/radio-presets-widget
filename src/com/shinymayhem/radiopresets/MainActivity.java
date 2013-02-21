@@ -32,11 +32,12 @@ import android.view.View;
 import android.widget.EditText;
 
 import com.shinymayhem.radiopresets.AddDialogFragment.AddDialogListener;
+import com.shinymayhem.radiopresets.EventDialogFragment.EventDialogListener;
 import com.shinymayhem.radiopresets.RadioDbContract.StationsDbHelper;
 import com.shinymayhem.radiopresets.RadioPlayer.LocalBinder;
 import com.shinymayhem.radiopresets.StationsFragment.PlayerListener;
 
-public class MainActivity extends Activity implements AddDialogListener, PlayerListener {
+public class MainActivity extends Activity implements AddDialogListener, EventDialogListener, PlayerListener {
 
 	//string-extra key for intent
 	public final static String URL = "com.shinymayhem.radiopresets.URL";
@@ -108,7 +109,23 @@ public class MainActivity extends Activity implements AddDialogListener, PlayerL
     	log("add station cancelled", "i");
     }
 	
-	
+    @Override
+	public void onDialogEventPositiveClick(DialogFragment dialog) {
+    	log("event details", "i");
+    	EditText detailsView = (EditText)dialog.getDialog().findViewById(R.id.event_details);
+    	log("--------------------{-----------------", "i");
+    	log(detailsView.getText().toString(), "i");
+    	log("--------------------}-----------------", "i");
+	}
+
+
+	@Override
+	public void onDialogEventNegativeClick(DialogFragment dialog) {
+		log("--------------------{-----------------", "i");
+		log("event details cancelled", "i");
+		log("--------------------}-----------------", "i");
+	}	
+
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -116,6 +133,24 @@ public class MainActivity extends Activity implements AddDialogListener, PlayerL
 		getMenuInflater().inflate(R.menu.activity_main, menu);
 		return true;
 	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item)
+	{
+		if (item.getItemId() == R.id.mark_event)
+		{
+			log("--------------------------------------", "i");
+			log("Event button pressed", "i");
+			log("--------------------------------------", "i");
+			DialogFragment dialog = new EventDialogFragment();
+			dialog.show(this.getFragmentManager(), "EventDialogFragment");
+			return true;	
+		}
+		return false;
+		
+	}
+	
+
 	
 	public void play(String url)
 	{
@@ -141,14 +176,8 @@ public class MainActivity extends Activity implements AddDialogListener, PlayerL
 		mService.stop();
 	}
 	
-	//tell service to copy logs to sd card
-	public void markEvent(MenuItem item)
-	{
-		log("--------------------------------------", "i");
-		log("Event button pressed", "i");
-		log("--------------------------------------", "i");
-		
-	}
+
+	
 	
 	//tell service to copy logs to sd card
 	public boolean copy(MenuItem item)
@@ -262,6 +291,7 @@ public class MainActivity extends Activity implements AddDialogListener, PlayerL
 			mService.end();
 		}
 		super.onDestroy();
-	}	
+	}
+
 
 }

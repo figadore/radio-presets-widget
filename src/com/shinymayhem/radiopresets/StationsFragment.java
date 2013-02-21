@@ -343,6 +343,7 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 				
 			}
 		});
+		builder.setTitle(R.string.station_details_title);
 		builder.show();
 	}
 	
