@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 
 import android.annotation.SuppressLint;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.app.TaskStackBuilder;
@@ -76,6 +77,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	protected boolean mBound = false;
 	protected Logger mLogger = new Logger();
 	protected Intent mIntent;
+	protected NotificationManager mNotificationManager;
 	
 	public class LocalBinder extends Binder
 	{
@@ -107,21 +109,10 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			state = RadioPlayer.STATE_PLAYING;
 			mInterrupted = false;
 
-			NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
-				.setContentTitle("Radio Presets")
-				.setContentText("Playing")
-				.addAction(R.drawable.ic_launcher, "Stop", getStopIntent())
-				.setSmallIcon(R.drawable.ic_launcher);
-			//PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
-			//TODO taskstack builder only available since 4.1
-			TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
-			stackBuilder.addParentStack(MainActivity.class);
-			//stackBuilder.addNextIntent(nextIntent)
-			Intent resultIntent = new Intent(this, MainActivity.class);
-			stackBuilder.addNextIntent(resultIntent);
-			PendingIntent intent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_CANCEL_CURRENT);
-			builder.setContentIntent(intent);
-			startForeground(ONGOING_NOTIFICATION, builder.build());
+			updateNotification("Playing", "Stop", true);
+			//startForeground(ONGOING_NOTIFICATION, builder.build());
+			
+			
 			log("start foreground notification: playing", "v");
 			Toast.makeText(this, "Playing", Toast.LENGTH_SHORT).show();
 		}
@@ -143,7 +134,9 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			{
 			//	status.setText("Stopped");	
 			}
-			//TODO update notification to indicate resumed playback
+			
+			updateNotification("Playing", "Stop", true);
+			
 			state = RadioPlayer.STATE_PLAYING;
 			return true;
 			
@@ -154,7 +147,11 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			log("start buffering", "v");
 			//Log.i(getPackageName(), "start buffering");
 			//status.setText("Buffering...");
-			//TODO update notification to buffering
+			
+			updateNotification("Buffering", "Cancel", true);
+			
+			
+
 			state = RadioPlayer.STATE_BUFFERING;
 			return true;
 		}
@@ -286,6 +283,10 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	@Override
 	public void onCreate()
 	{
+		if (mNotificationManager == null)
+		{
+			mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		} 
 		log("onCreate()", "d");
 		//TODO remove pending intents if they exist
 		stopForeground(true);
@@ -463,10 +464,43 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		initializePlayer(mMediaPlayer); 
 
 		state = RadioPlayer.STATE_PREPARING;
+		
+		updateNotification("Preparing", "Cancel", true);
 	
 		mMediaPlayer.prepareAsync(); // might take long! (for buffering, etc)
 		log("preparing async", "d");
 		Toast.makeText(this, "Preparing", Toast.LENGTH_SHORT).show();
+	}
+	
+	protected void updateNotification(String text, String stopText)
+	{
+		this.updateNotification(text, stopText, false);
+	}
+	
+	protected void updateNotification(String text, String stopText, boolean reset)
+	{
+		NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
+			.setContentTitle("Radio Presets")
+			.setContentText(text)
+			.addAction(R.drawable.ic_launcher, stopText, getStopIntent())
+			.setSmallIcon(R.drawable.ic_launcher);
+		//PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+		//TODO taskstack builder only available since 4.1
+		TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+		stackBuilder.addParentStack(MainActivity.class);
+		//stackBuilder.addNextIntent(nextIntent)
+		Intent resultIntent = new Intent(this, MainActivity.class);
+		stackBuilder.addNextIntent(resultIntent);
+		PendingIntent intent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_CANCEL_CURRENT);
+		builder.setContentIntent(intent);
+		if (reset)
+		{
+			startForeground(ONGOING_NOTIFICATION, builder.build());
+		}
+		else
+		{
+			mNotificationManager.notify(ONGOING_NOTIFICATION, builder.build());
+		}
 	}
 	
 	protected void initializePlayer(MediaPlayer player)
@@ -826,6 +860,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 					}
 					else if (mInterrupted == false)
 					{
+						updateNotification("Network updated, reconnecting", "Cancel", true);
 						str += " and now interrupted";
 						mInterrupted = true;	
 					}
@@ -917,6 +952,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 				{
 					mMediaPlayer.release();
 					mMediaPlayer = null;
+					updateNotification("Waiting for network", "Cancel", true);
 					log("-------------------------------", "d");
 					log("network connection lost while preparing? set null mediaplayer", "d");
 					log("-------------------------------", "d");
@@ -935,6 +971,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 				}
 				else if (state == RadioPlayer.STATE_ERROR)
 				{
+					updateNotification("Error. Will resume?", "Cancel", true);
 					mMediaPlayer.release();
 					mMediaPlayer = null;
 					log("-------------------------------", "d");
@@ -947,14 +984,17 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 				}
 				else if (state == RadioPlayer.STATE_PLAYING)
 				{
+					updateNotification("Waiting for network", "Cancel", true);
 					log("disconnected while playing. should resume when network does", "i");
 				}
 				else if (state == RadioPlayer.STATE_BUFFERING)
 				{
+					updateNotification("Waiting for network", "Cancel", true);
 					log("disconnected while buffering. should resume when network does", "i");
 				}
 				else
 				{
+					updateNotification("Waiting for network?", "Cancel", true);
 					log("-------------------------------", "d");
 					log("other state", "i");
 					log("-------------------------------", "d");
