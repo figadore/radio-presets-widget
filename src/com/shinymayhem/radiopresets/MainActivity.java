@@ -19,10 +19,12 @@ import android.app.Activity;
 import android.app.DialogFragment;
 import android.app.FragmentManager;
 import android.content.ComponentName;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.database.sqlite.SQLiteException;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -40,8 +42,9 @@ import com.shinymayhem.radiopresets.StationsFragment.PlayerListener;
 public class MainActivity extends Activity implements AddDialogListener, EventDialogListener, PlayerListener {
 
 	//string-extra key for intent
-	public final static String URL = "com.shinymayhem.radiopresets.URL";
-
+	//public final static String URL = "com.shinymayhem.radiopresets.URL";
+	public final static String STATION_ID_EXTRA = "com.shinymayhem.radiopresets.STATION_ID";
+	
 	public static final int BUTTON_LIMIT = 25;
 	public static final int LOADER_STATIONS = 0;
 	public final static String LOG_FILENAME = "log.txt";
@@ -90,16 +93,21 @@ public class MainActivity extends Activity implements AddDialogListener, EventDi
 		EditText titleView = (EditText)dialog.getDialog().findViewById(R.id.station_title);
 		EditText urlView = (EditText)dialog.getDialog().findViewById(R.id.station_url);
 		
-		int preset = 1;
+		//int preset = 1;
 		String title = titleView.getText().toString();
 		String url = urlView.getText().toString();
 		ContentValues values = new ContentValues();
-		values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, preset);
+		//values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, preset);
         values.put(RadioDbContract.StationEntry.COLUMN_NAME_TITLE, title);
         values.put(RadioDbContract.StationEntry.COLUMN_NAME_URL, url);
 		//CursorLoader var = getLoaderManager().getLoader(MainActivity.LOADER_STATIONS);
 		Uri uri = getContentResolver().insert(RadioContentProvider.CONTENT_URI_STATIONS, values);
-		log("uri of addition" + uri, "v");
+		int id = (int) ContentUris.parseId(uri);
+		if (id == -1)
+		{
+			throw new SQLiteException("Insert failed");
+		}
+		log("uri of addition:" + uri, "v");
 		
     }
 
@@ -152,12 +160,12 @@ public class MainActivity extends Activity implements AddDialogListener, EventDi
 	
 
 	
-	public void play(String url)
+	public void play(int id)
 	{
 		log("Play button received, sending play intent", "d");
 		Intent intent = new Intent(this, RadioPlayer.class);
 		intent.setAction(RadioPlayer.ACTION_PLAY);
-		intent.putExtra(URL, url);
+		intent.putExtra(STATION_ID_EXTRA, id);
 		startService(intent);
 		//mService.play(url);
 	}

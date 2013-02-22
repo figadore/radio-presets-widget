@@ -32,6 +32,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.Cursor;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
@@ -40,6 +41,7 @@ import android.media.MediaPlayer.OnInfoListener;
 import android.media.MediaPlayer.OnPreparedListener;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
@@ -72,6 +74,8 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	private NetworkReceiver mReceiver = new NetworkReceiver();
 	private NoisyAudioStreamReceiver mNoisyReceiver; 
 	protected String mUrl;
+	protected String mTitle;
+	protected int mPreset;
 	protected boolean mInterrupted = false;
 	private final IBinder mBinder = new LocalBinder();
 	protected boolean mBound = false;
@@ -334,8 +338,9 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			else if (action.equals(ACTION_PLAY.toString()))
 			{
 				log("PLAY action in intent", "i");
-				String url = intent.getStringExtra(MainActivity.URL);	
-				play(url);
+				//String url = intent.getStringExtra(MainActivity.URL);
+				int preset = Integer.valueOf(intent.getIntExtra(MainActivity.STATION_ID_EXTRA, 0));	
+				play(preset);
 				return START_REDELIVER_INTENT;
 			}
 			else if (action.equals(ACTION_STOP.toString()))
@@ -374,7 +379,8 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	protected void play()
 	{
 		log("play()", "d");
-		if (this.mUrl == null)
+		
+		/*if (this.mUrl == null)
 		{
 			log("url not set", "e");
 		}
@@ -384,14 +390,27 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			str += this.mUrl;
 			log(str, "v");
 		}
-		this.play(this.mUrl);
+		this.play(this.mUrl);*/
+		if (mPreset == 0)
+		{
+			log("preset = 0", "e");
+		}
+		play(mPreset);
 	}
 	
 	//called from bound ui, possibly notification action, if implemented
 	//possible start states: any
-	protected void play(String url)
+	protected void play(int preset)
 	{
 		log("play(url)", "d");
+		if (preset == 0)
+		{
+			log("preset = 0", "e");
+			throw new IllegalArgumentException("Preset = 0");
+		}
+		
+		//this.mPreset = preset;
+		
 		//TODO start foreground notification here with initializing status
 		state = RadioPlayer.STATE_INITIALIZING;
 		if (isConnected())
@@ -409,7 +428,8 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			
 			return;
 		}
-		//get url from param, fallback to instance variable
+		/*
+		 * //get url from param, fallback to instance variable
 		if (url != null)
 		{
 			this.mUrl = url;	
@@ -421,39 +441,57 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		else if(this.mUrl == null && url == null)
 		{
 			log("trouble: url not set", "e");
-		}
-		
-		//begin listen for headphones unplugged
-		if (mNoisyReceiver == null)
+		}*/
+		if (mPreset != preset) //have to look up new values for title and url
 		{
-			mNoisyReceiver = new NoisyAudioStreamReceiver();
-			IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
-			registerReceiver(mNoisyReceiver, intentFilter);
-			log("register noisy receiver", "v");	
+			//update currently playing preset
+			this.mPreset = preset;
+			
+			//begin listen for headphones unplugged
+			if (mNoisyReceiver == null)
+			{
+				mNoisyReceiver = new NoisyAudioStreamReceiver();
+				IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+				registerReceiver(mNoisyReceiver, intentFilter);
+				log("register noisy receiver", "v");	
+			}
+			else
+			{
+				log("noisy receiver already registered", "v");
+			}
+			
+			
+			if (mMediaPlayer != null)
+			{
+				log("releasing old media player", "v");
+				mMediaPlayer.release();
+				mMediaPlayer = null;
+			}
+			log("creating new media player", "v");
+			this.mMediaPlayer = new MediaPlayer();
+			
+			mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);	
+			
+			Uri uri = Uri.parse(RadioContentProvider.CONTENT_URI_PRESETS.toString() + "/" + String.valueOf(preset));
+			String[] projection = {RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, RadioDbContract.StationEntry.COLUMN_NAME_TITLE, RadioDbContract.StationEntry.COLUMN_NAME_URL};  
+			String selection = null;
+			String[] selectionArgs = null;
+			String sortOrder = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER;
+			Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
+			mPreset = (int)cursor.getLong(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER));
+			mTitle = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_TITLE));
+			mUrl = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));
 		}
 		else
 		{
-			log("noisy receiver already registered", "v");
+			//instance variables for url and title already set
 		}
 		
-		
-		if (mMediaPlayer != null)
-		{
-			log("releasing old media player", "v");
-			mMediaPlayer.release();
-			mMediaPlayer = null;
-		}
-		log("creating new media player", "v");
-		this.mMediaPlayer = new MediaPlayer();
-		
-		mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);	
-		
-		String str = "setting data source: ";
-		str += url;
-		log(str, "v");
+		//str += mUrl;
+		log("setting datasource for '" + mTitle + "' at '" + mUrl + "'", "v");
 		try
 		{
-			mMediaPlayer.setDataSource(url);
+			mMediaPlayer.setDataSource(mUrl);
 		}
 		catch (IOException e) 
 		{
@@ -473,16 +511,16 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		Toast.makeText(this, "Preparing", Toast.LENGTH_SHORT).show();
 	}
 	
-	protected void updateNotification(String text, String stopText)
+	protected void updateNotification(String status, String stopText)
 	{
-		this.updateNotification(text, stopText, false);
+		this.updateNotification(status, stopText, false);
 	}
 	
-	protected void updateNotification(String text, String stopText, boolean reset)
+	protected void updateNotification(String status, String stopText, boolean reset)
 	{
 		NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
-			.setContentTitle("Radio Presets")
-			.setContentText(text)
+			.setContentTitle(String.valueOf(mPreset) + ". " + mTitle)
+			.setContentText(status)
 			.addAction(R.drawable.ic_launcher, stopText, getStopIntent())
 			.setSmallIcon(R.drawable.ic_launcher);
 		//PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
@@ -603,6 +641,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	}
 	
 	//called from onComplete or network change if no network and was playing
+	/*
 	protected void restart()
 	{
 		log("restart()", "d");
@@ -677,30 +716,32 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		{
 			log("old player in wrong state to setnext", "e");
 		}
-		/*
+		
 		 
 		
-		if (mediaPlayer.isPlaying())
-		{
-			log("was still playing, stopping", "v");
-			mediaPlayer.stop();	
-		}
-		log("restarting/preparing", "v");
-		mediaPlayer.prepareAsync();
+		//if (mediaPlayer.isPlaying())
+		//{
+		//	log("was still playing, stopping", "v");
+		//	mediaPlayer.stop();	
+		//}
+		//log("restarting/preparing", "v");
+		//mediaPlayer.prepareAsync();
 		
-		*/
+		
 		
 		
 		//Log.i(getPackageName(), "restarting playback");
-		/*if (playing)
-		{
-			mediaPlayer.stop();	
-			mediaPlayer.release();
-			playing = false;
-		}
-		*/
+	
+		//if (playing)
+		//{
+		//	mediaPlayer.stop();	
+		//	mediaPlayer.release();
+		//	playing = false;
+		//}
+		
 		//play();
 	}
+	*/
 	
 	public boolean isPlaying()
 	{

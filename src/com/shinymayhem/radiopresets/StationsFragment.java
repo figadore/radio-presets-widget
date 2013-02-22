@@ -61,7 +61,7 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 	
 	public interface PlayerListener
 	{
-		public void play(String url);
+		public void play(int preset);
 	}
 	
 	PlayerListener mListener;
@@ -129,7 +129,7 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		//FLAG_REGISTER_CONTENT_OBSERVER makes RadioCursorAdapter.onContentChanged method get called
 		mAdapter = new RadioCursorAdapter(this.getActivity(), null, RadioCursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
 		//mAdapter = new RadioCursorAdapter(this.getActivity(), null, 0);
-		//this.setEmptyText("No stations added"); //this is done by layout, right?
+		
 		this.setListAdapter(mAdapter);
 		mContext = container.getContext();
 		
@@ -168,11 +168,14 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		});
 		*/
 		mListView = (ListView)getListView(); 
+		
 		//FIXME for some reason the xml attribute isn't working
 		mListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
 		//doesn't do anything if multi-choice-modal set
 		//listView.setOnItemLongClickListener((OnItemLongClickListener)this);
 		mListView.setMultiChoiceModeListener((MultiChoiceModeListener)this);
+		
+		this.setEmptyText("No stations added"); //this is done by layout, right?
 		
 	}
 	
@@ -211,14 +214,14 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		
 		
 		Cursor cursor = (Cursor)listView.getItemAtPosition(position);
-		final String url = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));
-		
-		String str= "list item clicked, play " + url + ". view position:";
+		//final String url = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));
+		final int preset = Integer.valueOf(cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER)));
+		String str= "list item clicked, play preset " + preset + ". view position:";
 		str += Integer.toString(position);
 		str += ", row id:";
 		str += Long.toString(id);
 		log(str, "v");
-		mListener.play(url);
+		mListener.play(preset);
 	}
 	
 	

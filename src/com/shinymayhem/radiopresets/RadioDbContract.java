@@ -29,14 +29,14 @@ public class RadioDbContract {
 	private static final String COMMA_SEP = ",";
 	private static final String SQL_CREATE_STATIONS =
 	    "CREATE TABLE " + RadioDbContract.StationEntry.TABLE_NAME + " (" +
-		RadioDbContract.StationEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
-		RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER + " INTEGER" + COMMA_SEP +
+		RadioDbContract.StationEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT" + COMMA_SEP +
+		RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER + " INTEGER NOT NULL" + COMMA_SEP +
 	    RadioDbContract.StationEntry.COLUMN_NAME_TITLE + TEXT_TYPE + COMMA_SEP +
-	    RadioDbContract.StationEntry.COLUMN_NAME_URL + TEXT_TYPE +
+	    RadioDbContract.StationEntry.COLUMN_NAME_URL + TEXT_TYPE + " NOT NULL" +
 	    " )";
 	//TODO insert sample stations?
 
-	//private static final String SQL_DELETE_STATIONS = "DROP TABLE IF EXISTS " + RadioDbContract.StationEntry.TABLE_NAME;
+	private static final String SQL_DELETE_STATIONS = "DROP TABLE IF EXISTS " + RadioDbContract.StationEntry.TABLE_NAME;
 	
 	private RadioDbContract() {}
 	
@@ -51,7 +51,7 @@ public class RadioDbContract {
 	public static class StationsDbHelper extends SQLiteOpenHelper {
 
 		public static final String DATABASE_NAME = "Radio.db";
-		public static final int DATABASE_VERSION = 1;
+		public static final int DATABASE_VERSION = 3; //if this is changed, update onUpgrade() to not delete data
 		
 		public StationsDbHelper(Context context) {
 			super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -66,8 +66,8 @@ public class RadioDbContract {
 		@Override
 		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 	        // discard the data and start over
-	        //db.execSQL(SQL_DELETE_STATIONS);
-	        //onCreate(db);
+	        db.execSQL(SQL_DELETE_STATIONS);
+	        onCreate(db);
 
 		}
 
