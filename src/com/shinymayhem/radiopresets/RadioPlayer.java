@@ -33,6 +33,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteException;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
@@ -186,6 +187,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		//mediaPlayer.release();
 		log("onCompletion()", "d");
 		state = RadioPlayer.STATE_COMPLETE;
+		//TODO update notification?
 		if (mInterrupted)
 		{
 			Toast.makeText(this, "Playback completed after interruption", Toast.LENGTH_SHORT).show();	
@@ -292,7 +294,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		} 
 		log("onCreate()", "d");
-		//TODO remove pending intents if they exist
+		//remove pending intents if they exist
 		stopForeground(true);
 		IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
 		mReceiver = new NetworkReceiver();
@@ -320,7 +322,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		}
 		else
 		{
-			//TODO find out why service starts again after STOP action in intent
+			//TODO find out why service starts again after STOP action in intent (does it still?)
 			String action = intent.getAction();
 			if (action == null)
 			{
@@ -409,9 +411,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			throw new IllegalArgumentException("Preset = 0");
 		}
 		
-		//this.mPreset = preset;
-		
-		//TODO start foreground notification here with initializing status
+
 		state = RadioPlayer.STATE_INITIALIZING;
 		if (isConnected())
 		{
@@ -420,7 +420,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		}
 		else
 		{
-			
+			//TODO handle this, let user know
 			log("setting network state to disconnected", "v");
 			mNetworkState = RadioPlayer.NETWORK_STATE_DISCONNECTED;
 			Toast.makeText(this, "tried to play with no network", Toast.LENGTH_SHORT).show();
@@ -446,46 +446,57 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		{
 			//update currently playing preset
 			this.mPreset = preset;
-			
-			//begin listen for headphones unplugged
-			if (mNoisyReceiver == null)
-			{
-				mNoisyReceiver = new NoisyAudioStreamReceiver();
-				IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
-				registerReceiver(mNoisyReceiver, intentFilter);
-				log("register noisy receiver", "v");	
-			}
-			else
-			{
-				log("noisy receiver already registered", "v");
-			}
-			
-			
-			if (mMediaPlayer != null)
-			{
-				log("releasing old media player", "v");
-				mMediaPlayer.release();
-				mMediaPlayer = null;
-			}
-			log("creating new media player", "v");
-			this.mMediaPlayer = new MediaPlayer();
-			
-			mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);	
-			
+
 			Uri uri = Uri.parse(RadioContentProvider.CONTENT_URI_PRESETS.toString() + "/" + String.valueOf(preset));
 			String[] projection = {RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, RadioDbContract.StationEntry.COLUMN_NAME_TITLE, RadioDbContract.StationEntry.COLUMN_NAME_URL};  
 			String selection = null;
 			String[] selectionArgs = null;
 			String sortOrder = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER;
 			Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
-			mPreset = (int)cursor.getLong(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER));
-			mTitle = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_TITLE));
-			mUrl = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));
+			int count = cursor.getCount();
+			if (count < 1)
+			{
+				log("no results found", "e");
+				throw new SQLiteException("Selected preset not found"); //TODO find correct exception to throw, or handle this some other way
+			}
+			else
+			{
+				cursor.moveToFirst();
+				mPreset = (int)cursor.getLong(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER));
+				mTitle = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_TITLE));
+				mUrl = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));	
+			}
+			
 		}
 		else
 		{
 			//instance variables for url and title already set
 		}
+		
+		//begin listen for headphones unplugged
+		if (mNoisyReceiver == null)
+		{
+			mNoisyReceiver = new NoisyAudioStreamReceiver();
+			IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+			registerReceiver(mNoisyReceiver, intentFilter);
+			log("register noisy receiver", "v");	
+		}
+		else
+		{
+			log("noisy receiver already registered", "v");
+		}
+		
+		
+		if (mMediaPlayer != null)
+		{
+			log("releasing old media player", "v");
+			mMediaPlayer.release();
+			mMediaPlayer = null;
+		}
+		log("creating new media player", "v");
+		this.mMediaPlayer = new MediaPlayer();
+		
+		mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);	
 		
 		//str += mUrl;
 		log("setting datasource for '" + mTitle + "' at '" + mUrl + "'", "v");
@@ -495,7 +506,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		}
 		catch (IOException e) 
 		{
-			//TODO handle this somehow
+			//TODO handle this somehow, let user know
 			log("setting data source failed", "e");
 			Toast.makeText(this, "Setting data source failed", Toast.LENGTH_SHORT).show();
 			e.printStackTrace();

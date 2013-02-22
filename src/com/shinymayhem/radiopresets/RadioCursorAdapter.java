@@ -40,7 +40,9 @@ public class RadioCursorAdapter extends CursorAdapter {
 		//make cursor available to list item, for onlistitemclick or onitemlongclick
 		//view.setTag(cursor);
 		TextView titleView = (TextView)view.findViewById(R.id.station_title);
-		titleView.setText(cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_TITLE)));
+		String text = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER)) + ". " +
+				cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_TITLE));
+		titleView.setText(text);
 		//ImageView imageView = (ImageView)view.findViewById(R.id.station_drag);
 		/*
 		imageView.setOnClickListener(new OnClickListener()
