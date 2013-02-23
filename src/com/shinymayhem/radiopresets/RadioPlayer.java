@@ -112,6 +112,10 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			log("mediaPlayer.start()", "v");
 			mediaPlayer.start();
 			state = RadioPlayer.STATE_PLAYING;
+			if (mInterrupted)
+			{
+				log("set interrupted = false", "v");
+			}
 			mInterrupted = false;
 
 			updateNotification("Playing", "Stop", true);
@@ -210,6 +214,10 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			if (mediaPlayer.isPlaying())
 			{
 				state = RadioPlayer.STATE_PLAYING;
+				if (mInterrupted)
+				{
+					log("set interrupted = false", "v");
+				}
 				mInterrupted = false;
 				log("new player playing", "i");
 				//TODO update notification to indicate resumed playback
@@ -426,7 +434,20 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			//TODO ask user if it should play on network resume
 			Toast.makeText(this, "tried to play with no network", Toast.LENGTH_LONG).show();
 			log("no network, should be handled by ui? returning", "e");
-			state = RadioPlayer.STATE_UNINITIALIZED;
+			//if disconnected while preparing, mediaplayer is null, then getting here will stop playback attempts
+			if (mInterrupted)
+			{
+				log("interrupted, so set state to playing so it will wait for network to resume", "v");
+				state = RadioPlayer.STATE_PLAYING;
+				updateNotification("Waiting for network", "Cancel", true);
+			}
+			else
+			{
+				log("wasn't interrupted, so remove any notifications and reset to uninitialized", "v");
+				state = RadioPlayer.STATE_UNINITIALIZED;
+				stopForeground(true);
+			}
+			
 			return;
 		}
 		/*
@@ -603,7 +624,12 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		startService(intent);*/
 		
 		//stop command called, reset interrupted flag
+		if (mInterrupted)
+		{
+			log("set interrupted = false", "v");
+		}
 		mInterrupted = false;
+		
 		if (state == RadioPlayer.STATE_STOPPED || state == RadioPlayer.STATE_END || state == RadioPlayer.STATE_UNINITIALIZED)
 		{
 			log("already stopped", "v");
@@ -901,6 +927,12 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			{
 				log("media player null, will cause problems if connected", "e");
 			}
+			else if (mMediaPlayer != null && state == RadioPlayer.STATE_UNINITIALIZED)
+			{
+				log("-------------------------------", "d");
+				log ("mediaPlayer not null, but uninitialized. how did this happen?", "w");
+				log("-------------------------------", "d");
+			}
 			String str = "";
 			if (isConnected())
 			{
@@ -911,7 +943,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 					str = "network type changed";
 					if (state == RadioPlayer.STATE_UNINITIALIZED)
 					{
-						str += " but uninitialized so it doesn't matter";
+						str += " but uninitialized so it doesn't matter. ";
 					}
 					else if (mInterrupted == false)
 					{
@@ -932,7 +964,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 					log("setting network state ivar", "v");
 					mNetworkState = newState;
 					
-					//if uninitialized, no url set yet. 
+					//if uninitialized, no preset picked yet. 
 					if (state == RadioPlayer.STATE_UNINITIALIZED)
 					{
 						log("unitialized, don't try to start or restart", "i");
@@ -1003,6 +1035,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 				
 
 				//TODO figure out the best thing to do for each state
+				
 				if (state == RadioPlayer.STATE_PREPARING) //this will lead to a mediaioerror when it reaches prepared
 				{
 					mMediaPlayer.release();
@@ -1047,9 +1080,31 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 					updateNotification("Waiting for network", "Cancel", true);
 					log("disconnected while buffering. should resume when network does", "i");
 				}
+				else if (state == RadioPlayer.STATE_UNINITIALIZED)
+				{
+					if (mMediaPlayer == null)
+					{
+						log("disconnected while uninitialized", "i");
+					}
+					else
+					{
+						//TODO throw exception? handle silently?
+						//might not cause problems, but shouldn't happen
+						log("-------------------------------", "d");
+						log("media player is not null, how did we get here?", "i");
+						log("-------------------------------", "d");
+					}
+				}
 				else
 				{
-					updateNotification("Waiting for network?", "Cancel", true);
+					if (mPreset == 0)
+					{
+						updateNotification("bad state detected", "stop?", true);
+					}
+					else
+					{
+						updateNotification("Waiting for network?", "Cancel", true);
+					}
 					log("-------------------------------", "d");
 					log("other state", "i");
 					log("-------------------------------", "d");
