@@ -7,13 +7,19 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 
     <uses-sdk
         android:minSdkVersion="16"
         android:targetSdkVersion="17" />
 
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    
+    
+	
+	    
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
@@ -34,14 +40,23 @@
             android:enabled="true"
             android:permission="android.permission.INTERNET"
             android:exported="true" >
-            
         </service>
-        <provider
-        android:authorities="com.shinymayhem.radiopresets.contentprovider"
-        android:name="com.shinymayhem.radiopresets.RadioContentProvider"
-        android:exported="false" >
         
+        <provider
+		        android:authorities="com.shinymayhem.radiopresets.contentprovider"
+		        android:name="com.shinymayhem.radiopresets.RadioContentProvider"
+		        android:exported="false" >
     	</provider>
+    	
+        <receiver android:name="PresetButtonsWidgetProvider" 
+            android:label="Radio Presets"
+            >
+		    <intent-filter>
+		        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+		    </intent-filter>
+		    <meta-data android:name="android.appwidget.provider"
+		               android:resource="@xml/preset_buttons_widget_info" />
+		</receiver>
     </application>
     
 

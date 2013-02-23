@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android" 
+    android:minWidth="294dp"
+    android:minHeight="30dp"
+    android:initialLayout="@layout/preset_buttons_widget"
+    android:resizeMode="none"
+    android:widgetCategory="home_screen"
+	>
+</appwidget-provider>
