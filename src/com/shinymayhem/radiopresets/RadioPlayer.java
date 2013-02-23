@@ -411,7 +411,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			throw new IllegalArgumentException("Preset = 0");
 		}
 		
-
+		this.mPreset = preset; 
 		state = RadioPlayer.STATE_INITIALIZING;
 		if (isConnected())
 		{
@@ -423,9 +423,10 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			//TODO handle this, let user know
 			log("setting network state to disconnected", "v");
 			mNetworkState = RadioPlayer.NETWORK_STATE_DISCONNECTED;
-			Toast.makeText(this, "tried to play with no network", Toast.LENGTH_SHORT).show();
+			//TODO ask user if it should play on network resume
+			Toast.makeText(this, "tried to play with no network", Toast.LENGTH_LONG).show();
 			log("no network, should be handled by ui? returning", "e");
-			
+			state = RadioPlayer.STATE_UNINITIALIZED;
 			return;
 		}
 		/*
@@ -442,8 +443,9 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		{
 			log("trouble: url not set", "e");
 		}*/
-		if (mPreset != preset) //have to look up new values for title and url
-		{
+		//have to look up new values for title and url
+		//if (mPreset != preset) //skip this check, in case currently playing preset number has been edited
+		//{
 			//update currently playing preset
 			this.mPreset = preset;
 
@@ -467,11 +469,11 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 				mUrl = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));	
 			}
 			
-		}
-		else
-		{
-			//instance variables for url and title already set
-		}
+		//}
+		//else
+		//{
+			////instance variables for url and title already set
+		//}
 		
 		//begin listen for headphones unplugged
 		if (mNoisyReceiver == null)
