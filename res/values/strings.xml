@@ -2,9 +2,8 @@
 <resources>
 
     <string name="app_name">Radio Presets</string>
-    <string name="esr">Electro Swing Revolution</string>
     <string name="menu_settings">Settings</string>
-    <string name="jr">Jazz Radio</string>
+    <string name="launch">Launch</string>
     <string name="stop">Stop</string>
     <string name="add_station">Add</string>
     <string name="edit_station">Edit</string>

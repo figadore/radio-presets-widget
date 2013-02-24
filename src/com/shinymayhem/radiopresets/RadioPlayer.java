@@ -556,8 +556,8 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
 			.setContentTitle(String.valueOf(mPreset) + ". " + mTitle)
 			.setContentText(status)
-			.addAction(R.drawable.ic_launcher, stopText, getStopIntent())
-			.setSmallIcon(R.drawable.ic_launcher);
+			.addAction(R.drawable.av_stop, stopText, getStopIntent())
+			.setSmallIcon(R.drawable.app_notification);
 		//PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
 		//TODO taskstack builder only available since 4.1
 		TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
