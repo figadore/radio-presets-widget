@@ -71,6 +71,7 @@ public class RadioContentProvider extends ContentProvider {
 		String groupBy = null;
 		String having = null;
 		String table = null;
+		String limit = null;
 		SQLiteDatabase db;
 		switch (sUriMatcher.match(uri))
 		{
@@ -114,7 +115,8 @@ public class RadioContentProvider extends ContentProvider {
 				groupBy,
 				having,
 				sortOrder, 
-				Integer.toString(MainActivity.BUTTON_LIMIT)
+				limit
+				//Integer.toString(MainActivity.BUTTON_LIMIT)
 			);
 		cursor.setNotificationUri(getContext().getContentResolver(), uri);
 		log("query uri:" + uri, "i");

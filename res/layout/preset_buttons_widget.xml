@@ -1,18 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:padding="@dimen/widget_margin" >
-    <Button 
-        android:layout_width="wrap_content"
-    	android:layout_height="match_parent"
-    	android:id="@+id/launch_main"
-    	android:text="Launch"
-        />
-	<Button 
-        android:layout_width="70dip"
-    	android:layout_height="match_parent"
-    	android:id="@+id/preset_1"
-    	android:text="1"
-        />
-</LinearLayout>
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent"
+	    android:orientation="horizontal"
+	    android:id="@+id/preset_buttons"
+	    android:padding="@dimen/widget_margin" >
+	    
+		<Button 
+	        android:layout_width="0dip"
+	    	android:layout_height="match_parent"
+	    	android:id="@+id/preset_1"
+	    	android:layout_weight="1"
+	    	android:text="1"
+	        />
+		<Button 
+	        android:layout_width="dip"
+	    	android:layout_height="match_parent"
+	    	android:id="@+id/preset_2"
+	    	android:layout_weight="1"
+	    	android:text="2"
+	        />
+		<Button 
+	        android:layout_width="0dip"
+	    	android:layout_height="match_parent"
+	    	android:id="@+id/preset_3"
+	    	android:layout_weight="1"
+	    	android:text="3"
+	        />
+	</LinearLayout>

@@ -3,7 +3,7 @@
     android:minWidth="294dp"
     android:minHeight="30dp"
     android:initialLayout="@layout/preset_buttons_widget"
-    android:resizeMode="none"
+    android:resizeMode="vertical|horizontal"
     android:widgetCategory="home_screen"
 	>
 </appwidget-provider>

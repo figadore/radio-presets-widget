@@ -20,7 +20,6 @@
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_alignParentBottom="true"
-        
         android:padding="5dp"
         android:contentDescription="@string/stop"
         style="?android:attr/borderlessButtonStyle"
