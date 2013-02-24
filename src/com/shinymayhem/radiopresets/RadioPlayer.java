@@ -349,7 +349,8 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			{
 				log("PLAY action in intent", "i");
 				//String url = intent.getStringExtra(MainActivity.URL);
-				int preset = Integer.valueOf(intent.getIntExtra(MainActivity.STATION_ID_EXTRA, 0));	
+				int preset = Integer.valueOf(intent.getIntExtra(MainActivity.EXTRA_STATION_PRESET, 0));	
+				log("preset in action:" + String.valueOf(preset), "i");
 				play(preset);
 				return START_REDELIVER_INTENT;
 			}

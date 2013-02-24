@@ -9,5 +9,10 @@
     	android:id="@+id/launch_main"
     	android:text="Launch"
         />
-
+	<Button 
+        android:layout_width="70dip"
+    	android:layout_height="match_parent"
+    	android:id="@+id/preset_1"
+    	android:text="1"
+        />
 </LinearLayout>

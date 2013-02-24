@@ -43,7 +43,7 @@ public class MainActivity extends Activity implements AddDialogListener, EventDi
 
 	//string-extra key for intent
 	//public final static String URL = "com.shinymayhem.radiopresets.URL";
-	public final static String STATION_ID_EXTRA = "com.shinymayhem.radiopresets.STATION_ID";
+	public final static String EXTRA_STATION_PRESET = "com.shinymayhem.radiopresets.STATION_ID";
 	
 	public static final int BUTTON_LIMIT = 25;
 	public static final int LOADER_STATIONS = 0;
@@ -165,7 +165,7 @@ public class MainActivity extends Activity implements AddDialogListener, EventDi
 		log("Play button received, sending play intent", "d");
 		Intent intent = new Intent(this, RadioPlayer.class);
 		intent.setAction(RadioPlayer.ACTION_PLAY);
-		intent.putExtra(STATION_ID_EXTRA, id);
+		intent.putExtra(EXTRA_STATION_PRESET, id);
 		startService(intent);
 		//mService.play(url);
 	}

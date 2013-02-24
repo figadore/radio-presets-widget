@@ -14,11 +14,6 @@
     <uses-sdk
         android:minSdkVersion="16"
         android:targetSdkVersion="17" />
-
-
-    
-    
-	
 	    
     <application
         android:allowBackup="true"
@@ -32,6 +27,7 @@
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
+                
             </intent-filter>
         </activity>
 
@@ -49,7 +45,7 @@
     	</provider>
     	
         <receiver android:name="PresetButtonsWidgetProvider" 
-            android:label="Radio Presets"
+            android:label="A Radio Presets"
             >
 		    <intent-filter>
 		        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
