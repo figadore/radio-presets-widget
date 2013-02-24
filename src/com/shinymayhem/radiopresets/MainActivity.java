@@ -243,8 +243,7 @@ public class MainActivity extends Activity implements AddDialogListener, EventDi
 		log("binding radio player", "d");
 		Intent intent = new Intent(this, RadioPlayer.class);
 		intent.setAction(Intent.ACTION_RUN);
-		//TODO uncomment this if needed
-		//startService(intent);
+		startService(intent);
 		
 		//don't call service's onStartCommand, just connect to it so play(url) and other functions are available through ui
 		//bind_above_client so ui might be killed before service, in case of low memory 
