@@ -126,7 +126,7 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
         playIntent.setFlags(0);
         playIntent.setClass(mContext, RadioPlayer.class);
         playIntent.putExtra(MainActivity.EXTRA_STATION_PRESET, preset);
-        PendingIntent presetIntent = PendingIntent.getService(mContext, 0, playIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+        PendingIntent presetIntent = PendingIntent.getService(mContext, preset, playIntent, PendingIntent.FLAG_CANCEL_CURRENT);
         return presetIntent;
 	}
 	
