@@ -1006,8 +1006,8 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 						else  
 						{
 							log("!complete && start!=true", "v");
-							play();
-							//TODO figure out if this is possible, or too buggy
+							//play();
+							//TODO figure out if restart is possible, or too buggy
 							//restart();
 							//return;
 						}
