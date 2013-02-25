@@ -19,6 +19,7 @@ package com.shinymayhem.radiopresets;
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -31,6 +32,9 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 	private final int TALL_WIDGET = 100;
 	protected RemoteViews mViews;
 	protected Context mContext;
+	public final static String ACTION_UPDATE_TEXT = "com.shinymayhem.radiopresets.intent.update_text";
+	public final static String EXTRA_TEXT1 = "com.shinymayhem.radiopresets.extras.text1";
+	public final static String EXTRA_TEXT2 = "com.shinymayhem.radiopresets.extras.text2";
 	
 	public void onEnabled(Context context)
 	{
@@ -43,7 +47,39 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 	{
 		log("onReceive()", "i");
 		mContext = context;
-		super.onReceive(context, intent);
+		if (intent.getAction() == ACTION_UPDATE_TEXT)
+		{
+			Bundle extras = intent.getExtras();
+			String text1 = extras.getString(EXTRA_TEXT1);
+			String text2 = extras.getString(EXTRA_TEXT2);
+			this.updateText(text1, text2);
+		}
+		else
+		{
+			super.onReceive(context, intent);	
+		}
+		
+	}
+	
+	private void updateText(String text1, String text2)
+	{
+		Log.i("widget", "updating text:" + text1 + "," + text2);
+		log("onUpdate()", "v");
+		//mContext = context;
+		AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(mContext);
+		ComponentName provider = new ComponentName(mContext, com.shinymayhem.radiopresets.PresetButtonsWidgetProvider.class);
+		int[] appWidgetIds = appWidgetManager.getAppWidgetIds(provider);
+		
+		final int N = appWidgetIds.length;
+        // Perform this loop procedure for each App Widget that belongs to this provider
+        for (int i=0; i<N; i++) {
+            int appWidgetId = appWidgetIds[i];
+            Bundle newOptions = appWidgetManager.getAppWidgetOptions(appWidgetId);
+            this.getViews(newOptions);
+            mViews.setTextViewText(R.id.currently_playing, text1);
+            mViews.setTextViewText(R.id.widget_status, text2);
+            appWidgetManager.updateAppWidget(appWidgetId, mViews);
+        }
 	}
 	
 	public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager, int appWidgetId, Bundle newOptions)
@@ -77,6 +113,7 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
         	Log.i("widget", "short widget");
         	this.getButtonViews();
         }
+		//return mViews;
 		//mViews = views;
 		//return views;
 	}
@@ -126,7 +163,7 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
         playIntent.setFlags(0);
         playIntent.setClass(mContext, RadioPlayer.class);
         playIntent.putExtra(MainActivity.EXTRA_STATION_PRESET, preset);
-        PendingIntent presetIntent = PendingIntent.getService(mContext, 0, playIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+        PendingIntent presetIntent = PendingIntent.getService(mContext, preset, playIntent, PendingIntent.FLAG_CANCEL_CURRENT);
         return presetIntent;
 	}
 	
