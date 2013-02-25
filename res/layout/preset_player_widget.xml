@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="@dimen/widget_margin" >
+	
+	
+	<include layout="@layout/preset_buttons_widget"
+	    android:padding="0dp"
+	    android:layout_width="match_parent"
+	    android:layout_height="0dp"
+	    android:layout_weight="1"
+	    android:orientation="horizontal"
+	    android:id="@+id/preset_buttons"
+	    />
+	   
+	<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    android:orientation="horizontal"
+	    android:id="@+id/preset_player"
+	    >
+
+		<ImageButton xmlns:android="http://schemas.android.com/apk/res/android"
+	        android:id="@+id/launch_main"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_centerVertical="true"
+	        android:padding="5dp"
+	        android:contentDescription="@string/launch"
+	        style="?android:attr/borderlessButtonStyle"
+	        android:src="@drawable/app_icon"
+	        />
+
+		<ImageButton 
+	        android:id="@+id/widget_stop"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_centerVertical="true"
+	        android:layout_toRightOf="@id/launch_main"
+	        android:padding="5dp"
+	        android:contentDescription="@string/stop"
+	        style="?android:attr/borderlessButtonStyle"
+	        android:src="@drawable/av_stop"
+	        />
+		<TextView
+		    android:id="@+id/currently_playing"
+		    android:layout_width="fill_parent"
+		    android:layout_height="wrap_content"
+	        android:layout_centerVertical="true"
+	        android:layout_toRightOf="@id/widget_stop"
+	        android:textSize="24sp"
+	        android:background="@color/widget_now_playing_background"
+	        android:lines="2"
+	        android:text="Playing:"
+	        />
+	</RelativeLayout>
+</LinearLayout>
