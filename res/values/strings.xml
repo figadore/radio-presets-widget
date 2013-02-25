@@ -23,9 +23,6 @@
     <string name="divider">Divider</string>
     <string name="drag">Drag and drop</string>
     <string name="stations">com.shinymayhem.radiopresets.stations_file_key</string>
-    <color name="white">#AAFFFFFF</color>
-    <color name="blue">#ff0000ff</color>
-    <color name="red">#ffff0000</color>
-    <color name="green">#ff00ff00</color>
+
 
 </resources>

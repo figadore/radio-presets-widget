@@ -547,7 +547,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	
 	protected void updateNotification(String status, String stopText)
 	{
-		this.updateNotification(status, stopText, false);
+		this.updateNotification(status, stopText, true);
 	}
 	
 	protected void updateNotification(String status, String stopText, boolean reset)
@@ -673,8 +673,8 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		}
 		
 		//clear any intents so player isn't started accidentally
-		log("experimental fix for service autostarting, redeliver-intent flag", "v");
-		mIntent.setAction(null);
+		//log("experimental fix for service autostarting, redeliver-intent flag", "v");
+		//mIntent.setAction(null);
 		
 		state = RadioPlayer.STATE_STOPPED;
 	}
@@ -945,6 +945,10 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 					{
 						str += " but uninitialized so it doesn't matter. ";
 					}
+					else if (state == RadioPlayer.STATE_STOPPED || state == RadioPlayer.STATE_STOPPING)
+					{
+						str += " but stopped so it doesn't matter. ";
+					}
 					else if (mInterrupted == false)
 					{
 						updateNotification("Network updated, reconnecting", "Cancel", true);
@@ -964,10 +968,10 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 					log("setting network state ivar", "v");
 					mNetworkState = newState;
 					
-					//if uninitialized, no preset picked yet. 
-					if (state == RadioPlayer.STATE_UNINITIALIZED)
+					//if uninitialized, no preset picked yet. if stopped, don't restart
+					if (state == RadioPlayer.STATE_UNINITIALIZED || state == RadioPlayer.STATE_STOPPED || state == RadioPlayer.STATE_STOPPING)
 					{
-						log("unitialized, don't try to start or restart", "i");
+						log("unitialized or stopped, don't try to start or restart", "i");
 						return;
 					}
 					boolean start = false;
