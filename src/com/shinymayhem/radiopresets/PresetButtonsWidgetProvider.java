@@ -29,132 +29,155 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 	
 	protected Logger mLogger = new Logger();
 	private final int TALL_WIDGET = 100;
+	protected RemoteViews mViews;
+	protected Context mContext;
 	
 	public void onEnabled(Context context)
 	{
 		log("onEnabled()", "i");
+		mContext = context;
 		super.onEnabled(context);
 	}
 	
 	public void onReceive(Context context, Intent intent)
 	{
 		log("onReceive()", "i");
+		mContext = context;
 		super.onReceive(context, intent);
 	}
 	
 	public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager, int appWidgetId, Bundle newOptions)
 	{
+		mContext = context;
 		log("onAppWidgetOptionsChanged()", "v");
 		Log.i("widget", "onAppWidgetOptionsChanged()");
-		/*int minHeight = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
+		int minHeight = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
 		int maxHeight = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
 		int minWidth = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
 		int maxWidth = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH);
 		Log.i("widget", "new min height:" + String.valueOf(minHeight));
 		Log.i("widget", "new max height:" + String.valueOf(maxHeight));
 		Log.i("widget", "new min width:" + String.valueOf(minWidth));
-		Log.i("widget", "new min width:" + String.valueOf(maxWidth));*/
-		appWidgetManager.updateAppWidget(appWidgetId, getViews(context, newOptions));
+		Log.i("widget", "new min width:" + String.valueOf(maxWidth));
+		this.getViews(newOptions);
+		appWidgetManager.updateAppWidget(appWidgetId, mViews);
 		super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions);
 	}
 	
-	private RemoteViews getViews(Context context, Bundle newOptions)
+	private void getViews(Bundle newOptions)
 	{
-		RemoteViews views;
+		//RemoteViews views;
 		if (getHeight(newOptions) >= TALL_WIDGET)
         {
-        	views = this.getPlayerViews(context);
+			Log.i("widget", "tall widget");
+        	this.getPlayerViews();
         }
         else
         {
-        	views = this.getButtonViews(context);
+        	Log.i("widget", "short widget");
+        	this.getButtonViews();
         }
-		return views;
+		//mViews = views;
+		//return views;
 	}
 
 	public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
 		log("onUpdate()", "v");
+		mContext = context;
 		final int N = appWidgetIds.length;
-		
         // Perform this loop procedure for each App Widget that belongs to this provider
         for (int i=0; i<N; i++) {
             int appWidgetId = appWidgetIds[i];
             Bundle newOptions = appWidgetManager.getAppWidgetOptions(appWidgetId);
-            appWidgetManager.updateAppWidget(appWidgetId, getViews(context, newOptions));
+            this.getViews(newOptions);
+            appWidgetManager.updateAppWidget(appWidgetId, mViews);
         }
 	}
 	
-	private Intent getMainIntent(Context context)
+	private Intent getMainIntent()
 	{
-		return new Intent(context, MainActivity.class);
+		return new Intent(mContext, MainActivity.class);
 		
 	}
 	
-	private PendingIntent getLaunchIntent(Context context)
+	private PendingIntent getLaunchIntent()
 	{
-		Intent intent = this.getMainIntent(context);
+		Intent intent = this.getMainIntent();
 		intent.setAction(Intent.ACTION_RUN);
         intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, Intent.FLAG_ACTIVITY_NEW_TASK);
+        PendingIntent pendingIntent = PendingIntent.getActivity(mContext, 0, intent, Intent.FLAG_ACTIVITY_NEW_TASK);
         return pendingIntent;
 	}
 	
-	private PendingIntent getStopIntent(Context context)
+	private PendingIntent getStopIntent()
 	{
-		Intent intent = getMainIntent(context)
+		Intent intent = getMainIntent()
 				.setFlags(0)
 				.setAction(RadioPlayer.ACTION_STOP)
-				.setClass(context, RadioPlayer.class);
-		return PendingIntent.getService(context, 0, intent, 0);
+				.setClass(mContext, RadioPlayer.class);
+		return PendingIntent.getService(mContext, 0, intent, 0);
 			 
 	}
 	
-	private PendingIntent getPresetIntent(Context context, int preset)
+	private PendingIntent getPresetIntent(int preset)
 	{
-		Intent playIntent = getMainIntent(context);
+		Intent playIntent = getMainIntent();
 		playIntent.setAction(RadioPlayer.ACTION_PLAY);
         playIntent.setFlags(0);
-        playIntent.setClass(context, RadioPlayer.class);
+        playIntent.setClass(mContext, RadioPlayer.class);
         playIntent.putExtra(MainActivity.EXTRA_STATION_PRESET, preset);
-        PendingIntent presetIntent = PendingIntent.getService(context, 0, playIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+        PendingIntent presetIntent = PendingIntent.getService(mContext, 0, playIntent, PendingIntent.FLAG_CANCEL_CURRENT);
         return presetIntent;
 	}
 	
 	
 	
-	private RemoteViews getButtonViews(Context context)
+	private void getButtonViews()
 	{
-		RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.preset_buttons_widget);
-		
-		//TODO iterate from query
-		int preset = 1;
-		{
-		PendingIntent presetIntent = this.getPresetIntent(context, preset);
-        views.setOnClickPendingIntent(R.id.preset_1, presetIntent);
-		}
+		mViews = new RemoteViews(mContext.getPackageName(), R.layout.preset_buttons_widget);
+		 
+		this.setPresets();
         
-        return views;
+        //return views;
 	}
 	
-	private RemoteViews getPlayerViews(Context context)
+	private void getPlayerViews()
 	{
-		RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.preset_player_widget);
+		mViews = new RemoteViews(mContext.getPackageName(), R.layout.preset_player_widget);
 		
-		PendingIntent launchIntent = this.getLaunchIntent(context);
-		views.setOnClickPendingIntent(R.id.launch_main, launchIntent);
+		PendingIntent launchIntent = this.getLaunchIntent();
+		mViews.setOnClickPendingIntent(R.id.launch_main, launchIntent);
 		
-		PendingIntent stopIntent = this.getStopIntent(context);
-		views.setOnClickPendingIntent(R.id.widget_stop, stopIntent);
+		PendingIntent stopIntent = this.getStopIntent();
+		mViews.setOnClickPendingIntent(R.id.widget_stop, stopIntent);
 		
+		setPresets();
+        
+        //return views;
+        
+	}
+	
+	private void setPresets()
+	{
 		//TODO iterate from query
-		int preset = 1;
-		{
-		PendingIntent presetIntent = this.getPresetIntent(context, preset);
-	    views.setOnClickPendingIntent(R.id.preset_1, presetIntent);
-		}
+		
+		int preset;
+		
+		preset = 3;
+		PendingIntent presetIntent3 = this.getPresetIntent(preset);
+		//presetIntent3 = this.getPresetIntent(preset);
+        mViews.setOnClickPendingIntent(R.id.preset_3, presetIntent3);
         
-        return views;
-        
+		preset = 2;
+		PendingIntent presetIntent2 = this.getPresetIntent(preset);
+		//presetIntent2 = this.getPresetIntent(preset);
+        mViews.setOnClickPendingIntent(R.id.preset_2, presetIntent2);
+		
+        preset = 1;
+		
+		PendingIntent presetIntent = this.getPresetIntent(preset);
+        mViews.setOnClickPendingIntent(R.id.preset_1, presetIntent);
+		
 	}
 
 /*

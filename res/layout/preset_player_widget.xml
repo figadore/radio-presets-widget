@@ -50,7 +50,8 @@
 		    android:layout_height="wrap_content"
 	        android:layout_centerVertical="true"
 	        android:layout_toRightOf="@id/widget_stop"
-	        android:background="@color/blue"
+	        android:textSize="24sp"
+	        android:background="@color/widget_now_playing_background"
 	        android:lines="2"
 	        android:text="Playing:"
 	        />
