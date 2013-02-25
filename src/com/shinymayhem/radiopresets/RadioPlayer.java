@@ -237,11 +237,22 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		//status.append("\nComplete");
 	}
 	
+	private void stopInfo(String status)
+	{
+		stopForeground(true);
+		this.updateWidget(getResources().getString(R.string.widget_initial_title), status);
+	}
+	
+	private void stopInfo()
+	{
+		this.stopInfo(getResources().getString(R.string.widget_stopped_status));
+	}
+	
 	public boolean onError(MediaPlayer mediaPlayer, int what, int extra)
 	{
 		log("onError()", "e");
 		//check if mediaPlayer is or needs to be released
-		stopForeground(true);
+		stopInfo(getResources().getString(R.string.widget_error_status)); //stopForeground(true);
 		if (mediaPlayer != null)
 		{
 			try
@@ -303,7 +314,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		} 
 		log("onCreate()", "d");
 		//remove pending intents if they exist
-		stopForeground(true);
+		stopInfo(); //stopForeground(true);
 		IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
 		mReceiver = new NetworkReceiver();
         //Log.i(getPackageName(), "creating service, registering broadcast receiver");
@@ -446,7 +457,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			{
 				log("wasn't interrupted, so remove any notifications and reset to uninitialized", "v");
 				state = RadioPlayer.STATE_UNINITIALIZED;
-				stopForeground(true);
+				stopInfo(); //stopForeground(true);
 			}
 			
 			return;
@@ -540,10 +551,34 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		state = RadioPlayer.STATE_PREPARING;
 		
 		updateNotification("Preparing", "Cancel", true);
+		updateWidget("Preparing");
 	
 		mMediaPlayer.prepareAsync(); // might take long! (for buffering, etc)
 		log("preparing async", "d");
+		
 		Toast.makeText(this, "Preparing", Toast.LENGTH_SHORT).show();
+	}
+	
+	protected Intent getWidgetUpdateIntent(String text1, String text2)
+	{
+		Intent intent = new Intent(this, com.shinymayhem.radiopresets.PresetButtonsWidgetProvider.class);
+		intent.setAction(PresetButtonsWidgetProvider.ACTION_UPDATE_TEXT);
+		intent.putExtra(com.shinymayhem.radiopresets.PresetButtonsWidgetProvider.EXTRA_TEXT1, text1);
+		intent.putExtra(com.shinymayhem.radiopresets.PresetButtonsWidgetProvider.EXTRA_TEXT2, text2);
+        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
+        return intent;
+	}
+	
+	protected void updateWidget(String text)
+	{
+		Intent intent = this.getWidgetUpdateIntent(String.valueOf(mPreset) + ". " + mTitle, text);
+		this.sendBroadcast(intent);
+	}
+	
+	protected void updateWidget(String title, String status)
+	{
+		Intent intent = this.getWidgetUpdateIntent(title, status);
+		this.sendBroadcast(intent);
 	}
 	
 	protected void updateNotification(String status, String stopText)
@@ -553,6 +588,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	
 	protected void updateNotification(String status, String stopText, boolean reset)
 	{
+		
 		NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
 			.setContentTitle(String.valueOf(mPreset) + ". " + mTitle)
 			.setContentText(status)
@@ -575,6 +611,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		{
 			mNotificationManager.notify(ONGOING_NOTIFICATION, builder.build());
 		}
+		this.updateWidget(status);
 	}
 	
 	protected void initializePlayer(MediaPlayer player)
@@ -646,7 +683,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		{
 			state = RadioPlayer.STATE_STOPPING;
 			log("stop called while preparing", "v");
-			stopForeground(true);
+			stopInfo(); //stopForeground(true);
 			mMediaPlayer.release();
 			mMediaPlayer = null;
 		}
@@ -655,7 +692,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			state = RadioPlayer.STATE_STOPPING;
 			log("stopping playback", "v");
 			Toast.makeText(this, "Stopping playback", Toast.LENGTH_SHORT).show();
-			stopForeground(true);
+			stopInfo(); //stopForeground(true);
 			mMediaPlayer.stop();
 			//mediaPlayer.reset();
 			mMediaPlayer.release();

@@ -15,6 +15,10 @@
     <string name="title">Title</string>
     <string name="url">URL</string>
     <string name="copy">Copy Logs</string>
+    <string name="widget_initial_status">Not started</string>
+    <string name="widget_stopped_status">Stopped</string>
+    <string name="widget_error_status">Error</string>
+    <string name="widget_initial_title">Nothing playing</string>
     <string name="mark_event">Mark Event</string>
     <string name="clear">Clear Logs</string>
     <string name="no_stations">No stations saved</string>
