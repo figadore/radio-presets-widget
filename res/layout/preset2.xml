@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Button xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="0dip"
+   	android:layout_height="85dp"
+   	android:layout_weight="1"
+   	android:id="@+id/widget_preset_2"
+   	android:text="@string/widget_button_initial_text" />
+
+   	<!-- <?xml version="1.0" encoding="utf-8"?>
+<include xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="0dip"
+   	android:layout_height="85dp"
+   	layout="@layout/widget_preset_button" 
+   	android:id="@+id/widget_preset_2" >
+    
+
+</include> -->

@@ -7,27 +7,5 @@
 	    android:id="@+id/preset_buttons"
 	    android:padding="@dimen/widget_margin" >
 	    
-		<Button 
-	        android:layout_width="0dip"
-	    	android:layout_height="85dp"
-	    	android:id="@+id/preset_1"
-	    	android:layout_weight="1"
-	    	android:text="1"
-	        />
-		<Button 
-	        android:layout_width="dip"
-	    	android:layout_height="85dp"
-	    	android:id="@+id/preset_2"
-	    	android:maxHeight="60dp"
-	    	android:layout_weight="1"
-	    	android:text="2"
-	        />
-		<Button 
-	        android:layout_width="0dip"
-	    	android:layout_height="85dp"
-	    	android:id="@+id/preset_3"
-	    	android:maxHeight="60dp"
-	    	android:layout_weight="1"
-	    	android:text="3"
-	        />
+		
 	</LinearLayout>

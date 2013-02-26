@@ -22,6 +22,8 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.RemoteViews;
@@ -32,6 +34,7 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 	private final int TALL_WIDGET = 100;
 	protected RemoteViews mViews;
 	protected Context mContext;
+	private final int MIN_BUTTON_WIDTH = 70;
 	public final static String ACTION_UPDATE_TEXT = "com.shinymayhem.radiopresets.intent.update_text";
 	public final static String EXTRA_TEXT1 = "com.shinymayhem.radiopresets.extras.text1";
 	public final static String EXTRA_TEXT2 = "com.shinymayhem.radiopresets.extras.text2";
@@ -106,12 +109,12 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 		if (getHeight(newOptions) >= TALL_WIDGET)
         {
 			Log.i("widget", "tall widget");
-        	this.getPlayerViews();
+        	this.getPlayerViews(newOptions);
         }
         else
         {
         	Log.i("widget", "short widget");
-        	this.getButtonViews();
+        	this.getButtonViews(newOptions);
         }
 		//return mViews;
 		//mViews = views;
@@ -169,16 +172,16 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 	
 	
 	
-	private void getButtonViews()
+	private void getButtonViews(Bundle options)
 	{
 		mViews = new RemoteViews(mContext.getPackageName(), R.layout.preset_buttons_widget);
 		 
-		this.setPresets();
+		this.setPresets(options);
         
         //return views;
 	}
 	
-	private void getPlayerViews()
+	private void getPlayerViews(Bundle options)
 	{
 		mViews = new RemoteViews(mContext.getPackageName(), R.layout.preset_player_widget);
 		
@@ -188,17 +191,110 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 		PendingIntent stopIntent = this.getStopIntent();
 		mViews.setOnClickPendingIntent(R.id.widget_stop, stopIntent);
 		
-		setPresets();
+		setPresets(options);
         
         //return views;
         
 	}
 	
-	private void setPresets()
+	private void setPresets(Bundle options)
 	{
-		//TODO iterate from query
+
+		mViews.removeAllViews(R.id.preset_buttons);
 		
-		int preset;
+		
+		RemoteViews presetButton;
+		int layoutId;
+		int buttonId;
+		PendingIntent presetIntent;
+		
+		int maxButtons = 1;
+		
+		
+		
+		Uri uri = RadioContentProvider.CONTENT_URI_STATIONS;
+		String[] projection = {RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER};  
+		String selection = null;
+		String[] selectionArgs = null;
+		String sortOrder = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER;
+		Cursor cursor = mContext.getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
+		
+		int stationsCount = cursor.getCount();
+		
+		int widgetWidth = getWidth(options);
+		//TODO math
+		if (stationsCount*MIN_BUTTON_WIDTH > widgetWidth)
+		{
+			maxButtons = widgetWidth/MIN_BUTTON_WIDTH;
+		}
+		else
+		{
+			maxButtons = stationsCount;
+		}
+		/*
+		int preset = 1;
+		layoutId = R.layout.preset1;
+		buttonId = R.id.widget_preset_1;
+		//layoutId = R.layout.widget_preset_button;
+		//buttonId = R.id.preset_button;
+		presetButton = new RemoteViews(mContext.getPackageName(), layoutId);
+		//int viewId = presetButton.getLayoutId();
+		
+		presetButton.setTextViewText(buttonId, String.valueOf(preset));
+		presetIntent = this.getPresetIntent(preset);
+		mViews.setOnClickPendingIntent(buttonId, presetIntent);
+		
+		mViews.addView(R.id.preset_buttons, presetButton);
+		*/
+		
+		int[] layoutIds = {R.layout.preset1, R.layout.preset2, R.layout.preset3, R.layout.preset4};
+		
+		int[] buttonIds = {R.id.widget_preset_1, R.id.widget_preset_2, R.id.widget_preset_3, R.id.widget_preset_4};
+		
+		for (int preset=1; preset <= maxButtons; preset++) {
+			
+			layoutId = layoutIds[preset-1];
+			buttonId = buttonIds[preset-1];
+			presetButton = new RemoteViews(mContext.getPackageName(), layoutId);
+			//int viewId = presetButton.getLayoutId();
+			
+			presetButton.setTextViewText(buttonId, String.valueOf(preset));
+			presetIntent = this.getPresetIntent(preset);
+			mViews.addView(R.id.preset_buttons, presetButton);
+			mViews.setOnClickPendingIntent(buttonId, presetIntent);
+			
+			
+		}
+		cursor.close();
+		
+		
+		
+		/*
+		preset = 2;
+		
+		presetButton = new RemoteViews(mContext.getPackageName(), R.layout.widget_preset_button);
+		viewId = R.id.preset_button;
+		presetButton.setTextViewText(viewId, String.valueOf(preset));
+		
+		 presetIntent = this.getPresetIntent(preset);
+		mViews.setOnClickPendingIntent(viewId, presetIntent);
+		
+		mViews.addView(R.id.preset_buttons, presetButton);
+		
+		
+		preset = 3;
+		
+		presetButton = new RemoteViews(mContext.getPackageName(), R.layout.widget_preset_button);
+		viewId = R.id.preset_button;
+		presetButton.setTextViewText(viewId, String.valueOf(preset));
+		
+		 presetIntent = this.getPresetIntent(preset);
+		mViews.setOnClickPendingIntent(viewId, presetIntent);
+		
+		mViews.addView(R.id.preset_buttons, presetButton);
+		*/
+		
+		/*
 		
 		preset = 3;
 		PendingIntent presetIntent3 = this.getPresetIntent(preset);
@@ -214,7 +310,7 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 		
 		PendingIntent presetIntent = this.getPresetIntent(preset);
         mViews.setOnClickPendingIntent(R.id.preset_1, presetIntent);
-		
+		*/
 	}
 
 /*
@@ -224,6 +320,13 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 		return minWidth;
 	}
 	*/
+	private int getWidth(Bundle newOptions)
+	{
+		int minWidth = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
+		return minWidth;
+	}
+
+	
 	private int getHeight(Bundle newOptions)
 	{
 		int minHeight = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);

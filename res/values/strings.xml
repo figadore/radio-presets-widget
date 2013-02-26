@@ -26,6 +26,7 @@
     <string name="divider">Divider</string>
     <string name="drag">Drag and drop</string>
     <string name="stations">com.shinymayhem.radiopresets.stations_file_key</string>
+    <string name="widget_button_initial_text">0</string>
 
 
 </resources>
