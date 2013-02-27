@@ -6,6 +6,6 @@
 	<include layout="@layout/widget_preset_button" 
 	    android:layout_width="match_parent"
 	   	android:layout_height="match_parent"
-	   	android:id="@+id/widget_preset_1" >
+	   	android:id="@+id/widget_preset_7" >
 	</include>
 </FrameLayout>

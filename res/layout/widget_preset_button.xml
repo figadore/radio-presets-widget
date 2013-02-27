@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Button xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="0dip"
-   	android:layout_height="85dp"
-   	android:layout_weight="1"
+    android:layout_width="match_parent"
+   	android:layout_height="match_parent"
    	android:id="@+id/preset_button"
    	android:text="@string/widget_button_initial_text" />

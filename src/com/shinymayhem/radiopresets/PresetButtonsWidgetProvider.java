@@ -34,7 +34,7 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 	private final int TALL_WIDGET = 100;
 	protected RemoteViews mViews;
 	protected Context mContext;
-	private final int MIN_BUTTON_WIDTH = 70;
+	private final int MIN_BUTTON_WIDTH = 65; //TODO get from preferences
 	public final static String ACTION_UPDATE_TEXT = "com.shinymayhem.radiopresets.intent.update_text";
 	public final static String EXTRA_TEXT1 = "com.shinymayhem.radiopresets.extras.text1";
 	public final static String EXTRA_TEXT2 = "com.shinymayhem.radiopresets.extras.text2";
@@ -176,6 +176,12 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 	{
 		mViews = new RemoteViews(mContext.getPackageName(), R.layout.preset_buttons_widget);
 		 
+		PendingIntent launchIntent = this.getLaunchIntent();
+		mViews.setOnClickPendingIntent(R.id.launch_main, launchIntent);
+		
+		PendingIntent stopIntent = this.getStopIntent();
+		mViews.setOnClickPendingIntent(R.id.widget_stop, stopIntent);
+		
 		this.setPresets(options);
         
         //return views;
@@ -222,7 +228,6 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 		int stationsCount = cursor.getCount();
 		
 		int widgetWidth = getWidth(options);
-		//TODO math
 		if (stationsCount*MIN_BUTTON_WIDTH > widgetWidth)
 		{
 			maxButtons = widgetWidth/MIN_BUTTON_WIDTH;
@@ -231,25 +236,11 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 		{
 			maxButtons = stationsCount;
 		}
-		/*
-		int preset = 1;
-		layoutId = R.layout.preset1;
-		buttonId = R.id.widget_preset_1;
-		//layoutId = R.layout.widget_preset_button;
-		//buttonId = R.id.preset_button;
-		presetButton = new RemoteViews(mContext.getPackageName(), layoutId);
-		//int viewId = presetButton.getLayoutId();
 		
-		presetButton.setTextViewText(buttonId, String.valueOf(preset));
-		presetIntent = this.getPresetIntent(preset);
-		mViews.setOnClickPendingIntent(buttonId, presetIntent);
 		
-		mViews.addView(R.id.preset_buttons, presetButton);
-		*/
+		int[] layoutIds = {R.layout.preset1, R.layout.preset2, R.layout.preset3, R.layout.preset4, R.layout.preset5, R.layout.preset6, R.layout.preset7, R.layout.preset8};
 		
-		int[] layoutIds = {R.layout.preset1, R.layout.preset2, R.layout.preset3, R.layout.preset4};
-		
-		int[] buttonIds = {R.id.widget_preset_1, R.id.widget_preset_2, R.id.widget_preset_3, R.id.widget_preset_4};
+		int[] buttonIds = {R.id.widget_preset_1, R.id.widget_preset_2, R.id.widget_preset_3, R.id.widget_preset_4, R.id.widget_preset_5, R.id.widget_preset_6, R.id.widget_preset_7, R.id.widget_preset_8};
 		
 		for (int preset=1; preset <= maxButtons; preset++) {
 			

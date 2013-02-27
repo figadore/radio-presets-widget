@@ -4,7 +4,9 @@
     <string name="app_name">Radio Presets</string>
     <string name="menu_settings">Settings</string>
     <string name="launch">Launch</string>
+    <string name="previous">Previous</string>
     <string name="stop">Stop</string>
+    <string name="next">Next</string>
     <string name="add_station">Add</string>
     <string name="edit_station">Edit</string>
     <string name="delete_station">Delete</string>
@@ -19,6 +21,9 @@
     <string name="widget_stopped_status">Stopped</string>
     <string name="widget_error_status">Error</string>
     <string name="widget_initial_title">Nothing playing</string>
+    <string name="widget_initial_song">Unknown song</string>
+    <string name="widget_initial_artist">Unknown artist</string>
+    <string name="widget_loading">Loading Radio Presets Widget...</string>
     <string name="mark_event">Mark Event</string>
     <string name="clear">Clear Logs</string>
     <string name="no_stations">No stations saved</string>
