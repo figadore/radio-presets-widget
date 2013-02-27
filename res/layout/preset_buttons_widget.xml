@@ -1,33 +1,86 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-	    android:layout_width="match_parent"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:padding="@dimen/widget_margin"
+    android:background="@color/widget_background" >
+   	<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	    android:id="@+id/short_widget_controls"
+	    android:layout_width="wrap_content"
 	    android:layout_height="match_parent"
+	    android:layout_alignParentTop="true"
+		android:layout_alignParentLeft="true"
+	    android:orientation="vertical" >
+		<ImageButton 
+	        android:id="@+id/widget_stop"
+	        android:layout_width="wrap_content"
+	        android:layout_height="0dp"
+		    android:layout_weight="1"
+		     android:adjustViewBounds="true"
+	        android:padding="5dp"
+	        android:scaleType="fitCenter"
+	        android:contentDescription="@string/stop"
+	        style="?android:attr/borderlessButtonStyle"
+	        android:src="@drawable/av_stop"
+	        />
+		<ImageButton
+		    xmlns:android="http://schemas.android.com/apk/res/android"
+		    android:id="@+id/launch_main"
+		    style="?android:attr/borderlessButtonStyle"
+		    android:layout_width="wrap_content"
+		    android:layout_height="0dp"
+		    android:layout_weight="1"
+		    android:adjustViewBounds="true"
+		    android:contentDescription="@string/launch"
+		    android:padding="5dp"
+		    android:scaleType="fitCenter"
+		    android:src="@drawable/app_icon" />
+	
+	</LinearLayout>	
+		
+	
+	<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	    android:layout_width="match_parent"
+	    android:layout_height="@dimen/widget_short_button_height"
+	    android:layout_alignParentBottom="true"
+	    android:layout_toRightOf="@id/short_widget_controls"
 	    android:orientation="horizontal"
 	    android:layout_gravity="center_vertical"
 	    android:id="@+id/preset_buttons"
-	    android:padding="@dimen/widget_margin" >
+	    android:padding="0dp">
 	    
-		<Button 
-	        android:layout_width="0dip"
-	    	android:layout_height="85dp"
-	    	android:id="@+id/preset_1"
-	    	android:layout_weight="1"
-	    	android:text="1"
+		
+	</LinearLayout>
+		   
+
+	<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	    android:id="@+id/widget_playing"
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    android:layout_toRightOf="@id/short_widget_controls"
+	    android:layout_above="@id/preset_buttons"
+	    android:orientation="horizontal" >
+		<TextView
+		    android:id="@+id/currently_playing"
+		    android:layout_width="0dp"
+		    android:layout_weight="1"
+		    android:layout_height="wrap_content"
+	        android:textSize="14sp"
+	        android:background="@color/widget_now_playing_background"
+	        android:lines="1"
+	        android:text="@string/widget_initial_title"
 	        />
-		<Button 
-	        android:layout_width="dip"
-	    	android:layout_height="85dp"
-	    	android:id="@+id/preset_2"
-	    	android:maxHeight="60dp"
-	    	android:layout_weight="1"
-	    	android:text="2"
-	        />
-		<Button 
-	        android:layout_width="0dip"
-	    	android:layout_height="85dp"
-	    	android:id="@+id/preset_3"
-	    	android:maxHeight="60dp"
-	    	android:layout_weight="1"
-	    	android:text="3"
+		<TextView
+		    android:id="@+id/widget_status"
+		    android:layout_width="0dp"
+		    android:layout_weight="1"
+		    android:layout_height="wrap_content"
+	        android:textSize="14sp"
+	        android:background="@color/widget_now_playing_background"
+	        android:lines="1"
+	        android:text="@string/widget_initial_status"
 	        />
 	</LinearLayout>
+
+</RelativeLayout>

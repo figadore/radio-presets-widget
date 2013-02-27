@@ -45,7 +45,7 @@ public class MainActivity extends Activity implements AddDialogListener, EventDi
 	//public final static String URL = "com.shinymayhem.radiopresets.URL";
 	public final static String EXTRA_STATION_PRESET = "com.shinymayhem.radiopresets.STATION_ID";
 	
-	public static final int BUTTON_LIMIT = 25;
+	//public static final int BUTTON_LIMIT = 25;
 	public static final int LOADER_STATIONS = 0;
 	public final static String LOG_FILENAME = "log.txt";
 	
