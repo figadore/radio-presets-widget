@@ -41,15 +41,17 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 	
 	public void onEnabled(Context context)
 	{
-		log("onEnabled()", "i");
+		
 		mContext = context;
+		log("onEnabled()", "i");
 		super.onEnabled(context);
 	}
 	
 	public void onReceive(Context context, Intent intent)
 	{
-		log("onReceive()", "i");
+		
 		mContext = context;
+		log("onReceive()", "i");
 		if (intent.getAction() == ACTION_UPDATE_TEXT)
 		{
 			Bundle extras = intent.getExtras();
@@ -122,8 +124,8 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 	}
 
 	public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
-		log("onUpdate()", "v");
 		mContext = context;
+		log("onUpdate()", "v");
 		final int N = appWidgetIds.length;
         // Perform this loop procedure for each App Widget that belongs to this provider
         for (int i=0; i<N; i++) {
@@ -205,7 +207,7 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 	
 	private void setPresets(Bundle options)
 	{
-
+		log("setPresets()", "v");
 		mViews.removeAllViews(R.id.preset_buttons);
 		
 		
@@ -327,8 +329,8 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 	
 	private void log(String text, String level)
 	{
-		//mLogger.log(this.get, text, level);
-		String callerClass = "WidgetProvider";
+		mLogger.log(mContext, text, level);
+		/*String callerClass = "WidgetProvider";
 		String str = text;
 		if (level == "v")
 		{
@@ -354,7 +356,7 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 		{
 			str = "ERROR:\t\t" + str;
 			Log.e(callerClass, str);
-		}
+		}*/
 	}
 	
 }

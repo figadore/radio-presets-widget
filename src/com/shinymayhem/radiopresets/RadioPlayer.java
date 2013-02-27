@@ -72,7 +72,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	protected int mNetworkState;
 	protected MediaPlayer mMediaPlayer;
 	protected MediaPlayer mNextPlayer;
-	private NetworkReceiver mReceiver = new NetworkReceiver();
+	private NetworkReceiver mReceiver;
 	private NoisyAudioStreamReceiver mNoisyReceiver; 
 	protected String mUrl;
 	protected String mTitle;
@@ -316,6 +316,14 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		//remove pending intents if they exist
 		stopInfo(); //stopForeground(true);
 		IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+		if (mReceiver != null)
+		{
+			log("------------------------------------------", "v");
+			log("network receiver already registered", "w");
+			log("------------------------------------------", "v");
+			this.unregisterReceiver(mReceiver);
+			mReceiver = null;
+		}
 		mReceiver = new NetworkReceiver();
         //Log.i(getPackageName(), "creating service, registering broadcast receiver");
         log("registering network change broadcast receiver", "v");
@@ -928,6 +936,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		if (mReceiver != null) {
 			log("unregister network receiver", "v");
             this.unregisterReceiver(mReceiver);
+            mReceiver = null;
         }
 		else
 		{
