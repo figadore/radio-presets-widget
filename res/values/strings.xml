@@ -23,7 +23,9 @@
     <string name="widget_initial_title">Nothing playing</string>
     <string name="widget_initial_song">Unknown song</string>
     <string name="widget_initial_artist">Unknown artist</string>
-    <string name="widget_loading">Loading Radio Presets Widget...</string>
+    <string name="widget_loading">Loading Radio Presets Widget…</string>
+    <string name="empty_stations">No stations added</string>
+    <string name="loading_stations">Loading…</string>
     <string name="mark_event">Mark Event</string>
     <string name="clear">Clear Logs</string>
     <string name="no_stations">No stations saved</string>

@@ -174,8 +174,8 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		//doesn't do anything if multi-choice-modal set
 		//listView.setOnItemLongClickListener((OnItemLongClickListener)this);
 		mListView.setMultiChoiceModeListener((MultiChoiceModeListener)this);
-		
-		this.setEmptyText("No stations added"); //this is done by layout, right?
+		//TODO remove layout that doesn't handle emptiness
+		this.setEmptyText(getResources().getString(R.string.loading_stations)); //this is done by layout, right?
 		
 	}
 	
@@ -254,6 +254,7 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		{
 			case MainActivity.LOADER_STATIONS:
 				mAdapter.swapCursor((Cursor)cursor);
+				this.setEmptyText(getResources().getString(R.string.empty_stations));
 				break;
 		}
 	}
