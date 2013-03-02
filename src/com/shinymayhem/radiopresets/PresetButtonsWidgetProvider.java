@@ -145,7 +145,7 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 	private PendingIntent getLaunchIntent()
 	{
 		Intent intent = this.getMainIntent()
-				.setFlags(0)
+				.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP)
 				.setAction(Intent.ACTION_RUN)
 				.setClass(mContext, MainActivity.class);
         //intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);

@@ -706,6 +706,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		stackBuilder.addParentStack(MainActivity.class);
 		//stackBuilder.addNextIntent(nextIntent)
 		Intent resultIntent = new Intent(this, MainActivity.class);
+		//resultIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP); //why is this not needed? 
 		stackBuilder.addNextIntent(resultIntent);
 		PendingIntent intent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_CANCEL_CURRENT);
 		builder.setContentIntent(intent);
