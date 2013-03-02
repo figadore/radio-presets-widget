@@ -102,7 +102,7 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 		Log.i("widget", "new min width:" + String.valueOf(maxWidth));
 		this.getViews(newOptions);
 		appWidgetManager.updateAppWidget(appWidgetId, mViews);
-		super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions);
+		//super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions);
 	}
 	
 	private void getViews(Bundle newOptions)
@@ -144,11 +144,23 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 	
 	private PendingIntent getLaunchIntent()
 	{
-		Intent intent = this.getMainIntent();
-		intent.setAction(Intent.ACTION_RUN);
-        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
-        PendingIntent pendingIntent = PendingIntent.getActivity(mContext, 0, intent, Intent.FLAG_ACTIVITY_NEW_TASK);
+		Intent intent = this.getMainIntent()
+				.setFlags(0)
+				.setAction(Intent.ACTION_RUN)
+				.setClass(mContext, MainActivity.class);
+        //intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
+        PendingIntent pendingIntent = PendingIntent.getActivity(mContext, 0, intent, 0); //Intent.FLAG_ACTIVITY_NEW_TASK
         return pendingIntent;
+	}
+	
+	private PendingIntent getPreviousIntent()
+	{
+		Intent intent = getMainIntent()
+				.setFlags(0)
+				.setAction(RadioPlayer.ACTION_PREVIOUS)
+				.setClass(mContext, RadioPlayer.class);
+		return PendingIntent.getService(mContext, 0, intent, 0);
+			 
 	}
 	
 	private PendingIntent getStopIntent()
@@ -161,14 +173,25 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 			 
 	}
 	
+	private PendingIntent getNextIntent()
+	{
+		Intent intent = getMainIntent()
+				.setFlags(0)
+				.setAction(RadioPlayer.ACTION_NEXT)
+				.setClass(mContext, RadioPlayer.class);
+		return PendingIntent.getService(mContext, 0, intent, 0);
+			 
+	}
+	
+	
 	private PendingIntent getPresetIntent(int preset)
 	{
-		Intent playIntent = getMainIntent();
-		playIntent.setAction(RadioPlayer.ACTION_PLAY);
-        playIntent.setFlags(0);
-        playIntent.setClass(mContext, RadioPlayer.class);
+		Intent playIntent = getMainIntent()
+				.setAction(RadioPlayer.ACTION_PLAY)
+				.setFlags(0)
+				.setClass(mContext, RadioPlayer.class);
         playIntent.putExtra(MainActivity.EXTRA_STATION_PRESET, preset);
-        PendingIntent presetIntent = PendingIntent.getService(mContext, preset, playIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+        PendingIntent presetIntent = PendingIntent.getService(mContext, preset, playIntent, PendingIntent.FLAG_UPDATE_CURRENT); //cancel current sometimes fails. test PendingIntent.FLAG_UPDATE_CURRENT if 0 doesn't work 
         return presetIntent;
 	}
 	
@@ -196,8 +219,14 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 		PendingIntent launchIntent = this.getLaunchIntent();
 		mViews.setOnClickPendingIntent(R.id.launch_main, launchIntent);
 		
+		PendingIntent previousIntent = this.getPreviousIntent();
+		mViews.setOnClickPendingIntent(R.id.widget_previous, previousIntent);
+		
 		PendingIntent stopIntent = this.getStopIntent();
 		mViews.setOnClickPendingIntent(R.id.widget_stop, stopIntent);
+		
+		PendingIntent nextIntent = this.getNextIntent();
+		mViews.setOnClickPendingIntent(R.id.widget_next, nextIntent);
 		
 		setPresets(options);
         

@@ -3,8 +3,11 @@
     android:minWidth="294dp"
     android:minHeight="30dp"
     android:initialLayout="@layout/widget_initial_layout"
-    android:initialKeyguardLayout="@layout/widget_initial_layout"
     android:resizeMode="vertical"
-    android:widgetCategory="home_screen|keyguard"
+    android:widgetCategory="home_screen"
 	>
 </appwidget-provider>
+<!-- android:initialLayout="@layout/widget_initial_layout"
+    android:initialKeyguardLayout="@layout/widget_initial_layout"
+    android:initialLayout="@layout/widget_preset_button"
+ -->

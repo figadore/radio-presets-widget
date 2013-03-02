@@ -26,6 +26,7 @@ import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
+import android.os.Bundle;
 
 import com.shinymayhem.radiopresets.RadioDbContract.StationsDbHelper;
 
@@ -225,6 +226,22 @@ public class RadioContentProvider extends ContentProvider {
 		getContext().getContentResolver().notifyChange(uri, null);
 		log("update uri:" + uri + ". " + String.valueOf(updatedCount) + " updated", "i");
 		return updatedCount;
+		
+	}
+	
+	@Override 
+	public Bundle call(String method, String arg, Bundle extras) 
+	{
+		Bundle values = new Bundle();
+		if (method == "getMaxPresetNumber")
+		{
+			values.putInt(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, this.getMaxPresetNumber());
+			return values;
+		}
+		else
+		{
+			return super.call(method, arg, extras);
+		}
 		
 	}
 	

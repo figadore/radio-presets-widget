@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 
 import android.annotation.SuppressLint;
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -44,6 +45,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.widget.Toast;
@@ -54,6 +56,8 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	public final static String ACTION = "com.shinymayhem.radiopresets.ACTION";
 	public final static String ACTION_STOP = "Stop";
 	public final static String ACTION_PLAY = "Play";
+	public final static String ACTION_NEXT = "Next";
+	public final static String ACTION_PREVIOUS = "Previous";
 	public String state = STATE_UNINITIALIZED;
 	public final static String STATE_UNINITIALIZED = "Uninitialized";
 	public final static String STATE_INITIALIZING = "Initializing";
@@ -91,13 +95,121 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			return RadioPlayer.this;
 		}
 	}
-	
-	protected PendingIntent getStopIntent()
+
+	@Override
+	public void onCreate()
 	{
-		Intent intent = new Intent(this, RadioPlayer.class).setAction(ACTION_STOP);
-		return PendingIntent.getService(this, 0, intent, 0);
-			 
+		if (mNotificationManager == null)
+		{
+			mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		} 
+		log("onCreate()", "d");
+		//remove pending intents if they exist
+		stopInfo(); //stopForeground(true);
+		IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+		if (mReceiver != null)
+		{
+			log("------------------------------------------", "v");
+			log("network receiver already registered, find out why", "w"); 
+			log("------------------------------------------", "v");
+			this.unregisterReceiver(mReceiver);
+			mReceiver = null;
+		}
+		mReceiver = new NetworkReceiver();
+        //Log.i(getPackageName(), "creating service, registering broadcast receiver");
+        log("registering network change broadcast receiver", "v");
+		this.registerReceiver(mReceiver, filter);
 	}
+	
+	
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		// Registers BroadcastReceiver to track network connection changes.
+		mIntent = intent;
+		if ((flags & Service.START_FLAG_REDELIVERY) != 0)
+		{
+			log("------------------------------------------", "v");
+			log("intent redelivery, restarting. maybe handle this with dialog? notification with resume action?", "v");
+			log("------------------------------------------", "v");
+		}
+		log("onStartCommand()", "d");
+		//Log.i(getPackageName(), "service start command");
+		if (intent == null)
+		{
+			log("no intent", "w");
+			//Log.i(getPackageName(), "No intent");
+		}
+		else
+		{
+			//TODO find out why service starts again after STOP action in intent (does it still?)
+			String action = intent.getAction();
+			if (action == null)
+			{
+				log("no action specified, not sure why", "w");
+				//return flag indicating no further action needed if service is stopped by system and later resumes
+				return START_NOT_STICKY;
+			}
+			else if (action.equals(Intent.ACTION_RUN))
+			{
+				log("service being started before bound", "i");
+				//String url = intent.getStringExtra(MainActivity.URL);	
+				//play(url);
+				return START_NOT_STICKY;
+			}
+			else if (action.equals(ACTION_PLAY.toString()))
+			{
+				log("PLAY action in intent", "i");
+				//String url = intent.getStringExtra(MainActivity.URL);
+				int preset = Integer.valueOf(intent.getIntExtra(MainActivity.EXTRA_STATION_PRESET, 0));	
+				log("preset in action:" + String.valueOf(preset), "i");
+				play(preset);
+				return START_REDELIVER_INTENT;
+			}
+			else if (action.equals(ACTION_NEXT.toString()))
+			{
+				log("NEXT action in intent", "i");	
+				nextPreset();
+				return START_NOT_STICKY;
+			}
+			else if (action.equals(ACTION_PREVIOUS.toString()))
+			{
+				log("PREVIOUS action in intent", "i");	
+				previousPreset();
+				return START_NOT_STICKY;
+			}
+			else if (action.equals(ACTION_STOP.toString()))
+			{
+				log("STOP action in intent", "i");	
+				end();
+				return START_NOT_STICKY;
+			}
+			else
+			{
+				String str = "Unknown Action:";
+				str += action;
+				log(str, "w");
+				//Log.i(getPackageName(), str);
+			
+			}
+		}
+		//this.url = intent.getStringExtra(MainActivity.URL);
+		//String url = intent.getStringExtra(MainActivity.URL);
+		//if (url != null)
+		//{
+			//this.url = url;
+		//}
+		//String str = "url:";
+		//str += this.url;
+		//Log.i(getPackageName(), str);
+		//this.play();
+		
+		
+		
+		//return START_STICKY;
+		return START_NOT_STICKY;
+		//return START_REDELIVER_INTENT;
+	}
+	
 	
 	@SuppressLint("NewApi")
 	public void onPrepared(MediaPlayer mediaPlayer)
@@ -118,8 +230,9 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			}
 			mInterrupted = false;
 
-			updateNotification("Playing", "Stop", true);
-			//startForeground(ONGOING_NOTIFICATION, builder.build());
+			Notification notification = updateNotification("Playing", "Stop", true);
+			mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
+			startForeground(ONGOING_NOTIFICATION, notification);
 			
 			
 			log("start foreground notification: playing", "v");
@@ -144,8 +257,8 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			//	status.setText("Stopped");	
 			}
 			
-			updateNotification("Playing", "Stop", true);
-			
+			Notification notification = updateNotification("Playing", "Stop", true);
+			mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 			state = RadioPlayer.STATE_PLAYING;
 			return true;
 			
@@ -157,8 +270,8 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			//Log.i(getPackageName(), "start buffering");
 			//status.setText("Buffering...");
 			
-			updateNotification("Buffering", "Cancel", true);
-			
+			Notification notification = updateNotification("Buffering", "Cancel", true);
+			mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 			
 
 			state = RadioPlayer.STATE_BUFFERING;
@@ -237,17 +350,6 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		//status.append("\nComplete");
 	}
 	
-	private void stopInfo(String status)
-	{
-		stopForeground(true);
-		this.updateWidget(getResources().getString(R.string.widget_initial_title), status);
-	}
-	
-	private void stopInfo()
-	{
-		this.stopInfo(getResources().getString(R.string.widget_stopped_status));
-	}
-	
 	public boolean onError(MediaPlayer mediaPlayer, int what, int extra)
 	{
 		log("onError()", "e");
@@ -305,105 +407,35 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		
 	}
 	
-	@Override
-	public void onCreate()
+
+	private void stopInfo(String status)
 	{
-		if (mNotificationManager == null)
-		{
-			mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-		} 
-		log("onCreate()", "d");
-		//remove pending intents if they exist
-		stopInfo(); //stopForeground(true);
-		IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-		if (mReceiver != null)
-		{
-			log("------------------------------------------", "v");
-			log("network receiver already registered", "w");
-			log("------------------------------------------", "v");
-			this.unregisterReceiver(mReceiver);
-			mReceiver = null;
-		}
-		mReceiver = new NetworkReceiver();
-        //Log.i(getPackageName(), "creating service, registering broadcast receiver");
-        log("registering network change broadcast receiver", "v");
-		this.registerReceiver(mReceiver, filter);
+		stopForeground(true);
+		this.updateWidget(getResources().getString(R.string.widget_initial_title), status);
 	}
 	
-	@Override
-	public int onStartCommand(Intent intent, int flags, int startId) {
-		// Registers BroadcastReceiver to track network connection changes.
-		mIntent = intent;
-		if ((flags & Service.START_FLAG_REDELIVERY) != 0)
-		{
-			log("------------------------------------------", "v");
-			log("intent redelivery, restarting. maybe handle this with dialog? notification with resume action?", "v");
-			log("------------------------------------------", "v");
-		}
-		log("onStartCommand()", "d");
-		//Log.i(getPackageName(), "service start command");
-		if (intent == null)
-		{
-			log("no intent", "w");
-			//Log.i(getPackageName(), "No intent");
-		}
-		else
-		{
-			//TODO find out why service starts again after STOP action in intent (does it still?)
-			String action = intent.getAction();
-			if (action == null)
-			{
-				log("no action specified, not sure why", "w");
-				//return flag indicating no further action needed if service is stopped by system and later resumes
-				return START_NOT_STICKY;
-			}
-			else if (action.equals(Intent.ACTION_RUN))
-			{
-				log("service being started before bound", "i");
-				//String url = intent.getStringExtra(MainActivity.URL);	
-				//play(url);
-				return START_NOT_STICKY;
-			}
-			else if (action.equals(ACTION_PLAY.toString()))
-			{
-				log("PLAY action in intent", "i");
-				//String url = intent.getStringExtra(MainActivity.URL);
-				int preset = Integer.valueOf(intent.getIntExtra(MainActivity.EXTRA_STATION_PRESET, 0));	
-				log("preset in action:" + String.valueOf(preset), "i");
-				play(preset);
-				return START_REDELIVER_INTENT;
-			}
-			else if (action.equals(ACTION_STOP.toString()))
-			{
-				log("STOP action in intent", "i");	
-				end();
-				return START_NOT_STICKY;
-			}
-			else
-			{
-				String str = "Unknown Action:";
-				str += action;
-				log(str, "w");
-				//Log.i(getPackageName(), str);
-			
-			}
-		}
-		//this.url = intent.getStringExtra(MainActivity.URL);
-		//String url = intent.getStringExtra(MainActivity.URL);
-		//if (url != null)
-		//{
-			//this.url = url;
-		//}
-		//String str = "url:";
-		//str += this.url;
-		//Log.i(getPackageName(), str);
-		//this.play();
-		
-		
-		
-		//return START_STICKY;
-		return START_NOT_STICKY;
-		//return START_REDELIVER_INTENT;
+	private void stopInfo()
+	{
+		this.stopInfo(getResources().getString(R.string.widget_stopped_status));
+	}
+	
+	
+	protected PendingIntent getPreviousIntent()
+	{
+		Intent intent = new Intent(this, RadioPlayer.class).setAction(ACTION_PREVIOUS);
+		return PendingIntent.getService(this, 0, intent, 0);	 
+	}
+	
+	protected PendingIntent getStopIntent()
+	{
+		Intent intent = new Intent(this, RadioPlayer.class).setAction(ACTION_STOP);
+		return PendingIntent.getService(this, 0, intent, 0);	 
+	}
+	
+	protected PendingIntent getNextIntent()
+	{
+		Intent intent = new Intent(this, RadioPlayer.class).setAction(ACTION_NEXT);
+		return PendingIntent.getService(this, 0, intent, 0);	 
 	}
 	
 	protected void play()
@@ -459,7 +491,8 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			{
 				log("interrupted, so set state to playing so it will wait for network to resume", "v");
 				state = RadioPlayer.STATE_PLAYING;
-				updateNotification("Waiting for network", "Cancel", true);
+				Notification notification = updateNotification("Waiting for network", "Cancel", true);
+				mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 			}
 			else
 			{
@@ -470,51 +503,28 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			
 			return;
 		}
-		/*
-		 * //get url from param, fallback to instance variable
-		if (url != null)
-		{
-			this.mUrl = url;	
-		}
-		else if (this.mUrl != null && url == null)
-		{
-			url = this.mUrl;
-		}
-		else if(this.mUrl == null && url == null)
-		{
-			log("trouble: url not set", "e");
-		}*/
-		//have to look up new values for title and url
-		//if (mPreset != preset) //skip this check, in case currently playing preset number has been edited
-		//{
-			//update currently playing preset
-			this.mPreset = preset;
+		
+		this.mPreset = preset;
 
-			Uri uri = Uri.parse(RadioContentProvider.CONTENT_URI_PRESETS.toString() + "/" + String.valueOf(preset));
-			String[] projection = {RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, RadioDbContract.StationEntry.COLUMN_NAME_TITLE, RadioDbContract.StationEntry.COLUMN_NAME_URL};  
-			String selection = null;
-			String[] selectionArgs = null;
-			String sortOrder = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER;
-			Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
-			int count = cursor.getCount();
-			if (count < 1)
-			{
-				log("no results found", "e");
-				throw new SQLiteException("Selected preset not found"); //TODO find correct exception to throw, or handle this some other way
-			}
-			else
-			{
-				cursor.moveToFirst();
-				mPreset = (int)cursor.getLong(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER));
-				mTitle = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_TITLE));
-				mUrl = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));	
-			}
-			
-		//}
-		//else
-		//{
-			////instance variables for url and title already set
-		//}
+		Uri uri = Uri.parse(RadioContentProvider.CONTENT_URI_PRESETS.toString() + "/" + String.valueOf(preset));
+		String[] projection = {RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, RadioDbContract.StationEntry.COLUMN_NAME_TITLE, RadioDbContract.StationEntry.COLUMN_NAME_URL};  
+		String selection = null;
+		String[] selectionArgs = null;
+		String sortOrder = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER;
+		Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
+		int count = cursor.getCount();
+		if (count < 1)
+		{
+			log("no results found", "e");
+			throw new SQLiteException("Selected preset not found"); //TODO find correct exception to throw, or handle this some other way
+		}
+		else
+		{
+			cursor.moveToFirst();
+			mPreset = (int)cursor.getLong(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER));
+			mTitle = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_TITLE));
+			mUrl = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));	
+		}
 		
 		//begin listen for headphones unplugged
 		if (mNoisyReceiver == null)
@@ -558,13 +568,85 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 
 		state = RadioPlayer.STATE_PREPARING;
 		
-		updateNotification("Preparing", "Cancel", true);
+		Notification notification = updateNotification("Preparing", "Cancel", true);
+		//mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
+		startForeground(ONGOING_NOTIFICATION, notification);
 		updateWidget("Preparing");
 	
 		mMediaPlayer.prepareAsync(); // might take long! (for buffering, etc)
 		log("preparing async", "d");
 		
 		Toast.makeText(this, "Preparing", Toast.LENGTH_SHORT).show();
+	}
+	
+	protected void nextPreset()
+	{
+		log("nextPreset()", "v");
+		mPreset++;
+		Uri uri = Uri.parse(RadioContentProvider.CONTENT_URI_PRESETS.toString() + "/" + String.valueOf(mPreset));
+		String[] projection = {RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER};  
+		String selection = null;
+		String[] selectionArgs = null;
+		String sortOrder = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER;
+		Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
+		int count = cursor.getCount();
+		if (count < 1 && mPreset == 1)
+		{
+			log("no stations, unless db integrity lost", "w");
+			return; //TODO notify user?
+		}
+		else if (count < 1)
+		{
+			mPreset = 0; 
+			log("incremented preset but nothing found, must be at end, start at 1", "v");
+			this.nextPreset(); //try again, starting at 0
+		}
+		else
+		{
+			cursor.moveToFirst();
+			mPreset = (int)cursor.getLong(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER));
+			log("incremented preset, playing " + String.valueOf(mPreset), "v");
+			play();	
+		}
+	}
+	
+	protected void previousPreset()
+	{
+		log("previousPreset()", "v");
+		mPreset--;
+		if (mPreset == 0)
+		{
+			Uri maxUri = RadioContentProvider.CONTENT_URI_PRESETS_MAX;
+			Bundle values = getContentResolver().call(maxUri, "getMaxPresetNumber", null, null);  
+			mPreset = values.getInt(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER);
+			if (mPreset == 0) //no stations? 
+			{
+				log("no stations, unless getMaxPresetNumber doesn't work", "w");
+				return; //TODO notify user?
+			}
+			//play();
+			//return;
+		}
+		//find out if the desired station exists
+		Uri uri = Uri.parse(RadioContentProvider.CONTENT_URI_PRESETS.toString() + "/" + String.valueOf(mPreset));
+		String[] projection = {RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER};  
+		String selection = null;
+		String[] selectionArgs = null;
+		String sortOrder = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER;
+		Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
+		int count = cursor.getCount();
+		if (count < 1)
+		{
+			log("no station found below current, but not 0", "e");
+			throw new SQLiteException("No station found below current, but not 0"); //TODO find correct exception to throw, or handle this some other way
+		}
+		else
+		{
+			cursor.moveToFirst();
+			mPreset = (int)cursor.getLong(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER));
+			log("decremented preset, playing " + String.valueOf(mPreset), "v");
+			play();	
+		}
 	}
 	
 	protected Intent getWidgetUpdateIntent(String text1, String text2)
@@ -589,18 +671,18 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		this.sendBroadcast(intent);
 	}
 	
-	protected void updateNotification(String status, String stopText)
-	{
-		this.updateNotification(status, stopText, true);
-	}
-	
-	protected void updateNotification(String status, String stopText, boolean reset)
+	protected Notification updateNotification(String status, String stopText, boolean updateTicker)
 	{
 		
 		NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
 			.setContentTitle(String.valueOf(mPreset) + ". " + mTitle)
 			.setContentText(status)
-			.addAction(R.drawable.av_stop, stopText, getStopIntent())
+			//.addAction(R.drawable.av_previous, getResources().getString(R.string.previous), getPreviousIntent())
+			//.addAction(R.drawable.av_stop, stopText, getStopIntent())
+			//.addAction(R.drawable.av_next, getResources().getString(R.string.next), getNextIntent())
+			.addAction(R.drawable.av_previous, null, getPreviousIntent())
+			.addAction(R.drawable.av_stop, null, getStopIntent())
+			.addAction(R.drawable.av_next, null, getNextIntent())
 			.setSmallIcon(R.drawable.app_notification);
 		//PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
 		//TODO taskstack builder only available since 4.1
@@ -611,15 +693,17 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		stackBuilder.addNextIntent(resultIntent);
 		PendingIntent intent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_CANCEL_CURRENT);
 		builder.setContentIntent(intent);
-		if (reset)
+		if (updateTicker)
 		{
-			startForeground(ONGOING_NOTIFICATION, builder.build());
+			builder.setTicker(status);
+			//startForeground(ONGOING_NOTIFICATION, builder.build());
 		}
 		else
 		{
-			mNotificationManager.notify(ONGOING_NOTIFICATION, builder.build());
+			//mNotificationManager.notify(ONGOING_NOTIFICATION, builder.build());
 		}
 		this.updateWidget(status);
+		return builder.build();
 	}
 	
 	protected void initializePlayer(MediaPlayer player)
@@ -998,7 +1082,8 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 					}
 					else if (mInterrupted == false)
 					{
-						updateNotification("Network updated, reconnecting", "Cancel", true);
+						Notification notification = updateNotification("Network updated, reconnecting", "Cancel", true);
+						mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 						str += " and now interrupted";
 						mInterrupted = true;	
 					}
@@ -1091,7 +1176,8 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 				{
 					mMediaPlayer.release();
 					mMediaPlayer = null;
-					updateNotification("Waiting for network", "Cancel", true);
+					Notification notification = updateNotification("Waiting for network", "Cancel", true);
+					mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 					log("-------------------------------", "d");
 					log("network connection lost while preparing? set null mediaplayer", "d");
 					log("-------------------------------", "d");
@@ -1110,7 +1196,8 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 				}
 				else if (state == RadioPlayer.STATE_ERROR)
 				{
-					updateNotification("Error. Will resume?", "Cancel", true);
+					Notification notification = updateNotification("Error. Will resume?", "Cancel", true);
+					mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 					mMediaPlayer.release();
 					mMediaPlayer = null;
 					log("-------------------------------", "d");
@@ -1123,12 +1210,14 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 				}
 				else if (state == RadioPlayer.STATE_PLAYING)
 				{
-					updateNotification("Waiting for network", "Cancel", true);
+					Notification notification = updateNotification("Waiting for network", "Cancel", true);
+					mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 					log("disconnected while playing. should resume when network does", "i");
 				}
 				else if (state == RadioPlayer.STATE_BUFFERING)
 				{
-					updateNotification("Waiting for network", "Cancel", true);
+					Notification notification = updateNotification("Waiting for network", "Cancel", true);
+					mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 					log("disconnected while buffering. should resume when network does", "i");
 				}
 				else if (state == RadioPlayer.STATE_UNINITIALIZED)
@@ -1150,11 +1239,13 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 				{
 					if (mPreset == 0)
 					{
-						updateNotification("bad state detected", "stop?", true);
+						Notification notification = updateNotification("bad state detected", "stop?", true);
+						mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 					}
 					else
 					{
-						updateNotification("Waiting for network?", "Cancel", true);
+						Notification notification = updateNotification("Waiting for network?", "Cancel", true);
+						mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 					}
 					log("-------------------------------", "d");
 					log("other state", "i");
