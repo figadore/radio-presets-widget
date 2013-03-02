@@ -35,6 +35,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteException;
+import android.graphics.drawable.BitmapDrawable;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
@@ -698,7 +699,9 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			//.addAction(R.drawable.av_next, getResources().getString(R.string.next), getNextIntent())
 			.addAction(R.drawable.av_previous, null, getPreviousIntent())
 			.addAction(R.drawable.av_stop, null, getStopIntent())
+			.setUsesChronometer(true)
 			.addAction(R.drawable.av_next, null, getNextIntent())
+			.setLargeIcon(((BitmapDrawable)getResources().getDrawable(R.drawable.app_icon)).getBitmap())
 			.setSmallIcon(R.drawable.app_notification);
 		//PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
 		//TODO taskstack builder only available since 4.1
