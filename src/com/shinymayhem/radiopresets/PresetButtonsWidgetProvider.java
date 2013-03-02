@@ -54,6 +54,7 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 		log("onReceive()", "i");
 		if (intent.getAction() == ACTION_UPDATE_TEXT)
 		{
+			log("update text action", "i");
 			Bundle extras = intent.getExtras();
 			String text1 = extras.getString(EXTRA_TEXT1);
 			String text2 = extras.getString(EXTRA_TEXT2);
@@ -61,6 +62,15 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 		}
 		else
 		{
+			if (intent.getAction() == null)
+			{
+				log("no action", "i");	
+			}
+			else
+			{
+				log("other action:" + String.valueOf(intent.getAction()), "i");	
+			}
+			
 			super.onReceive(context, intent);	
 		}
 		
