@@ -467,7 +467,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	//possible start states: any
 	protected void play(int preset)
 	{
-		log("play(url)", "d");
+		log("play(preset)", "d");
 		if (preset == 0)
 		{
 			log("preset = 0", "e");
@@ -1189,6 +1189,10 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 					{
 						str += " but stopped so it doesn't matter. ";
 					}
+					else if (state == RadioPlayer.STATE_END)
+					{
+						str += " but ended so it doesn't matter. ";
+					}
 					else if (state == RadioPlayer.STATE_PAUSED || state == RadioPlayer.STATE_PHONE)
 					{
 						str += " but paused so it doesn't matter. ";
@@ -1218,9 +1222,10 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 							state == RadioPlayer.STATE_STOPPED || 
 							state == RadioPlayer.STATE_STOPPING ||
 							state == RadioPlayer.STATE_PAUSED || 
-							state == RadioPlayer.STATE_PHONE)
+							state == RadioPlayer.STATE_PHONE|| 
+							state == RadioPlayer.STATE_END)
 					{
-						log("unitialized or stopped/paused, don't try to start or restart", "i");
+						log("unitialized or stopped/paused/ended, don't try to start or restart", "i");
 						return;
 					}
 					boolean start = false;
@@ -1241,7 +1246,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 						catch (IllegalStateException e)
 						{
 							log("illegal state detected, can't restart, start from scratch instead", "e");
-							start = true;
+							start = true; 
 						}
 						//can't set nextplayer after complete, so just start fresh
 						if (state == RadioPlayer.STATE_COMPLETE || start)
