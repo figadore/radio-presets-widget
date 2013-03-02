@@ -1136,6 +1136,15 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	    		log("resuming after phone call", "i");
 	    		resume();
 	    	}
+	    	else
+	    	{
+	    		log("outgoing phone call?", "i");
+	    		if (isPlaying())
+	    		{
+	    			pause();
+	    			state = STATE_PHONE;
+	    		}
+	    	}
 	        
 	    }
 	}
