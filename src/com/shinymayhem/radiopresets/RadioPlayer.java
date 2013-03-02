@@ -48,6 +48,7 @@ import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
+import android.telephony.TelephonyManager;
 import android.widget.Toast;
 
 public class RadioPlayer extends Service implements OnPreparedListener, OnInfoListener, OnCompletionListener, OnErrorListener {
@@ -65,6 +66,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	public final static String STATE_PLAYING = "Playing";
 	public final static String STATE_BUFFERING = "Buffering";
 	public final static String STATE_PAUSED = "Paused";
+	public final static String STATE_PHONE = "Phone";
 	public final static String STATE_ERROR = "Error";
 	public final static String STATE_RESTARTING = "Restarting";
 	public final static String STATE_STOPPING = "Stopping";
@@ -77,7 +79,8 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	protected MediaPlayer mMediaPlayer;
 	protected MediaPlayer mNextPlayer;
 	private NetworkReceiver mReceiver;
-	private NoisyAudioStreamReceiver mNoisyReceiver; 
+	private NoisyAudioStreamReceiver mNoisyReceiver;
+	private PhoneCallReceiver mPhoneReceiver;
 	protected String mUrl;
 	protected String mTitle;
 	protected int mPreset;
@@ -539,6 +542,19 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			log("noisy receiver already registered", "v");
 		}
 		
+		//begin listen for phone call
+		if (mPhoneReceiver == null)
+		{
+			mPhoneReceiver = new PhoneCallReceiver();
+			IntentFilter intentFilter = new IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
+			registerReceiver(mPhoneReceiver, intentFilter);
+			log("register phone receiver", "v");	
+		}
+		else
+		{
+			log("phone receiver already registered", "v");
+		}
+		
 		
 		if (mMediaPlayer != null)
 		{
@@ -741,7 +757,55 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		}
 		
 	}
-
+	
+	protected void pause()
+	{
+		log("pause()", "v");
+		if (mMediaPlayer == null)
+		{
+			log("null media player", "e");
+		}
+		else if (state == RadioPlayer.STATE_PREPARING)
+		{
+			log("pause called while preparing", "v");
+			mMediaPlayer.release();
+			mMediaPlayer = null;
+		}
+		else
+		{
+			log("pause playback", "v");
+			
+			mMediaPlayer.stop();
+			mMediaPlayer.release();
+			mMediaPlayer = null;
+			
+			Notification notification = updateNotification("Paused", "Cancel", false);
+			mNotificationManager.notify(ONGOING_NOTIFICATION, notification);	
+		}
+		
+		/*try
+		{
+			unregisterReceiver(mNoisyReceiver);
+			mNoisyReceiver = null;
+			log("unregistering noisyReceiver", "v");
+		}
+		catch (IllegalArgumentException e)
+		{
+			log("noisyReceiver already unregistered", "e");
+		}*/
+		state = STATE_PAUSED;
+	}
+	
+	protected void resume()
+	{
+		log("resume()", "v");
+		/*mNoisyReceiver = new NoisyAudioStreamReceiver();
+		IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+		registerReceiver(mNoisyReceiver, intentFilter);
+		log("register noisy receiver", "v");*/
+		play();
+	}
+	
 	//called from onDestroy, end
 	protected void stop()
 	{
@@ -773,7 +837,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		}
 		else if (state == RadioPlayer.STATE_PREPARING)
 		{
-			state = RadioPlayer.STATE_STOPPING;
+			state = RadioPlayer.STATE_STOPPING; //store oldstate to move state change outside of conditionals
 			log("stop called while preparing", "v");
 			stopInfo(); //stopForeground(true);
 			mMediaPlayer.release();
@@ -800,6 +864,17 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		catch (IllegalArgumentException e)
 		{
 			log("noisyReceiver already unregistered", "e");
+		}
+		
+		try
+		{
+			unregisterReceiver(mPhoneReceiver);
+			mPhoneReceiver = null;
+			log("unregistering phoneReceiver", "v");
+		}
+		catch (IllegalArgumentException e)
+		{
+			log("phoneReceiver already unregistered", "e");
 		}
 		
 		//clear any intents so player isn't started accidentally
@@ -914,19 +989,16 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	
 	public boolean isPlaying()
 	{
-		if (
+		return (
 				state == RadioPlayer.STATE_BUFFERING || 
 				state == RadioPlayer.STATE_PLAYING ||
 				state == RadioPlayer.STATE_PAUSED ||
+				state == RadioPlayer.STATE_PHONE ||
 				state == RadioPlayer.STATE_PREPARING ||
 				state == RadioPlayer.STATE_INITIALIZING ||
 				state == RadioPlayer.STATE_COMPLETE || //service should still stay alive and listen for network changes to resume
 				state == RadioPlayer.STATE_RESTARTING
-			)
-		{
-			return true;
-		}
-		return false;
+			);
 	}
 	
 	protected boolean isConnected()
@@ -1033,10 +1105,38 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	private class NoisyAudioStreamReceiver extends BroadcastReceiver {
 	    @Override
 	    public void onReceive(Context context, Intent intent) {
-	        if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
+	        if (state != STATE_PHONE && state != STATE_PAUSED && AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
 	        	log("headphones unplugged", "i");
 	        	end();
 	        }
+	        else
+	        {
+	        	log("headphones unplugged, but it is paused", "i");
+	        }
+	    }
+	}
+	
+	private class PhoneCallReceiver extends BroadcastReceiver {
+	    @Override
+	    public void onReceive(Context context, Intent intent) {
+	    	log("phone call receiver onReceive()", "v");
+	    	String phoneState = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
+	    	if (phoneState.equals(TelephonyManager.EXTRA_STATE_RINGING))
+	    	{
+	    		log("phone ringing", "i");
+	    		if (isPlaying())
+	    		{
+	    			pause();
+	    			state = STATE_PHONE;
+	    		}
+	    		
+	    	}
+	    	else if (phoneState.equals(TelephonyManager.EXTRA_STATE_IDLE) && state.equals(STATE_PHONE))
+	    	{
+	    		log("resuming after phone call", "i");
+	    		resume();
+	    	}
+	        
 	    }
 	}
 	
@@ -1080,6 +1180,10 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 					{
 						str += " but stopped so it doesn't matter. ";
 					}
+					else if (state == RadioPlayer.STATE_PAUSED || state == RadioPlayer.STATE_PHONE)
+					{
+						str += " but paused so it doesn't matter. ";
+					}
 					else if (mInterrupted == false)
 					{
 						Notification notification = updateNotification("Network updated, reconnecting", "Cancel", true);
@@ -1100,10 +1204,14 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 					log("setting network state ivar", "v");
 					mNetworkState = newState;
 					
-					//if uninitialized, no preset picked yet. if stopped, don't restart
-					if (state == RadioPlayer.STATE_UNINITIALIZED || state == RadioPlayer.STATE_STOPPED || state == RadioPlayer.STATE_STOPPING)
+					//if uninitialized, no preset picked yet. if stopped or paused, don't restart
+					if (state == RadioPlayer.STATE_UNINITIALIZED || 
+							state == RadioPlayer.STATE_STOPPED || 
+							state == RadioPlayer.STATE_STOPPING ||
+							state == RadioPlayer.STATE_PAUSED || 
+							state == RadioPlayer.STATE_PHONE)
 					{
-						log("unitialized or stopped, don't try to start or restart", "i");
+						log("unitialized or stopped/paused, don't try to start or restart", "i");
 						return;
 					}
 					boolean start = false;
