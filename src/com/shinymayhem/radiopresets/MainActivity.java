@@ -25,6 +25,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.database.sqlite.SQLiteException;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -83,6 +84,9 @@ public class MainActivity extends Activity implements AddDialogListener, EventDi
 					.add(R.id.fragment_container, stationsFragment)
 					.commit();
 		}
+		
+		//while app is visible, volume buttons should adjust music stream volume
+		setVolumeControlStream(AudioManager.STREAM_MUSIC);
 		
 	}
 	

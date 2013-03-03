@@ -30,6 +30,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.app.TaskStackBuilder;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -37,6 +38,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteException;
 import android.graphics.drawable.BitmapDrawable;
 import android.media.AudioManager;
+import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.media.MediaPlayer.OnErrorListener;
@@ -50,16 +52,18 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.telephony.TelephonyManager;
+import android.view.KeyEvent;
 import android.widget.Toast;
 
-public class RadioPlayer extends Service implements OnPreparedListener, OnInfoListener, OnCompletionListener, OnErrorListener {
+public class RadioPlayer extends Service implements OnPreparedListener, OnInfoListener, OnCompletionListener, OnErrorListener, OnAudioFocusChangeListener {
 	
 	public final static int ONGOING_NOTIFICATION = 1;
-	public final static String ACTION = "com.shinymayhem.radiopresets.ACTION";
-	public final static String ACTION_STOP = "Stop";
-	public final static String ACTION_PLAY = "Play";
-	public final static String ACTION_NEXT = "Next";
-	public final static String ACTION_PREVIOUS = "Previous";
+	//public final static String ACTION = "com.shinymayhem.radiopresets.ACTION";
+	public final static String ACTION_STOP = "com.shinymayhem.radiopresets.ACTION_STOP";
+	public final static String ACTION_PLAY = "com.shinymayhem.radiopresets.ACTION_PLAY";
+	public final static String ACTION_NEXT = "com.shinymayhem.radiopresets.ACTION_NEXT";
+	public final static String ACTION_PREVIOUS = "com.shinymayhem.radiopresets.ACTION_PREVIOUS";
+	public final static String ACTION_MEDIA_BUTTON = "com.shinymayhem.radiopresets.MEDIA_BUTTON";
 	public String state = STATE_UNINITIALIZED;
 	public final static String STATE_UNINITIALIZED = "Uninitialized";
 	public final static String STATE_INITIALIZING = "Initializing";
@@ -82,6 +86,11 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	private NetworkReceiver mReceiver;
 	private NoisyAudioStreamReceiver mNoisyReceiver;
 	private PhoneCallReceiver mPhoneReceiver;
+	private AudioManager mAudioManager;
+	private boolean mMediaButtonEventReceiverRegistered = false;
+	private MediaButtonReceiver mButtonReceiver;// = new MediaButtonReceiver();
+	//private OnAudioFocusChangeListener mFocusListener;
+	private boolean mAudioFocused = false;
 	protected String mUrl;
 	protected String mTitle;
 	protected int mPreset;
@@ -103,45 +112,43 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	@Override
 	public void onCreate()
 	{
+		log("onCreate()", "d");
+		
+		//initialize managers
 		if (mNotificationManager == null)
 		{
 			mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		} 
-		log("onCreate()", "d");
-		//remove pending intents if they exist
-		stopInfo(); //stopForeground(true);
-		IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-		if (mReceiver != null)
+		if (mAudioManager == null)
 		{
-			log("------------------------------------------", "v");
-			log("network receiver already registered, find out why", "w"); 
-			log("------------------------------------------", "v");
-			this.unregisterReceiver(mReceiver);
-			mReceiver = null;
+			mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 		}
-		mReceiver = new NetworkReceiver();
-        //Log.i(getPackageName(), "creating service, registering broadcast receiver");
-        log("registering network change broadcast receiver", "v");
-		this.registerReceiver(mReceiver, filter);
+		
+		//remove pending intents if they exist
+		stopInfo(); 
+
+		registerNetworkReceiver();
+		registerButtonReceiver();
+		
 	}
 	
 	
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		// Registers BroadcastReceiver to track network connection changes.
-		mIntent = intent;
+		log("onStartCommand()", "d");
+
+		//check if resuming after close for memory, or other crash
 		if ((flags & Service.START_FLAG_REDELIVERY) != 0)
 		{
 			log("------------------------------------------", "v");
 			log("intent redelivery, restarting. maybe handle this with dialog? notification with resume action?", "v");
 			log("------------------------------------------", "v");
 		}
-		log("onStartCommand()", "d");
-		//Log.i(getPackageName(), "service start command");
+		
+		mIntent = intent;
 		if (intent == null)
 		{
 			log("no intent", "w");
-			//Log.i(getPackageName(), "No intent");
 		}
 		else
 		{
@@ -153,35 +160,32 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 				//return flag indicating no further action needed if service is stopped by system and later resumes
 				return START_NOT_STICKY;
 			}
-			else if (action.equals(Intent.ACTION_RUN))
+			else if (action.equals(Intent.ACTION_RUN)) //called when service is being bound
 			{
 				log("service being started before bound", "i");
-				//String url = intent.getStringExtra(MainActivity.URL);	
-				//play(url);
 				return START_NOT_STICKY;
 			}
-			else if (action.equals(ACTION_PLAY.toString()))
+			else if (action.equals(ACTION_PLAY.toString())) //Play intent
 			{
 				log("PLAY action in intent", "i");
-				//String url = intent.getStringExtra(MainActivity.URL);
 				int preset = Integer.valueOf(intent.getIntExtra(MainActivity.EXTRA_STATION_PRESET, 0));	
 				log("preset in action:" + String.valueOf(preset), "i");
 				play(preset);
 				return START_REDELIVER_INTENT;
 			}
-			else if (action.equals(ACTION_NEXT.toString()))
+			else if (action.equals(ACTION_NEXT.toString())) //Next preset intent
 			{
 				log("NEXT action in intent", "i");	
 				nextPreset();
 				return START_NOT_STICKY;
 			}
-			else if (action.equals(ACTION_PREVIOUS.toString()))
+			else if (action.equals(ACTION_PREVIOUS.toString())) //Previous preset intent
 			{
 				log("PREVIOUS action in intent", "i");	
 				previousPreset();
 				return START_NOT_STICKY;
 			}
-			else if (action.equals(ACTION_STOP.toString()))
+			else if (action.equals(ACTION_STOP.toString())) //Stop intent
 			{
 				log("STOP action in intent", "i");	
 				end();
@@ -196,18 +200,6 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			
 			}
 		}
-		//this.url = intent.getStringExtra(MainActivity.URL);
-		//String url = intent.getStringExtra(MainActivity.URL);
-		//if (url != null)
-		//{
-			//this.url = url;
-		//}
-		//String str = "url:";
-		//str += this.url;
-		//Log.i(getPackageName(), str);
-		//this.play();
-		
-		
 		
 		//return START_STICKY;
 		return START_NOT_STICKY;
@@ -225,22 +217,37 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		}
 		else
 		{
-			log("mediaPlayer.start()", "v");
-			mediaPlayer.start();
-			state = RadioPlayer.STATE_PLAYING;
-			if (mInterrupted)
+			int result = mAudioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+			if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
 			{
-				log("set interrupted = false", "v");
-			}
-			mInterrupted = false;
+				mAudioFocused = true;
+				
+				log("mediaPlayer.start()", "v");
+				mediaPlayer.start();
+				state = RadioPlayer.STATE_PLAYING;
+				if (mInterrupted)
+				{
+					log("set interrupted = false", "v");
+				}
+				mInterrupted = false;
 
-			Notification notification = updateNotification("Playing", "Stop", true);
-			mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
-			startForeground(ONGOING_NOTIFICATION, notification);
+				Notification notification = updateNotification("Playing", "Stop", true);
+				mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
+				startForeground(ONGOING_NOTIFICATION, notification);
+				
+				
+				log("start foreground notification: playing", "v");
+				Toast.makeText(this, "Playing", Toast.LENGTH_SHORT).show();
+			}
+			else if (result == AudioManager.AUDIOFOCUS_REQUEST_FAILED)
+			{
+				mAudioFocused = false;
+				log("audio focus failed", "w");
+				//TODO find a better way to deal with this
+				Toast.makeText(this, "Could not gain audio focus", Toast.LENGTH_SHORT).show();
+			}
 			
 			
-			log("start foreground notification: playing", "v");
-			Toast.makeText(this, "Playing", Toast.LENGTH_SHORT).show();
 		}
 	}
 	
@@ -412,6 +419,103 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	}
 	
 
+	@Override
+	public void onAudioFocusChange(int focusChange) {
+		if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT)
+		{
+			mAudioFocused = false;
+			log("AUDIOFOCUS_LOSS_TRANSIENT", "v");
+	        // Pause playback
+			pause();
+        } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
+        	mAudioFocused = true;
+        	log("AUDIOFOCUS_GAIN", "v");
+        	// Resume playback or unduck
+        	if (!isPlaying())
+        	{
+        		if (mPreset == 0)
+        		{
+        			//should this really start playing? 
+        			play(1); //TODO get from storage
+        		} 
+        	}
+        	else
+        	{
+        		if (state == STATE_PAUSED)
+        		{
+        			resume();
+        		}
+        		else
+        		{
+        			log("focus gained,  but not resumed?", "w");
+        			//play();
+        		}
+        	}
+        	unduck();
+            
+        } else if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
+        	
+        	log("AUDIOFOCUS_LOSS", "v");
+        	if (mMediaButtonEventReceiverRegistered)
+        	{
+        		log("unregister button receiver", "v");
+        		mAudioManager.unregisterMediaButtonEventReceiver(new ComponentName(getPackageName(), RemoteControlReceiver.class.getName()));
+            	mMediaButtonEventReceiverRegistered = false;	
+        	}
+        	else
+        	{
+        		log("button receiver already unregistered", "v");
+        	}
+        	if (mAudioFocused)
+        	{
+        		log("abandon focus", "v");
+        		mAudioManager.abandonAudioFocus(this);
+        		mAudioFocused = false;
+        		
+        	}
+        	else
+        	{
+        		log("focus already abandoned", "v");
+        	}
+            // Stop playback
+        	stop();
+
+        }
+        else if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
+            // Lower the volume
+        	log("AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK", "v");
+        	duck();
+        } 
+		
+	}
+	
+	private void duck()
+	{
+		log("duck()", "v");
+		//mDucked = true;
+		if (mMediaPlayer != null)
+		{
+			
+			int volume = 20;
+			float log1=(float)(Math.log(100-volume)/Math.log(100));
+			log("lowering volume to " +  String.valueOf(log1), "v");
+			mMediaPlayer.setVolume(1-log1, 1-log1);
+			//mMediaPlayer.setVolume(leftVolume, rightVolume)
+		}
+	}
+	
+	private void unduck()
+	{
+		log("unduck()", "v");
+		//mDucked = false;
+		if (mMediaPlayer != null)
+		{
+			mMediaPlayer.setVolume(1, 1);
+			
+			//mMediaPlayer.setVolume(leftVolume, rightVolume)
+		}
+	}
+
 	private void stopInfo(String status)
 	{
 		stopForeground(true);
@@ -423,6 +527,46 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		this.stopInfo(getResources().getString(R.string.widget_stopped_status));
 	}
 	
+	private void registerNetworkReceiver()
+	{
+		//register network receiver
+		IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+		if (mReceiver != null)
+		{
+			log("------------------------------------------", "v");
+			log("network receiver already registered, find out why", "w"); 
+			log("------------------------------------------", "v");
+			this.unregisterReceiver(mReceiver);
+			mReceiver = null;
+		}
+		mReceiver = new NetworkReceiver();
+        log("registering network change broadcast receiver", "v");
+		this.registerReceiver(mReceiver, filter);
+
+
+	}
+	
+	private void registerButtonReceiver()
+	{
+		//register media button receiver
+		if (mButtonReceiver != null)
+		{
+			log("media button listener already registered", "v");
+			this.unregisterReceiver(mButtonReceiver);
+			mButtonReceiver = null;	
+		}
+		log("register media button listener", "v");
+		mButtonReceiver = new MediaButtonReceiver();
+		registerReceiver(mButtonReceiver, new IntentFilter(ACTION_MEDIA_BUTTON));
+		
+		//set RemoteControlReceiver to be the sole receiver of media button actions
+		if (mMediaButtonEventReceiverRegistered == false)
+		{
+			log("registering media button listener", "v");
+			mAudioManager.registerMediaButtonEventReceiver(new ComponentName(getPackageName(), RemoteControlReceiver.class.getName()));
+			mMediaButtonEventReceiverRegistered = true;
+		}
+	}
 	
 	protected PendingIntent getPreviousIntent()
 	{
@@ -543,6 +687,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			log("noisy receiver already registered", "v");
 		}
 		
+		
 		//begin listen for phone call
 		if (mPhoneReceiver == null)
 		{
@@ -631,7 +776,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	{
 		log("previousPreset()", "v");
 		mPreset--;
-		if (mPreset == 0)
+		if (mPreset <= 0)
 		{
 			Uri maxUri = RadioContentProvider.CONTENT_URI_PRESETS_MAX;
 			Bundle values = getContentResolver().call(maxUri, "getMaxPresetNumber", null, null);  
@@ -767,7 +912,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		log("pause()", "v");
 		if (mMediaPlayer == null)
 		{
-			log("null media player", "e");
+			log("null media player", "w");
 		}
 		else if (state == RadioPlayer.STATE_PREPARING)
 		{
@@ -780,13 +925,22 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			log("pause playback", "v");
 			
 			mMediaPlayer.stop();
+			if (mAudioFocused)
+			{
+				log("abandon audio focus", "v");
+				mAudioManager.abandonAudioFocus(this);
+			}
+			else
+			{
+				log("audio focus already abandoned", "w");
+			}
 			mMediaPlayer.release();
 			mMediaPlayer = null;
 			
-			Notification notification = updateNotification("Paused", "Cancel", false);
-			mNotificationManager.notify(ONGOING_NOTIFICATION, notification);	
+				
 		}
-		
+		Notification notification = updateNotification("Paused", "Cancel", false);
+		mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 		/*try
 		{
 			unregisterReceiver(mNoisyReceiver);
@@ -807,7 +961,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
 		registerReceiver(mNoisyReceiver, intentFilter);
 		log("register noisy receiver", "v");*/
-		play();
+		play(); 
 	}
 	
 	//called from onDestroy, end
@@ -837,7 +991,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		if (mMediaPlayer == null)
 		{
 			state = RadioPlayer.STATE_STOPPING;
-			log("null media player", "e");
+			log("null media player", "w");
 		}
 		else if (state == RadioPlayer.STATE_PREPARING)
 		{
@@ -854,6 +1008,15 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			Toast.makeText(this, "Stopping playback", Toast.LENGTH_SHORT).show();
 			stopInfo(); //stopForeground(true);
 			mMediaPlayer.stop();
+			if (mAudioFocused == true)
+			{
+				log("abandon audio focus", "v");
+				mAudioManager.abandonAudioFocus(this);
+			}
+			else
+			{
+				log("focus already abandoned", "w");
+			}
 			//mediaPlayer.reset();
 			mMediaPlayer.release();
 			mMediaPlayer = null;
@@ -1102,8 +1265,70 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		{
 			log("unregistering network receiver failed, null", "e");
 		}
-		
+		if (mButtonReceiver != null) {
+			log("unregister media button receiver", "v");
+            this.unregisterReceiver(mButtonReceiver);
+            mButtonReceiver = null;
+        }
+		else
+		{
+			log("unregistering network receiver failed, null", "e");
+		}
 		 
+	}
+	
+	
+	
+	public class MediaButtonReceiver extends BroadcastReceiver {
+	    @Override
+	    public void onReceive(Context context, Intent intent) {
+	    	log("received remote control action", "i");
+	        if (ACTION_MEDIA_BUTTON.equals(intent.getAction())) {
+	        	KeyEvent event = (KeyEvent)intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+	        	switch (event.getKeyCode())
+	        	{
+	        		case KeyEvent.KEYCODE_MEDIA_PLAY:
+	        			break;
+	        		case KeyEvent.KEYCODE_MEDIA_NEXT:
+	        		case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
+	        			nextPreset();
+	        			break;
+	        		case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+	        		case KeyEvent.KEYCODE_MEDIA_REWIND:
+	        			previousPreset();
+	        			break;
+	        		case KeyEvent.KEYCODE_MEDIA_PAUSE:
+	        		case KeyEvent.KEYCODE_MEDIA_STOP:
+	        			stop();
+	        			break;
+	        		case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+	        		case KeyEvent.KEYCODE_HEADSETHOOK:
+	        			if (isPlaying() && state != STATE_PAUSED)
+	        			{
+	        				pause();
+	        			}
+	        			else
+	        			{
+	        				if (mPreset == 0) //TODO store last played preset somewhere
+	        				{
+	        					play(1);	
+	        				}
+	        				else
+	        				{
+	        					resume();
+	        				}
+	        				
+	        			}
+	        		default:
+	        			log("other button:" + String.valueOf(event.getKeyCode()), "v");
+	        	}
+	           
+	        }
+	        else
+	        {
+	        	log("other remote action?", "v");
+	        }
+	    }
 	}
 	
 	private class NoisyAudioStreamReceiver extends BroadcastReceiver {
@@ -1463,5 +1688,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			
 		}
 	}
+
+
 	
 }

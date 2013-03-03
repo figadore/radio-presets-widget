@@ -42,7 +42,11 @@
 		        android:name="com.shinymayhem.radiopresets.RadioContentProvider"
 		        android:exported="false" >
     	</provider>
-    	
+    	<receiver android:name="RemoteControlReceiver">
+    	    <intent-filter>
+    	        <action android:name="android.intent.action.MEDIA_BUTTON" />
+    	    </intent-filter>
+    	</receiver>
         <receiver android:name="PresetButtonsWidgetProvider" 
             android:label="A Radio Presets">
 		    <intent-filter>
