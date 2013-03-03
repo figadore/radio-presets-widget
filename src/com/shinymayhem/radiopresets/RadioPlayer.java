@@ -53,6 +53,7 @@ import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.telephony.TelephonyManager;
 import android.view.KeyEvent;
+import android.webkit.URLUtil;
 import android.widget.Toast;
 
 public class RadioPlayer extends Service implements OnPreparedListener, OnInfoListener, OnCompletionListener, OnErrorListener, OnAudioFocusChangeListener {
@@ -370,7 +371,10 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		{
 			try
 			{
-				mediaPlayer.stop();
+				if (state != RadioPlayer.STATE_PREPARING)
+				{
+					mediaPlayer.stop();	
+				}
 				log("media player stopped", "i");
 			}
 			catch (IllegalStateException e)
@@ -387,11 +391,16 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		String statusString = "";
 		if (oldState == "Preparing")
 		{
+			//TODO notify user somehow
 			statusString = "An error occurred while trying to connect to the server. ";
+			if (what == MediaPlayer.MEDIA_ERROR_UNKNOWN && extra == -2147483648)
+			{
+				statusString += "Bad URL or file format?";
+			}
 		}
 		else
 		{
-			statusString = "Error:"; 
+			statusString = "Not error while preparing:"; 
 		}
 		if (what == MediaPlayer.MEDIA_ERROR_UNKNOWN && extra == MediaPlayer.MEDIA_ERROR_IO)
 		{
@@ -1221,6 +1230,35 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		log(str, "i");
 		return newState;
 	}
+	
+	public static boolean validateUrl(String url)
+	{	
+		
+		if (!URLUtil.isHttpUrl(url) && !URLUtil.isHttpsUrl(url))
+		{
+			//log("not a valid http or https url", "i");
+			return false;
+		}
+		//check for empty after prefix
+		if (url == "http://" || url == "https://")
+		{
+			return false;
+		}
+		
+		MediaPlayer mediaPlayer = new MediaPlayer();
+		mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+		try
+		{
+			mediaPlayer.setDataSource(url);
+			mediaPlayer.release();
+		}
+		catch (IOException e) 
+		{
+			return false;
+		}
+		return true;
+	}
+	
 
 	@Override
 	public IBinder onBind(Intent intent) {

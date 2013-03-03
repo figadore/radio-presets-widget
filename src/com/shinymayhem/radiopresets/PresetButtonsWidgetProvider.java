@@ -354,14 +354,20 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 	*/
 	private int getWidth(Bundle newOptions)
 	{
+		//in portrait
 		int minWidth = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
+		//in landscape
+		//int minWidth = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH);
 		return minWidth;
 	}
 
 	
 	private int getHeight(Bundle newOptions)
 	{
+		//in landscape
 		int minHeight = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
+		//in portrait
+		//int minHeight = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
 		return minHeight;
 	}
 

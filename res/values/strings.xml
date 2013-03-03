@@ -9,6 +9,7 @@
     <string name="next">Next</string>
     <string name="add_station">Add</string>
     <string name="edit_station">Edit</string>
+    <string name="initial_url">http://</string>
     <string name="delete_station">Delete</string>
     <string name="station_details_title">Station Details</string>
     <string name="event_details">Event details</string>

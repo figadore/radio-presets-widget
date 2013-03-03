@@ -22,6 +22,7 @@ import android.app.DialogFragment;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.View;
 
 public class AddDialogFragment extends DialogFragment {
 
@@ -34,8 +35,8 @@ public class AddDialogFragment extends DialogFragment {
 	
 	public interface AddDialogListener
 	{
-		public void onDialogPositiveClick(DialogFragment dialog);
-		public void onDialogNegativeClick(DialogFragment dialog);
+		public void onDialogPositiveClick(View view);
+		public void onDialogNegativeClick();
 	}
 	
 	AddDialogListener mListener;
@@ -64,18 +65,19 @@ public class AddDialogFragment extends DialogFragment {
         
      // Get the layout inflater
         LayoutInflater inflater = getActivity().getLayoutInflater();
-        
-        builder.setView(inflater.inflate(R.layout.dialog_station_details, null))
+        final View view = inflater.inflate(R.layout.dialog_station_details, null);
+        //EditText titleView = (EditText) view.findViewById(R.id.station_title);
+        builder.setView(view)
                .setPositiveButton(R.string.add_station, new DialogInterface.OnClickListener() {
                    public void onClick(DialogInterface dialog, int id) {
                        // Send the positive button event back to the host activity
-                       mListener.onDialogPositiveClick(AddDialogFragment.this);
+                       mListener.onDialogPositiveClick(view);
                    }
                })
                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
                    public void onClick(DialogInterface dialog, int id) {
                        // Send the negative button event back to the host activity
-                       mListener.onDialogNegativeClick(AddDialogFragment.this);
+                       mListener.onDialogNegativeClick();
                    }
                })
                .setTitle(R.string.station_details_title);

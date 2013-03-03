@@ -351,7 +351,7 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		builder.show();
 	}
 	
-	private void editStation(long id, View view)
+	private void editStation(final long id, View view)
 	{
 		log("id:" + String.valueOf(id), "i"); 
 		// User touched the dialog's positive button
@@ -360,17 +360,57 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		EditText urlView = (EditText)view.findViewById(R.id.station_url);
 		
 		//int preset = 1;
-		String title = titleView.getText().toString();
-		String url = urlView.getText().toString();
-		ContentValues values = new ContentValues();
-		//values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, preset);
-        values.put(RadioDbContract.StationEntry.COLUMN_NAME_TITLE, title);
-        values.put(RadioDbContract.StationEntry.COLUMN_NAME_URL, url);
-		//CursorLoader var = getLoaderManager().getLoader(MainActivity.LOADER_STATIONS);
-        //TODO see if there is a better way to do this, like addId or something
-        Uri uri = Uri.parse(RadioContentProvider.CONTENT_URI_STATIONS.toString() + "/" + String.valueOf(id));
-		int updatedCount = this.getActivity().getContentResolver().update(uri, values, null, null);
-		log("updated " + updatedCount + " rows.", "v");
+		String title = titleView.getText().toString().trim();
+		String url = urlView.getText().toString().trim();
+		
+		boolean valid = RadioPlayer.validateUrl(url);
+		if (valid)
+		{
+			ContentValues values = new ContentValues();
+			//values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, preset);
+	        values.put(RadioDbContract.StationEntry.COLUMN_NAME_TITLE, title);
+	        values.put(RadioDbContract.StationEntry.COLUMN_NAME_URL, url);
+			//CursorLoader var = getLoaderManager().getLoader(MainActivity.LOADER_STATIONS);
+	        //TODO see if there is a better way to do this, like addId or something
+	        Uri uri = Uri.parse(RadioContentProvider.CONTENT_URI_STATIONS.toString() + "/" + String.valueOf(id));
+			int updatedCount = this.getActivity().getContentResolver().update(uri, values, null, null);
+			log("updated " + updatedCount + " rows.", "v");
+		}
+		else
+		{
+			//code duplication in MainActivity
+			log("URL " + url + " not valid", "v");
+			LayoutInflater inflater = LayoutInflater.from(mContext);
+			final View editView = inflater.inflate(R.layout.dialog_station_details, null);
+			titleView = ((EditText)editView.findViewById(R.id.station_title));
+			titleView.setText(title);
+			urlView = ((EditText)editView.findViewById(R.id.station_url));
+			urlView.setText(url);
+			urlView.requestFocus();
+			AlertDialog.Builder builder = new AlertDialog.Builder(this.getContext());
+			builder.setView(editView);
+			builder.setPositiveButton(R.string.edit_station, new DialogInterface.OnClickListener() {
+				
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					editStation(id, editView);
+				}
+			});
+			builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+				
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					log("edit station cancelled", "i");
+					
+				}
+			});
+			builder.setTitle("URL appears invalid. Try again");
+			builder.show();
+			//TODO
+		}
+		
+		
+		
 	}
 	
 	//returns last found matching checked item position, -1 on no match
