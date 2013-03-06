@@ -655,6 +655,12 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			{
 				log("wasn't interrupted, so remove any notifications and reset to uninitialized", "v");
 				state = RadioPlayer.STATE_UNINITIALIZED;
+				if (mMediaPlayer != null)
+				{
+					log("media player not null, releasing", "v");
+					mMediaPlayer.release();
+					mMediaPlayer = null;
+				}
 				stopInfo(); //stopForeground(true);
 			}
 			
