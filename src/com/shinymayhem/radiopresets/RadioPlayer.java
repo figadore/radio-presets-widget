@@ -1556,6 +1556,11 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 				{
 					str = "still ";
 				}
+				else
+				{
+					mInterrupted = true;
+					log ("setting interrupted to true", "v");
+				}
 				str += "not connected. ";
 				str += "old:" + mNetworkState;
 				str += ", new:" + Integer.toString(RadioPlayer.NETWORK_STATE_DISCONNECTED);
