@@ -88,8 +88,7 @@ public class MainActivity extends Activity implements AddDialogListener, EventDi
 					.commit();
 		}
 		
-		//while app is visible, volume buttons should adjust music stream volume
-		setVolumeControlStream(AudioManager.STREAM_MUSIC);
+		
 		
 	}
 	
@@ -303,6 +302,9 @@ public class MainActivity extends Activity implements AddDialogListener, EventDi
 	{
 		super.onResume();
 		log("resuming main activity", "d");
+		//while app is visible, volume buttons should adjust music stream volume
+		log("setting volume control stream", "d");
+		setVolumeControlStream(AudioManager.STREAM_MUSIC);
 	}
 	
 	@Override
