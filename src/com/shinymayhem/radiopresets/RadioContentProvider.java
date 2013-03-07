@@ -26,7 +26,6 @@ import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
-import android.os.Bundle;
 
 import com.shinymayhem.radiopresets.RadioDbContract.StationsDbHelper;
 
@@ -229,6 +228,8 @@ public class RadioContentProvider extends ContentProvider {
 		
 	}
 	
+	//not used because not supported until api 11
+	/*
 	@Override 
 	public Bundle call(String method, String arg, Bundle extras) 
 	{
@@ -243,7 +244,7 @@ public class RadioContentProvider extends ContentProvider {
 			return super.call(method, arg, extras);
 		}
 		
-	}
+	}*/
 	
 	private int getMaxPresetNumber()
 	{

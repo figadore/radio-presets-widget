@@ -21,13 +21,13 @@
 	        android:padding="5dp"
 	        android:scaleType="fitCenter"
 	        android:contentDescription="@string/stop"
-	        android:background="@android:color/transparent"
+	        style="?android:attr/borderlessButtonStyle"
 	        android:src="@drawable/av_stop"
 	        />
 		<ImageButton
 		    
 		    android:id="@+id/launch_main"
-		    android:background="@android:color/transparent"
+		    style="?android:attr/borderlessButtonStyle"
 		    android:layout_width="wrap_content"
 		    android:layout_height="0dp"
 		    android:layout_weight="1"

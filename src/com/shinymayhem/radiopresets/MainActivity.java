@@ -15,10 +15,9 @@
 */
 package com.shinymayhem.radiopresets;
 
-import android.app.Activity;
+
+
 import android.app.AlertDialog;
-import android.app.DialogFragment;
-import android.app.FragmentManager;
 import android.content.ComponentName;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -31,6 +30,9 @@ import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -43,7 +45,7 @@ import com.shinymayhem.radiopresets.RadioDbContract.StationsDbHelper;
 import com.shinymayhem.radiopresets.RadioPlayer.LocalBinder;
 import com.shinymayhem.radiopresets.StationsFragment.PlayerListener;
 
-public class MainActivity extends Activity implements AddDialogListener, EventDialogListener, PlayerListener {
+public class MainActivity extends FragmentActivity implements AddDialogListener, EventDialogListener, PlayerListener {
 
 	//string-extra key for intent
 	//public final static String URL = "com.shinymayhem.radiopresets.URL";
@@ -82,7 +84,7 @@ public class MainActivity extends Activity implements AddDialogListener, EventDi
 			StationsFragment stationsFragment = new StationsFragment();
 			stationsFragment.setArguments(getIntent().getExtras());
 			
-			FragmentManager fragmentManager = getFragmentManager();
+			FragmentManager fragmentManager = getSupportFragmentManager();
 			fragmentManager.beginTransaction()
 					.add(R.id.fragment_container, stationsFragment)
 					.commit();
@@ -99,7 +101,7 @@ public class MainActivity extends Activity implements AddDialogListener, EventDi
 		EditText titleView = (EditText)view.findViewById(R.id.station_title);
 		EditText urlView = (EditText)view.findViewById(R.id.station_url);
 		
-		//int preset = 1;
+		//int preset = 1; 
 		String title = titleView.getText().toString().trim();
 		String url = urlView.getText().toString().trim();
 		boolean valid = RadioPlayer.validateUrl(url);
@@ -192,7 +194,7 @@ public class MainActivity extends Activity implements AddDialogListener, EventDi
 			log("Event button pressed", "i");
 			log("--------------------------------------", "i");
 			DialogFragment dialog = new EventDialogFragment();
-			dialog.show(this.getFragmentManager(), "EventDialogFragment");
+			dialog.show(this.getSupportFragmentManager(), "EventDialogFragment");
 			return true;	
 		}
 		return false;

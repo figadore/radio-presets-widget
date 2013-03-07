@@ -18,44 +18,42 @@ package com.shinymayhem.radiopresets;
 
 import java.util.NoSuchElementException;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.DialogFragment;
-import android.app.ListFragment;
-import android.app.LoaderManager.LoaderCallbacks;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.CursorLoader;
 import android.content.DialogInterface;
-import android.content.Loader;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.ListFragment;
+import android.support.v4.app.LoaderManager.LoaderCallbacks;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.util.SparseBooleanArray;
-import android.view.ActionMode;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AbsListView.MultiChoiceModeListener;
 import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.EditText;
 import android.widget.ListView;
 
 import com.shinymayhem.radiopresets.RadioDbContract.StationsDbHelper;
 
-public class StationsFragment extends ListFragment implements LoaderCallbacks<Cursor>, 
-		OnItemLongClickListener, MultiChoiceModeListener {
+public class StationsFragment extends ListFragment implements LoaderCallbacks<Cursor> /*, 
+		OnItemClickListener, OnItemLongClickListener, MultiChoiceModeListener */ {
 
 	protected StationsDbHelper mDbHelper;
 	protected Context mContext;
-	protected ListView mListView;
 	protected Logger mLogger = new Logger();
-	protected ActionMode mActionMode;
-	protected int mSelectedCount;
+	protected ListView mListView;
 	
 	RadioCursorAdapter mAdapter;
 	
@@ -98,6 +96,41 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 	}
 	
 	@Override
+	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+		super.onCreateContextMenu(menu, v, menuInfo);
+		new MenuInflater(mContext).inflate(R.menu.station_selected, menu);
+		
+	}
+	
+	@Override
+	public boolean onContextItemSelected(MenuItem item)
+	{
+		boolean handled = false;
+		AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+		switch(item.getItemId())
+		{
+			case R.id.delete_station:
+				long[] ids = {(long)info.id}; 
+				delete(ids);
+				handled = true;
+				break;
+			case R.id.edit_station:
+				edit(info.position);
+				handled = true;
+				break;
+			default:
+				throw new IllegalArgumentException("Unknown context menu item");
+		}
+		if (handled)
+		{
+			//mode.finish();
+			//mActionMode = null;
+		}
+		return handled;
+		//return super.onContextItemSelected(item);
+	}
+	
+	@Override
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
 		// Inflate the menu; this adds items to the action bar if it is present.
 		inflater.inflate(R.menu.stations, menu);
@@ -116,7 +149,7 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 			dialog.show(this.getFragmentManager(), "AddDialogFragment");
 			return true;	
 		}
-		return false;
+		return super.onOptionsItemSelected(item);
 		
 	}
 	
@@ -134,59 +167,66 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		mContext = container.getContext();
 		
 		
-		
+		super.onCreateView(inflater, container, savedInstanceState);
 		View view = super.onCreateView(inflater, container, savedInstanceState);
+		
+		//TODO use this custom view instead of default simple list view
+		//View view = inflater.inflate(R.layout.stations_fragment, container);
 		
 		
 		
 		return view;
 		
 	}
-	
+	/*
 	@Override
 	public void onViewCreated(View view, Bundle savedInstanceState)
-	{
+	{ 
+		
 		log("onViewCreated()", "v");
 		super.onViewCreated(view, savedInstanceState);
 		//this.registerForContextMenu(this.getListView());
 		
-		/*
-		//implemented in this
-		getListView().setOnItemClickListener(new OnItemClickListener()
-		{
-
-			@Override
-			public void onItemClick(AdapterView<?> adapterView, View view, int position,
-					long id) {
-				
-				Cursor cursor = (Cursor)view.getTag();
-				final String url = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));
-				String str= "list item clicked, play "+ url;
-				log(str, "v");
-			}
-			
-		});
-		*/
-		mListView = (ListView)getListView(); 
 		
-		//FIXME for some reason the xml attribute isn't working
-		mListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
-		//doesn't do anything if multi-choice-modal set
-		//listView.setOnItemLongClickListener((OnItemLongClickListener)this);
-		mListView.setMultiChoiceModeListener((MultiChoiceModeListener)this);
-		//TODO remove layout that doesn't handle emptiness
-		this.setEmptyText(getResources().getString(R.string.loading_stations)); //this is done by layout, right?
 		
 	}
-	
+	*/
+	@SuppressLint({ "NewApi", "InlinedApi" })
 	@Override 
 	public void onActivityCreated(Bundle savedInstanceState)
 	{
+		log("onActivityCreated()", "v");
 		super.onActivityCreated(savedInstanceState);
+		mListView = (ListView)getListView(); 
+		
+		
+		if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.HONEYCOMB) {
+			//FIXME for some reason the xml attribute for multiple modal isn't working
+			mListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
+			mListView.setMultiChoiceModeListener(new StationMultiChoiceModeListener(this, mListView));
+		}
+		else {
+			//mListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+		    registerForContextMenu(mListView);
+		}
+		
+		
+		
+		
+		//mListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
+		//doesn't do anything if multi-choice-modal set
+		
+		//mListView.setMultiChoiceModeListener((MultiChoiceModeListener)this);
+		//mListView.setOnItemClickListener(this);
+		//mListView.setOnItemSelectedListener(this);
+		//mListView.setOnItemLongClickListener(this);
+		//TODO remove layout that doesn't handle emptiness
+		this.setEmptyText(getResources().getString(R.string.loading_stations)); //this is done by layout, right?
 	}
 	
-	//doesn't do anything if multi-choice-modal set
-	public boolean onItemLongClick(AdapterView<?> adapterView, View view,
+
+	//doesn't do anything if multi-choice-modal set (used to use AdapterView as first arg)
+	/*public boolean onItemLongClick(AdapterView<?> adapterView, View view,
 			int position, long id) {
 		String str= "list item longclicked";
 		log(str, "v");
@@ -194,24 +234,116 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		boolean checked = true;
 		ListView listView = (ListView) adapterView;
 		listView.setItemChecked(position, checked);
+		//view.setBackgroundColor(getResources().getColor(R.color.blue));
 		//SparseBooleanArray checkedPositions = listView.getCheckedItemPositions();
 		//int checkedCount = listView.getCheckedItemCount();
 		//long[] var = listView.getCheckedItemIds();
-		
 		//view.setSelected(true);
-		listView.startActionMode(this);
 		
+		//listView.startActionMode(this);
+		mActionMode = this.getSherlockActivity().startActionMode(this);
+		mActionMode.setTitle(this.getCheckedItemCount() + " " + getResources().getString(R.string.selected)); 
 		
 		
 		return true;
 	}
+	*/
+/*
+	@Override
+	public void onItemClick(AdapterView<?> adapterView, View item, int position, long id) {
+
+		log("onItemClick()", "v");
+		
+		if (mActionMode != null) //in multi-select mode. click = check
+		{
+			//boolean checked = item.isSelected().isActivated();
+			SparseBooleanArray checkedArray = ((ListView) adapterView).getCheckedItemPositions();
+			boolean checked = checkedArray.get(position);
+			
+			int count = this.getCheckedItemCount();
+			mActionMode.setTitle(String.valueOf(count) + " " + getResources().getString(R.string.selected));
+			//mode.setSubtitle("Subtitle");
+			
+			String str = "Position " + String.valueOf(position) + " ";
+			//RelativeLayout item = (RelativeLayout) mListView.getChildAt(position);
+			//item.setActivated(checked);
+			if (checked)
+			{
+				//Object item = mListView.getItemAtPosition(position);
+				
+				//item.setBackgroundColor("android:attr/activatedBackgroundColor");
+				str += "checked";
+				item.setBackgroundColor(getResources().getColor(R.color.blue));
+			}
+			else
+			{
+				str += "unchecked";
+				//item.setBackgroundColor(getResources().getColor(android.R.color.transparent));
+				item.setBackgroundColor(getResources().getColor(R.color.white));
+			}
+			log(str, "i");
+			
+			if (count < 1)
+			{
+				mActionMode.finish();	
+			}
+			else
+			{
+				mActionMode.invalidate();	
+			}
+			
+			
+		}
+		else //not in selection mode, play clicked item
+		{
+			Cursor cursor = (Cursor)adapterView.getItemAtPosition(position);
+			//final String url = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));
+			final int preset = Integer.valueOf(cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER)));
+			String str= "list item clicked, play preset " + preset + ". view position:";
+			str += Integer.toString(position);
+			str += ", row id:";
+			str += Long.toString(id);
+			log(str, "v");
+			mListener.play(preset);
+		}
+		
+	}*/
 	
 	@Override
 	public void onListItemClick(ListView listView, View view, int position, long id)
 	{
-		//TODO handle playing here, if possible
+		log("onListItemClick()", "v");
+		Cursor cursor = (Cursor)listView.getItemAtPosition(position);
+		//final String url = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));
+		final int preset = Integer.valueOf(cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER)));
+		String str= "list item clicked, play preset " + preset + ". view position:";
+		str += Integer.toString(position);
+		str += ", row id:";
+		str += Long.toString(id);
+		log(str, "v");
+		mListener.play(preset);
+		
+		/*
 		super.onListItemClick(listView, view, position, id);
 		
+		SparseBooleanArray checked = listView.getCheckedItemPositions();
+	    boolean hasCheckedElement = false;
+	    for (int i = 0; i < checked.size() && !hasCheckedElement; i++) {
+	        hasCheckedElement = checked.valueAt(i);
+	    }
+
+	    if (hasCheckedElement) {
+	        if (mActionMode == null) {
+	            mActionMode = getSherlockActivity().startActionMode(this);
+	            mActionMode.invalidate();
+	        } else {
+	            mActionMode.invalidate();
+	        }
+	    } else {
+	        if (mActionMode != null) {
+	            mActionMode.finish();
+	        }
+	    }
 		
 		Cursor cursor = (Cursor)listView.getItemAtPosition(position);
 		//final String url = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));
@@ -222,15 +354,11 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		str += Long.toString(id);
 		log(str, "v");
 		mListener.play(preset);
+		*/
 	}
 	
-	
-	
-	private void log(String text, String level)
-	{
-		mLogger.log(this.getActivity(), "StationsFragment:\t\t"+text, level);
-	}
-	
+
+
 
 	@Override
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
@@ -269,58 +397,34 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 				break;
 		}
 	}
-
-	@Override
-	public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-		boolean handled = false;
-		switch(item.getItemId())
-		{
-			case R.id.delete_station:
-				deleteSelected();
-				handled = true;
-				break;
-			case R.id.edit_station:
-				editSelected();
-				handled = true;
-				break;
-			default:
-				throw new IllegalArgumentException("Unknown action menu item");
-		}
-		if (handled)
-		{
-			mode.finish();
-			//mActionMode = null;
-		}
-		return handled;
-	}
 	
-	private void deleteSelected()
+	public void delete(long[] ids)
 	{
-		log("deleting selected", "i");
-		long[] selected = mListView.getCheckedItemIds();
-		String[] values = new String[selected.length];
+		String[] values = new String[ids.length];
 		String where = RadioDbContract.StationEntry._ID + " in (";
 		//String[] values = new String[1];
 		//values[0] = String.valueOf(selected[0]);
-		for (int i=0; i<selected.length; i++)
+		for (int i=0; i<ids.length; i++)
 		{
 			where += "?, ";
-			values[i] = String.valueOf(selected[i]);
+			values[i] = String.valueOf(ids[i]);
 		}
 		where += "'') ";
 		//where= "_id in (?, ?, '')"
 		int deletedCount = getActivity().getContentResolver().delete(RadioContentProvider.CONTENT_URI_STATIONS, where, values);//(RadioContentProvider.CONTENT_URI_STATIONS, selected);
 		log("deleted " + String.valueOf(deletedCount), "v");
 	}
-	
-	private void editSelected()
+
+	public void deleteSelected()
 	{
-		log("editing selected", "i");
-		int position = getSelectedPosition();
-		if (position == -1) //should never happen
-		{
-			throw new NoSuchElementException("Selected element not found.");
-		}
+		log("deleting selected", "i");
+		long[] selected = mListView.getCheckedItemIds();
+		delete(selected);
+		
+	}
+	
+	public void edit(int position)
+	{
 		Cursor cursor = (Cursor)mListView.getItemAtPosition(position);
 		String title = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_TITLE));
 		String url = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));
@@ -349,6 +453,18 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		});
 		builder.setTitle(R.string.station_details_title);
 		builder.show();
+	}
+	
+	public void editSelected()
+	{
+		log("editing selected", "i");
+		int position = getSelectedPosition();
+		if (position == -1) //should never happen
+		{
+			throw new NoSuchElementException("Selected element not found.");
+		}
+		edit(position);
+		
 	}
 	
 	private void editStation(final long id, View view)
@@ -406,7 +522,6 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 			});
 			builder.setTitle("URL appears invalid. Try again");
 			builder.show();
-			//TODO
 		}
 		
 		
@@ -428,72 +543,43 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		}
 		return position;
 	}
+	
 
-	@Override
-	public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-		mSelectedCount=mListView.getCheckedItemCount();;
-		mActionMode = mode;
-		MenuInflater inflater = mode.getMenuInflater();
-		
-		inflater.inflate(R.menu.station_selected, menu);
-		
-		return true;
-	}
+	
 
-	@Override
-	public void onDestroyActionMode(ActionMode mode) {
-		mActionMode = null;
-	}
+	
+	
 
-	@Override
-	public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-		// TODO Auto-generated method stub
-		int newCount = mListView.getCheckedItemCount();
-		if (mSelectedCount == 1 || newCount == 1)
+	/*
+	private int getCheckedItemCount()
+	{
+		int count = 0;
+		if (mListView != null)
 		{
-			menu.clear();
-			MenuInflater inflater = mode.getMenuInflater();
-			if (newCount == 1)
-			{
-				inflater.inflate(R.menu.station_selected, menu);
-			}
-			else
-			{
-				inflater.inflate(R.menu.stations_selected, menu);
-			}
-			mSelectedCount = newCount;
-			return true;
+			SparseBooleanArray checked = mListView.getCheckedItemPositions();
+		    //boolean hasCheckedElement = false;
+		    
+		    for (int i = 0; i < checked.size(); i++) {
+		       // hasCheckedElement |= checked.valueAt(i);
+		    	if (checked.valueAt(i))
+		    	{
+		    		count++;	
+		    	}
+		        
+		    }
+	
 		}
 		
-		//menu.clear();
-		
-		return false; //no change, don't update
+		return count;
 	}
+*/
 
-	@Override
-	public void onItemCheckedStateChanged(ActionMode mode, int position, long id,
-			boolean checked) {
-		// TODO Auto-generated method stub
-		
-		int count = mListView.getCheckedItemCount();
-		mode.setTitle(String.valueOf(count) + " selected");
-		//mode.setSubtitle("Subtitle");
 
-		String str = "Position " + String.valueOf(position) + " ";
-		//RelativeLayout item = (RelativeLayout) mListView.getChildAt(position);
-		//item.setActivated(checked);
-		if (checked)
-		{
-			//Object item = mListView.getItemAtPosition(position);
-			
-			//item.setBackgroundColor("android:attr/activatedBackgroundColor");
-			str += "checked";
-		}
-		else
-		{
-			str += "unchecked";
-		}
-		log(str, "i");
-		mode.invalidate();
+	
+	public void log(String text, String level)
+	{
+		mLogger.log(this.getActivity(), "StationsFragment:\t\t"+text, level);
 	}
+	
+
 }

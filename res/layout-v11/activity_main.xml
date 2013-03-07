@@ -21,7 +21,7 @@
         android:layout_alignParentBottom="true"
         android:padding="5dp"
         android:contentDescription="@string/stop"
-        android:background="@android:color/transparent"
+        style="?android:attr/borderlessButtonStyle"
         android:src="@drawable/av_stop"
         android:onClick="stop" />
     

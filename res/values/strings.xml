@@ -3,6 +3,7 @@
 
     <string name="app_name">Radio Presets</string>
     <string name="menu_settings">Settings</string>
+    <string name="selected">selected</string>
     <string name="launch">Launch</string>
     <string name="previous">Previous</string>
     <string name="stop">Stop</string>

@@ -16,6 +16,7 @@
 
 package com.shinymayhem.radiopresets;
 
+import android.annotation.SuppressLint;
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
@@ -24,6 +25,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.RemoteViews;
@@ -52,7 +54,10 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 		
 		mContext = context;
 		log("onReceive()", "i");
-		if (intent.getAction() == ACTION_UPDATE_TEXT)
+		String action = intent.getAction();
+		log(action,"v");
+		log(ACTION_UPDATE_TEXT,"v");
+		if (action.equals(ACTION_UPDATE_TEXT))
 		{
 			log("update text action", "i");
 			Bundle extras = intent.getExtras();
@@ -76,6 +81,7 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 		
 	}
 	
+	@SuppressLint("NewApi")
 	private void updateText(String text1, String text2)
 	{
 		Log.i("widget", "updating text:" + text1 + "," + text2);
@@ -89,8 +95,16 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
         // Perform this loop procedure for each App Widget that belongs to this provider
         for (int i=0; i<N; i++) {
             int appWidgetId = appWidgetIds[i];
-            Bundle newOptions = appWidgetManager.getAppWidgetOptions(appWidgetId);
-            this.getViews(newOptions);
+            if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.JELLY_BEAN)
+            {
+            	Bundle newOptions = appWidgetManager.getAppWidgetOptions(appWidgetId);
+                this.getViews(newOptions);	
+            }
+            else
+            {
+            	this.getViews();
+            }
+            
             mViews.setTextViewText(R.id.currently_playing, text1);
             mViews.setTextViewText(R.id.widget_status, text2);
             appWidgetManager.updateAppWidget(appWidgetId, mViews);
@@ -115,6 +129,14 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 		//super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions);
 	}
 	
+	//default for pre-jellybean, not resizeable, stick with 2x4 
+	private void getViews()
+	{
+		Bundle options = new Bundle();
+		options.putInt("appWidgetMinWidth", MIN_BUTTON_WIDTH*4);
+		this.getPlayerViews(options);
+	}
+	
 	private void getViews(Bundle newOptions)
 	{
 		//RemoteViews views;
@@ -133,6 +155,7 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 		//return views;
 	}
 
+	@SuppressLint("NewApi")
 	public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
 		mContext = context;
 		log("onUpdate()", "v");
@@ -140,8 +163,15 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
         // Perform this loop procedure for each App Widget that belongs to this provider
         for (int i=0; i<N; i++) {
             int appWidgetId = appWidgetIds[i];
-            Bundle newOptions = appWidgetManager.getAppWidgetOptions(appWidgetId);
-            this.getViews(newOptions);
+            if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.JELLY_BEAN)
+            {
+            	Bundle newOptions = appWidgetManager.getAppWidgetOptions(appWidgetId);
+                this.getViews(newOptions);	
+            }
+            else
+            {
+            	this.getViews();
+            }
             appWidgetManager.updateAppWidget(appWidgetId, mViews);
         }
 	}

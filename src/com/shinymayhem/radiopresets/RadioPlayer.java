@@ -28,7 +28,6 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.app.TaskStackBuilder;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -48,9 +47,9 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Binder;
-import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.TaskStackBuilder;
 import android.telephony.TelephonyManager;
 import android.view.KeyEvent;
 import android.webkit.URLUtil;
@@ -787,15 +786,37 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		}
 	}
 	
+	//FIXME duplicate code from radioContentProvider
+	protected int getMaxPresetNumber()
+	{
+		Uri uri = RadioContentProvider.CONTENT_URI_PRESETS_MAX;
+		String[] projection = null;
+		String selection = null;
+		String[] selectionArgs = null;
+		String sortOrder = null;
+		Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
+		long preset = 0;
+		if (cursor.getCount() > 0)		
+		{
+			cursor.moveToFirst();
+			preset = cursor.getLong(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER));	
+		}
+		
+		cursor.close();
+		return (int)preset;
+	}
+	
 	protected void previousPreset()
 	{
 		log("previousPreset()", "v");
 		mPreset--;
 		if (mPreset <= 0)
 		{
-			Uri maxUri = RadioContentProvider.CONTENT_URI_PRESETS_MAX;
-			Bundle values = getContentResolver().call(maxUri, "getMaxPresetNumber", null, null);  
-			mPreset = values.getInt(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER);
+			////call() not supported until api 11
+			//Uri maxUri = RadioContentProvider.CONTENT_URI_PRESETS_MAX;
+			//Bundle values = getContentResolver().call(maxUri, "getMaxPresetNumber", null, null);  
+			//mPreset = values.getInt(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER);
+			mPreset = getMaxPresetNumber();
 			if (mPreset == 0) //no stations? 
 			{
 				log("no stations, unless getMaxPresetNumber doesn't work", "w");

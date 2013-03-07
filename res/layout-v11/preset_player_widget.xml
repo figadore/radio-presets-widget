@@ -102,7 +102,7 @@
 	        android:paddingLeft="@dimen/widget_player_padding"
 	    android:paddingRight="@dimen/widget_player_padding"
 	        android:contentDescription="@string/launch"
-	        android:background="@android:color/transparent"
+	        style="?android:attr/borderlessButtonStyle"
 	        android:src="@drawable/app_icon"
 	        />
 
@@ -114,7 +114,7 @@
 	        android:paddingLeft="@dimen/widget_player_padding"
 	    android:paddingRight="@dimen/widget_player_padding"
 	        android:contentDescription="@string/previous"
-	        android:background="@android:color/transparent"
+	        style="?android:attr/borderlessButtonStyle"
 	        android:src="@drawable/av_previous"
 	        />
 		<ImageButton 
@@ -125,7 +125,7 @@
 	        android:paddingLeft="@dimen/widget_player_padding"
 	    android:paddingRight="@dimen/widget_player_padding"
 	        android:contentDescription="@string/stop"
-	        android:background="@android:color/transparent"
+	        style="?android:attr/borderlessButtonStyle"
 	        android:src="@drawable/av_stop"
 	        />
 		<ImageButton 
@@ -136,7 +136,7 @@
 	        android:paddingLeft="@dimen/widget_player_padding"
 	    android:paddingRight="@dimen/widget_player_padding"
 	        android:contentDescription="@string/next"
-	        android:background="@android:color/transparent"
+	        style="?android:attr/borderlessButtonStyle"
 	        android:src="@drawable/av_next"
 	        />
 		

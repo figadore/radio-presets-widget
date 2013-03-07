@@ -45,8 +45,7 @@
 	    android:textSize="22sp"
 	    android:gravity="left"
 	    android:clickable="false"
-	    android:textColor="@android:color/white"
-	    android:background="@android:color/transparent"
+	    style="?android:attr/borderlessButtonStyle"
 	    android:id="@+id/station_title" >
 	    
 	
