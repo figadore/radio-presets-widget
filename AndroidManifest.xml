@@ -51,6 +51,8 @@
             android:label="A Radio Presets">
 		    <intent-filter>
 		        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+		        <action android:name="com.shinymayhem.radiopresets.PresetButtonsWidgetProvider.ACTION_UPDATE_TEXT" />
+		        <action android:name="com.shinymayhem.radiopresets.intent.update_text" />
 		    </intent-filter>
 		    <meta-data android:name="android.appwidget.provider"
 		               android:resource="@xml/preset_buttons_widget_info" />

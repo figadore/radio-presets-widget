@@ -17,6 +17,7 @@
 package com.shinymayhem.radiopresets;
 
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
@@ -37,6 +38,8 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 	protected RemoteViews mViews;
 	protected Context mContext;
 	private final int MIN_BUTTON_WIDTH = 65; //TODO get from preferences
+	private final int FIXED_WIDTH = 294;
+	private final int FIXED_HEIGHT = 100;
 	public final static String ACTION_UPDATE_TEXT = "com.shinymayhem.radiopresets.intent.update_text";
 	public final static String EXTRA_TEXT1 = "com.shinymayhem.radiopresets.extras.text1";
 	public final static String EXTRA_TEXT2 = "com.shinymayhem.radiopresets.extras.text2";
@@ -54,6 +57,7 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 		
 		mContext = context;
 		log("onReceive()", "i");
+		super.onReceive(context, intent);	
 		String action = intent.getAction();
 		log(action,"v");
 		log(ACTION_UPDATE_TEXT,"v");
@@ -76,7 +80,7 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 				log("other action:" + String.valueOf(intent.getAction()), "i");	
 			}
 			
-			super.onReceive(context, intent);	
+			
 		}
 		
 	}
@@ -107,10 +111,12 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
             
             mViews.setTextViewText(R.id.currently_playing, text1);
             mViews.setTextViewText(R.id.widget_status, text2);
+            //appWidgetManager.updateAppWidget(provider, mViews);
             appWidgetManager.updateAppWidget(appWidgetId, mViews);
         }
 	}
 	
+	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 	public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager, int appWidgetId, Bundle newOptions)
 	{
 		mContext = context;
@@ -382,23 +388,35 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 		return minWidth;
 	}
 	*/
+	@SuppressLint("InlinedApi")
 	private int getWidth(Bundle newOptions)
 	{
-		//in portrait
-		int minWidth = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
-		//in landscape
-		//int minWidth = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH);
-		return minWidth;
+		if (newOptions != null)
+		{
+			//in portrait
+			int minWidth = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
+			//in landscape
+			//int minWidth = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH);
+
+			return minWidth;
+		}
+		return FIXED_WIDTH;
+
 	}
 
 	
+	@SuppressLint("InlinedApi")
 	private int getHeight(Bundle newOptions)
 	{
-		//in landscape
-		int minHeight = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
-		//in portrait
-		//int minHeight = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
-		return minHeight;
+		if (newOptions != null)
+		{
+			//in landscape
+			int minHeight = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
+			//in portrait
+			//int minHeight = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
+			return minHeight;
+		}
+		return FIXED_HEIGHT;
 	}
 
 	

@@ -861,7 +861,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnBuffer
 		intent.setAction(PresetButtonsWidgetProvider.ACTION_UPDATE_TEXT);
 		intent.putExtra(com.shinymayhem.radiopresets.PresetButtonsWidgetProvider.EXTRA_TEXT1, text1);
 		intent.putExtra(com.shinymayhem.radiopresets.PresetButtonsWidgetProvider.EXTRA_TEXT2, text2);
-        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
+        //intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
         return intent;
 	}
 	
