@@ -39,6 +39,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.media.AudioManager;
 import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnBufferingUpdateListener;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.media.MediaPlayer.OnErrorListener;
 import android.media.MediaPlayer.OnInfoListener;
@@ -55,7 +56,7 @@ import android.view.KeyEvent;
 import android.webkit.URLUtil;
 import android.widget.Toast;
 
-public class RadioPlayer extends Service implements OnPreparedListener, OnInfoListener, OnCompletionListener, OnErrorListener, OnAudioFocusChangeListener {
+public class RadioPlayer extends Service implements OnPreparedListener, OnBufferingUpdateListener, OnInfoListener, OnCompletionListener, OnErrorListener, OnAudioFocusChangeListener {
 	
 	public final static int ONGOING_NOTIFICATION = 1;
 	//public final static String ACTION = "com.shinymayhem.radiopresets.ACTION";
@@ -162,32 +163,32 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			}
 			else if (action.equals(Intent.ACTION_RUN)) //called when service is being bound
 			{
-				log("service being started before bound", "i");
+				log("service being started before bound", "v");
 				return START_NOT_STICKY;
 			}
 			else if (action.equals(ACTION_PLAY.toString())) //Play intent
 			{
-				log("PLAY action in intent", "i");
+				log("PLAY action in intent", "v");
 				int preset = Integer.valueOf(intent.getIntExtra(MainActivity.EXTRA_STATION_PRESET, 0));	
-				log("preset in action:" + String.valueOf(preset), "i");
+				log("preset in action:" + String.valueOf(preset), "v");
 				play(preset);
 				return START_REDELIVER_INTENT;
 			}
 			else if (action.equals(ACTION_NEXT.toString())) //Next preset intent
 			{
-				log("NEXT action in intent", "i");	
+				log("NEXT action in intent", "v");	
 				nextPreset();
 				return START_NOT_STICKY;
 			}
 			else if (action.equals(ACTION_PREVIOUS.toString())) //Previous preset intent
 			{
-				log("PREVIOUS action in intent", "i");	
+				log("PREVIOUS action in intent", "v");	
 				previousPreset();
 				return START_NOT_STICKY;
 			}
 			else if (action.equals(ACTION_STOP.toString())) //Stop intent
 			{
-				log("STOP action in intent", "i");	
+				log("STOP action in intent", "v");	
 				end();
 				return START_NOT_STICKY;
 			}
@@ -211,7 +212,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	public void onPrepared(MediaPlayer mediaPlayer)
 	{
 		log("onPrepared()", "d");
-		if (state == RadioPlayer.STATE_RESTARTING || state == RadioPlayer.STATE_COMPLETE)
+		if (state.equals(RadioPlayer.STATE_RESTARTING) || state.equals(RadioPlayer.STATE_COMPLETE))
 		{
 			log("newPlayer ready", "i");
 		}
@@ -309,6 +310,13 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		return false;
 	}
 	
+	@Override
+	public void onBufferingUpdate(MediaPlayer player, int percent) {
+		log("buffering percent:" + String.valueOf(percent), "v");
+		
+	}
+
+	
 	public void onCompletion(MediaPlayer mediaPlayer)
 	{
 		//mediaPlayer.reset();
@@ -319,13 +327,13 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		if (mInterrupted)
 		{
 			Toast.makeText(this, "Playback completed after interruption", Toast.LENGTH_SHORT).show();	
-			log("Playback completed after interruption, should restart when network connects again", "i");
+			log("Playback completed after interruption, should restart when network connects again", "v");
 		}
 		else
 		{
 			//still an interruption, streaming shouldn't complete
 			Toast.makeText(this, "Playback completed, no interruption reported", Toast.LENGTH_SHORT).show();
-			log("Playback completed, no network interruption reported, restart", "i");
+			log("Playback completed, no network interruption reported, restart", "v");
 			//restart();
 			play();
 		}
@@ -374,7 +382,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 				{
 					mediaPlayer.stop();	
 				}
-				log("media player stopped", "i");
+				log("media player stopped", "v");
 			}
 			catch (IllegalStateException e)
 			{
@@ -388,7 +396,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		state = RadioPlayer.STATE_ERROR;
 		//TextView status = (TextView) findViewById(R.id.status);
 		String statusString = "";
-		if (oldState == "Preparing")
+		if (oldState.equals("Preparing"))
 		{
 			//TODO notify user somehow
 			statusString = "An error occurred while trying to connect to the server. ";
@@ -418,7 +426,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		log(statusString, "e");
 		//status.append(statusString);
 		Toast.makeText(this, statusString, Toast.LENGTH_LONG).show();
-		if (oldState == "Preparing")
+		if (oldState.equals("Preparing"))
 		{
 			stop();
 		}
@@ -449,7 +457,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
         	}
         	else
         	{
-        		if (state == STATE_PAUSED)
+        		if (state.equals(STATE_PAUSED))
         		{
         			resume();
         		}
@@ -914,6 +922,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		player.setOnInfoListener(this);
 		player.setOnCompletionListener(this);
 		player.setOnErrorListener(this);
+		player.setOnBufferingUpdateListener(this);
 		return;
 	}
 	
@@ -950,7 +959,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		{
 			log("null media player", "w");
 		}
-		else if (state == RadioPlayer.STATE_PREPARING)
+		else if (state.equals(RadioPlayer.STATE_PREPARING))
 		{
 			log("pause called while preparing", "v");
 			mMediaPlayer.release();
@@ -1018,7 +1027,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		}
 		mInterrupted = false;
 		
-		if (state == RadioPlayer.STATE_STOPPED || state == RadioPlayer.STATE_END || state == RadioPlayer.STATE_UNINITIALIZED)
+		if (state.equals(RadioPlayer.STATE_STOPPED) || state.equals(RadioPlayer.STATE_END) || state.equals(RadioPlayer.STATE_UNINITIALIZED))
 		{
 			log("already stopped", "v");
 			return;
@@ -1029,7 +1038,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			state = RadioPlayer.STATE_STOPPING;
 			log("null media player", "w");
 		}
-		else if (state == RadioPlayer.STATE_PREPARING)
+		else if (state.equals(RadioPlayer.STATE_PREPARING))
 		{
 			state = RadioPlayer.STATE_STOPPING; //store oldstate to move state change outside of conditionals
 			log("stop called while preparing", "v");
@@ -1136,7 +1145,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			boolean playing = mMediaPlayer.isPlaying();
 			if (playing)
 			{
-				log("old player playing, new player ready to set", "i");
+				log("old player playing, new player ready to set", "v");
 			}
 			else
 			{
@@ -1157,7 +1166,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		try
 		{
 			mMediaPlayer.setNextMediaPlayer(mNextPlayer);
-			log("nextplayer set", "i");
+			log("nextplayer set", "v");
 		}
 		catch (IllegalStateException e)
 		{
@@ -1193,15 +1202,15 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	public boolean isPlaying()
 	{
 		return (
-				state == RadioPlayer.STATE_BUFFERING || 
-				state == RadioPlayer.STATE_PLAYING ||
-				state == RadioPlayer.STATE_PAUSED ||
-				state == RadioPlayer.STATE_PHONE ||
-				state == RadioPlayer.STATE_PREPARING ||
-				state == RadioPlayer.STATE_INITIALIZING ||
-				state == RadioPlayer.STATE_COMPLETE || //service should still stay alive and listen for network changes to resume
-				state == RadioPlayer.STATE_RESTARTING
-			);
+				state.equals(RadioPlayer.STATE_BUFFERING) || 
+				state.equals(RadioPlayer.STATE_PLAYING) ||
+				state.equals(RadioPlayer.STATE_PAUSED) ||
+				state.equals(RadioPlayer.STATE_PHONE) ||
+				state.equals(RadioPlayer.STATE_PREPARING) ||
+				state.equals(RadioPlayer.STATE_INITIALIZING) ||
+				state.equals(RadioPlayer.STATE_COMPLETE) || //service should still stay alive and listen for network changes to resume
+				state.equals(RadioPlayer.STATE_RESTARTING)
+		);
 	}
 	
 	protected boolean isConnected()
@@ -1254,7 +1263,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 				break;
 		}
 		str += " detected";
-		log(str, "i");
+		log(str, "v");
 		return newState;
 	}
 	
@@ -1263,7 +1272,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		
 		if (!URLUtil.isHttpUrl(url) && !URLUtil.isHttpsUrl(url))
 		{
-			//log("not a valid http or https url", "i");
+			//log("not a valid http or https url", "v");
 			return false;
 		}
 		//check for empty after prefix
@@ -1347,7 +1356,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	public class MediaButtonReceiver extends BroadcastReceiver {
 	    @Override
 	    public void onReceive(Context context, Intent intent) {
-	    	log("received remote control action", "i");
+	    	log("received remote control action", "v");
 	        if (ACTION_MEDIA_BUTTON.equals(intent.getAction())) {
 	        	KeyEvent event = (KeyEvent)intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
 	        	switch (event.getKeyCode())
@@ -1400,12 +1409,12 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	    @Override
 	    public void onReceive(Context context, Intent intent) {
 	        if (state != STATE_PHONE && state != STATE_PAUSED && AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
-	        	log("headphones unplugged", "i");
+	        	log("headphones unplugged", "v");
 	        	end();
 	        }
 	        else
 	        {
-	        	log("headphones unplugged, but it is paused", "i");
+	        	log("headphones unplugged, but it is paused", "v");
 	        }
 	    }
 	}
@@ -1417,7 +1426,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	    	String phoneState = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
 	    	if (phoneState.equals(TelephonyManager.EXTRA_STATE_RINGING))
 	    	{
-	    		log("phone ringing", "i");
+	    		log("phone ringing", "v");
 	    		if (isPlaying())
 	    		{
 	    			pause();
@@ -1427,12 +1436,12 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	    	}
 	    	else if (phoneState.equals(TelephonyManager.EXTRA_STATE_IDLE) && state.equals(STATE_PHONE))
 	    	{
-	    		log("resuming after phone call", "i");
+	    		log("resuming after phone call", "v");
 	    		resume();
 	    	}
 	    	else
 	    	{
-	    		log("outgoing phone call?", "i");
+	    		log("outgoing phone call?", "v");
 	    		if (isPlaying())
 	    		{
 	    			pause();
@@ -1448,9 +1457,9 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	      
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			log("received network change broadcast", "i");
+			log("received network change broadcast", "v");
 			//Log.i(getPackageName(), "received network change broadcast");
-			if (mMediaPlayer == null && state == RadioPlayer.STATE_PREPARING)
+			if (mMediaPlayer == null && state.equals(RadioPlayer.STATE_PREPARING))
 			{
 				log("recover from disconnect while preparing", "v");
 				//Log.i(getPackageName(), "no media player, don't care about connection updates");
@@ -1461,7 +1470,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			{
 				log("media player null, will cause problems if connected", "e");
 			}
-			else if (mMediaPlayer != null && state == RadioPlayer.STATE_UNINITIALIZED)
+			else if (mMediaPlayer != null && state.equals(RadioPlayer.STATE_UNINITIALIZED))
 			{
 				log("-------------------------------", "d");
 				log ("mediaPlayer not null, but uninitialized. how did this happen?", "w");
@@ -1475,19 +1484,19 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 				{
 					
 					str = "network type changed";
-					if (state == RadioPlayer.STATE_UNINITIALIZED)
+					if (state.equals(RadioPlayer.STATE_UNINITIALIZED))
 					{
 						str += " but uninitialized so it doesn't matter. ";
 					}
-					else if (state == RadioPlayer.STATE_STOPPED || state == RadioPlayer.STATE_STOPPING)
+					else if (state.equals(RadioPlayer.STATE_STOPPED) || state.equals(RadioPlayer.STATE_STOPPING))
 					{
 						str += " but stopped so it doesn't matter. ";
 					}
-					else if (state == RadioPlayer.STATE_END)
+					else if (state.equals(RadioPlayer.STATE_END))
 					{
 						str += " but ended so it doesn't matter. ";
 					}
-					else if (state == RadioPlayer.STATE_PAUSED || state == RadioPlayer.STATE_PHONE)
+					else if (state.equals(RadioPlayer.STATE_PAUSED) || state.equals(RadioPlayer.STATE_PHONE))
 					{
 						str += " but paused so it doesn't matter. ";
 					}
@@ -1512,14 +1521,15 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 					mNetworkState = newState;
 					
 					//if uninitialized, no preset picked yet. if stopped or paused, don't restart
-					if (state == RadioPlayer.STATE_UNINITIALIZED || 
-							state == RadioPlayer.STATE_STOPPED || 
-							state == RadioPlayer.STATE_STOPPING ||
-							state == RadioPlayer.STATE_PAUSED || 
-							state == RadioPlayer.STATE_PHONE|| 
-							state == RadioPlayer.STATE_END)
+					if (state.equals(RadioPlayer.STATE_UNINITIALIZED) || 
+							state.equals(RadioPlayer.STATE_STOPPED) || 
+							state.equals(RadioPlayer.STATE_STOPPING) ||
+							state.equals(RadioPlayer.STATE_PAUSED) || 
+							state.equals(RadioPlayer.STATE_PHONE) || 
+							state.equals(RadioPlayer.STATE_END)
+						)
 					{
-						log("unitialized or stopped/paused/ended, don't try to start or restart", "i");
+						log("unitialized or stopped/paused/ended, don't try to start or restart", "v");
 						return;
 					}
 					boolean start = false;
@@ -1527,8 +1537,8 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 					{
 						log("-------------------------------", "d");
 						log("find out how we got here", "e");
-						log("trying to play when not connected?", "i");
-						log("disconnected while initializing? ", "i");
+						log("trying to play when not connected?", "v");
+						log("disconnected while initializing? ", "v");
 						log("-------------------------------", "d");
 					}
 					else
@@ -1543,7 +1553,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 							start = true; 
 						}
 						//can't set nextplayer after complete, so just start fresh
-						if (state == RadioPlayer.STATE_COMPLETE || start)
+						if (state.equals(RadioPlayer.STATE_COMPLETE) || start)
 						{
 							log("complete or start=true", "v");
 							
@@ -1577,7 +1587,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 				{
 					str = "still ";
 				}
-				else
+				else if (isPlaying())
 				{
 					mInterrupted = true;
 					log ("setting interrupted to true", "v");
@@ -1585,7 +1595,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 				str += "not connected. ";
 				str += "old:" + mNetworkState;
 				str += ", new:" + Integer.toString(RadioPlayer.NETWORK_STATE_DISCONNECTED);
-				log(str, "i");
+				log(str, "v");
 				
 				log("setting network state ivar to disconnected", "v");
 				mNetworkState = RadioPlayer.NETWORK_STATE_DISCONNECTED;
@@ -1593,7 +1603,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 
 				//TODO figure out the best thing to do for each state
 				
-				if (state == RadioPlayer.STATE_PREPARING) //this will lead to a mediaioerror when it reaches prepared
+				if (state.equals(RadioPlayer.STATE_PREPARING)) //this will lead to a mediaioerror when it reaches prepared
 				{
 					mMediaPlayer.release();
 					mMediaPlayer = null;
@@ -1603,7 +1613,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 					log("network connection lost while preparing? set null mediaplayer", "d");
 					log("-------------------------------", "d");
 				}
-				else if (state == RadioPlayer.STATE_INITIALIZING)
+				else if (state.equals(RadioPlayer.STATE_INITIALIZING))
 				{
 					if (alreadyDisconnected)
 					{
@@ -1615,7 +1625,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 					}
 					
 				}
-				else if (state == RadioPlayer.STATE_ERROR)
+				else if (state.equals(RadioPlayer.STATE_ERROR))
 				{
 					Notification notification = updateNotification("Error. Will resume?", "Cancel", true);
 					mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
@@ -1625,27 +1635,27 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 					log("not sure what to do, how did we get here?", "d");
 					log("-------------------------------", "d");
 				}
-				else if (state == RadioPlayer.STATE_STOPPED)
+				else if (state.equals(RadioPlayer.STATE_STOPPED))
 				{
-					log("disconnected while stopped, don't care", "i");
+					log("disconnected while stopped, don't care", "v");
 				}
-				else if (state == RadioPlayer.STATE_PLAYING)
-				{
-					Notification notification = updateNotification("Waiting for network", "Cancel", true);
-					mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
-					log("disconnected while playing. should resume when network does", "i");
-				}
-				else if (state == RadioPlayer.STATE_BUFFERING)
+				else if (state.equals(RadioPlayer.STATE_PLAYING))
 				{
 					Notification notification = updateNotification("Waiting for network", "Cancel", true);
 					mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
-					log("disconnected while buffering. should resume when network does", "i");
+					log("disconnected while playing. should resume when network does", "v");
 				}
-				else if (state == RadioPlayer.STATE_UNINITIALIZED)
+				else if (state.equals(RadioPlayer.STATE_BUFFERING))
+				{
+					Notification notification = updateNotification("Waiting for network", "Cancel", true);
+					mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
+					log("disconnected while buffering. should resume when network does", "v");
+				}
+				else if (state.equals(RadioPlayer.STATE_UNINITIALIZED))
 				{
 					if (mMediaPlayer == null)
 					{
-						log("disconnected while uninitialized", "i");
+						log("disconnected while uninitialized", "v");
 					}
 					else
 					{
