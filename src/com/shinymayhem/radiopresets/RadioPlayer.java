@@ -172,7 +172,8 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnBuffer
 				int preset = Integer.valueOf(intent.getIntExtra(MainActivity.EXTRA_STATION_PRESET, 0));	
 				log("preset in action:" + String.valueOf(preset), "v");
 				play(preset);
-				return START_REDELIVER_INTENT;
+				//return START_REDELIVER_INTENT;
+				return START_NOT_STICKY; 
 			}
 			else if (action.equals(ACTION_NEXT.toString())) //Next preset intent
 			{
