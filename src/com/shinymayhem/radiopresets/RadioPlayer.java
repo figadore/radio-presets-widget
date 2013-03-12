@@ -56,7 +56,7 @@ import android.view.KeyEvent;
 import android.webkit.URLUtil;
 import android.widget.Toast;
 
-public class RadioPlayer extends Service implements OnPreparedListener, OnBufferingUpdateListener, OnInfoListener, OnCompletionListener, OnErrorListener, OnAudioFocusChangeListener {
+public class RadioPlayer extends Service implements OnPreparedListener, OnInfoListener, OnCompletionListener, OnErrorListener, OnAudioFocusChangeListener {
 	
 	public final static int ONGOING_NOTIFICATION = 1;
 	//public final static String ACTION = "com.shinymayhem.radiopresets.ACTION";
@@ -310,13 +310,6 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnBuffer
 		status.append(statusString);*/
 		return false;
 	}
-	
-	@Override
-	public void onBufferingUpdate(MediaPlayer player, int percent) {
-		log("buffering percent:" + String.valueOf(percent), "v");
-		
-	}
-
 	
 	public void onCompletion(MediaPlayer mediaPlayer)
 	{
@@ -938,7 +931,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnBuffer
 		player.setOnInfoListener(this);
 		player.setOnCompletionListener(this);
 		player.setOnErrorListener(this);
-		player.setOnBufferingUpdateListener(this);
+		//player.setOnBufferingUpdateListener(this);
 		return;
 	}
 	
