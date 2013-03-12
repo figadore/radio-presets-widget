@@ -892,6 +892,20 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnBuffer
 		this.sendBroadcast(intent);
 	}
 	
+	protected Notification getResumeNotification()
+	{
+		NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
+		;
+		return builder.build();
+	}
+	
+	protected Notification getErrorNotification()
+	{
+		NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
+		;
+		return builder.build();
+	}
+	
 	protected Notification updateNotification(String status, String stopText, boolean updateTicker)
 	{
 		
