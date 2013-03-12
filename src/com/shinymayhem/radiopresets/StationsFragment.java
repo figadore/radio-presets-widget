@@ -57,12 +57,12 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 	
 	RadioCursorAdapter mAdapter;
 	
-	public interface PlayerListener
+	public interface PresetListener
 	{
 		public void play(int preset);
 	}
 	
-	PlayerListener mListener;
+	PresetListener mListener;
 	
 	@Override
 	public void onAttach(Activity activity)
@@ -71,13 +71,13 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		try
 		{
 			// Instantiate the AddDialogListener so we can send events to the host
-			mListener = (PlayerListener) activity;
+			mListener = (PresetListener) activity;
 		}
 		catch (ClassCastException e)
 		{
 			// The activity doesn't implement the interface, throw exception
             throw new ClassCastException(activity.toString()
-                    + " must implement PlayerListener");
+                    + " must implement PresetListener");
 		}
 	}
 
@@ -171,7 +171,7 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		View view = super.onCreateView(inflater, container, savedInstanceState);
 		
 		//TODO use this custom view instead of default simple list view
-		//View view = inflater.inflate(R.layout.stations_fragment, container);
+		//View view = inflater.inflate(R.layout.stations_fragment, container, false);
 		
 		
 		

@@ -855,6 +855,21 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnBuffer
 		}
 	}
 	
+	protected void setVolume(int percent)
+	{
+		AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+		
+		int maxVolume = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+		int newVolume = (int)((long)(percent/100)*maxVolume);
+		audio.setStreamVolume(AudioManager.STREAM_MUSIC, newVolume, 0);
+		/*log("setting volume to " + String.valueOf(percent), "v");
+		float log1=(float)(Math.log(100-percent)/Math.log(100));
+		log("lowering volume to " +  String.valueOf(log1), "v");
+		mMediaPlayer.setVolume(1-log1, 1-log1);*/
+		
+		
+	}
+	
 	protected Intent getWidgetUpdateIntent(String text1, String text2)
 	{
 		Intent intent = new Intent(this, com.shinymayhem.radiopresets.PresetButtonsWidgetProvider.class);
@@ -926,31 +941,6 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnBuffer
 		return;
 	}
 	
-	//called from unbound, headphones unplugged, notification->stop 
-	protected void end()
-	{
-		log("end()", "d");
-		stop();
-		if (!mBound)
-		{
-			log("not bound, stopping service with stopself", "d");
-			stopSelf();
-			//Intent intent = new Intent(this, RadioPlayer.class);
-			//stopSelf();
-			//only stops service intent started with play action? not sure. not even sure if that would work
-			//what should happen is 
-			//intent.setAction(RadioPlayer.ACTION_PLAY);
-			//this.stopService(intent);
-			state = RadioPlayer.STATE_END;
-		} 
-		else
-		{
-			String str = "still bound";
-			log(str, "v");
-			
-		}
-		
-	}
 	
 	protected void pause()
 	{
@@ -1094,6 +1084,32 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnBuffer
 		//mIntent.setAction(null);
 		
 		state = RadioPlayer.STATE_STOPPED;
+	}
+	
+	//called from unbound, headphones unplugged, notification->stop 
+	protected void end()
+	{
+		log("end()", "d");
+		stop();
+		if (!mBound)
+		{
+			log("not bound, stopping service with stopself", "d");
+			stopSelf();
+			//Intent intent = new Intent(this, RadioPlayer.class);
+			//stopSelf();
+			//only stops service intent started with play action? not sure. not even sure if that would work
+			//what should happen is 
+			//intent.setAction(RadioPlayer.ACTION_PLAY);
+			//this.stopService(intent);
+			state = RadioPlayer.STATE_END;
+		} 
+		else
+		{
+			String str = "still bound";
+			log(str, "v");
+			
+		}
+		
 	}
 	
 	//called from onComplete or network change if no network and was playing

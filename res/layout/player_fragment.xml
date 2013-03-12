@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:orientation="vertical"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:id="@+id/player_fragment"
+	>
+         
+	<ImageButton
+        android:id="@+id/stop_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:padding="5dp"
+        android:contentDescription="@string/stop"
+        android:background="@android:color/transparent"
+        android:src="@drawable/av_stop"
+        android:onClick="stop" />
+    
+    <ImageView
+	    android:src="@android:drawable/divider_horizontal_dark"
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:contentDescription="@string/divider"
+	    android:scaleType="fitXY"
+	    android:paddingLeft="5dp"
+	    android:paddingRight="5dp"
+	    android:paddingBottom="2dp"
+	    android:paddingTop="2dp" 
+	    android:layout_alignTop="@id/stop_button"/>
+</RelativeLayout>

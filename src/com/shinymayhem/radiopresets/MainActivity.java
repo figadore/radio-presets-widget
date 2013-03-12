@@ -41,11 +41,12 @@ import android.widget.EditText;
 
 import com.shinymayhem.radiopresets.AddDialogFragment.AddDialogListener;
 import com.shinymayhem.radiopresets.EventDialogFragment.EventDialogListener;
+import com.shinymayhem.radiopresets.PlayerFragment.PlayerListener;
 import com.shinymayhem.radiopresets.RadioDbContract.StationsDbHelper;
 import com.shinymayhem.radiopresets.RadioPlayer.LocalBinder;
-import com.shinymayhem.radiopresets.StationsFragment.PlayerListener;
+import com.shinymayhem.radiopresets.StationsFragment.PresetListener;
 
-public class MainActivity extends FragmentActivity implements AddDialogListener, EventDialogListener, PlayerListener {
+public class MainActivity extends FragmentActivity implements AddDialogListener, EventDialogListener, PresetListener, PlayerListener {
 
 	//string-extra key for intent
 	//public final static String URL = "com.shinymayhem.radiopresets.URL";
@@ -76,20 +77,22 @@ public class MainActivity extends FragmentActivity implements AddDialogListener,
 		//set content view first so findViewById works
 		setContentView(R.layout.activity_main);
 		
-		if (findViewById(R.id.fragment_container) != null) {
+		if (findViewById(R.id.stations_fragment_container) != null) {
 			if (savedInstanceState != null) { //don't create overlapping fragments
                 return;
             }
 			
+			PlayerFragment playerFragment = new PlayerFragment();
 			StationsFragment stationsFragment = new StationsFragment();
+			playerFragment.setArguments(getIntent().getExtras());
 			stationsFragment.setArguments(getIntent().getExtras());
 			
 			FragmentManager fragmentManager = getSupportFragmentManager();
 			fragmentManager.beginTransaction()
-					.add(R.id.fragment_container, stationsFragment)
+					.add(R.id.stations_fragment_container, stationsFragment)
+					.add(R.id.player_fragment_container, playerFragment)
 					.commit();
 		}
-		
 		
 		
 	}
@@ -213,22 +216,47 @@ public class MainActivity extends FragmentActivity implements AddDialogListener,
 		//mService.play(url);
 	}
 	
+	public void setVolume(int percent)
+	{
+		log("setVolume()", "v");
+		mService.setVolume(percent);
+	}
+	
 
 	public void stop(View view)
 	{
-		//Intent intent = new Intent(this, RadioPlayer.class);
-		//stopService(intent);
-		/*
-		log("Stop button received, sending stop intent", "d");
-		Intent intent = new Intent(this, RadioPlayer.class);
-		intent.setAction(RadioPlayer.ACTION_STOP);
-		startService(intent);
-		*/
+		log("stop()", "v");
 		mService.stop();
 	}
 	
+	public void next(View view)
+	{
+		log("next()", "v");
+		mService.nextPreset();
+	}
 	
+	public void prev(View view)
+	{
+		log("prev()", "v");
+		mService.previousPreset();
+	}
 	
+/*
+	public void stop(View view)
+	{
+		log("stop(View view)", "v");
+		//Intent intent = new Intent(this, RadioPlayer.class);
+		//stopService(intent);
+		
+		//log("Stop button received, sending stop intent", "d");
+		//Intent intent = new Intent(this, RadioPlayer.class);
+		//intent.setAction(RadioPlayer.ACTION_STOP);
+		//startService(intent);
+		
+		mService.stop();
+	}*/
+	
+
 	//tell service to copy logs to sd card
 	public boolean copy(MenuItem item)
 	{
