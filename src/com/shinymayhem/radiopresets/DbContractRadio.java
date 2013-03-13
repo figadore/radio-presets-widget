@@ -33,9 +33,20 @@ public class DbContractRadio {
 		DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER + " INTEGER NOT NULL" + COMMA_SEP +
 	    DbContractRadio.EntryStation.COLUMN_NAME_TITLE + TEXT_TYPE + COMMA_SEP +
 	    DbContractRadio.EntryStation.COLUMN_NAME_URL + TEXT_TYPE + " NOT NULL" +
-	    " )";
-	//TODO insert sample stations?
-
+	    " )" +
+	    ";";
+	
+	private static final String ADD_SAMPLE_STATIONS = 
+		"insert into " + DbContractRadio.EntryStation.TABLE_NAME + " (" +
+		    DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER + COMMA_SEP +
+		    DbContractRadio.EntryStation.COLUMN_NAME_TITLE + COMMA_SEP +
+		    DbContractRadio.EntryStation.COLUMN_NAME_URL +
+		    " )" + 
+		    "  " +
+		    "select 1, 'ElectroSwing Revolution', 'http://streamplus17.leonex.de:39060' union " +
+		    "select 2, 'Jazz Radio Electroswing', 'http://jazz-wr04.ice.infomaniak.ch/jazz-wr04-128.mp3' union " +
+		    "select 3, 'Bart&Baker', 'http://jazz-wr14.ice.infomaniak.ch/jazz-wr14-128.mp3' " + 
+		    ";";
 	private static final String SQL_DELETE_STATIONS = "DROP TABLE IF EXISTS " + DbContractRadio.EntryStation.TABLE_NAME;
 	
 	private DbContractRadio() {}
@@ -60,6 +71,7 @@ public class DbContractRadio {
 		@Override
 		public void onCreate(SQLiteDatabase db) {
 			db.execSQL(SQL_CREATE_STATIONS);
+			db.execSQL(ADD_SAMPLE_STATIONS);
 			Log.i(getClass().toString(), "Created database");
 		}
 
