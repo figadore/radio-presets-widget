@@ -80,7 +80,7 @@
         android:contentDescription="@string/next"
         android:background="@android:color/transparent"
         android:src="@drawable/av_next"
-        android:onClick="prev" />
+        android:onClick="next" />
     <FrameLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
