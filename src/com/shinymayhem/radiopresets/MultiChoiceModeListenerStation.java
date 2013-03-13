@@ -10,13 +10,13 @@ import android.widget.AbsListView.MultiChoiceModeListener;
 import android.widget.ListView;
 
 @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-public class StationMultiChoiceModeListener implements MultiChoiceModeListener {
+public class MultiChoiceModeListenerStation implements MultiChoiceModeListener {
 	protected ActionMode mActionMode;
 	protected int mSelectedCount;
 	protected ListView mListView;
-	StationsFragment mHost;
+	FragmentStations mHost;
 	
-	StationMultiChoiceModeListener(StationsFragment host, ListView lv) {
+	MultiChoiceModeListenerStation(FragmentStations host, ListView lv) {
 	    this.mHost=host;
 	    this.mListView=lv;
 	  }

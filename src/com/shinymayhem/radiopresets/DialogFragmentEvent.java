@@ -23,7 +23,7 @@ import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.view.LayoutInflater;
 
-public class EventDialogFragment extends DialogFragment {
+public class DialogFragmentEvent extends DialogFragment {
 
 	
 	@Override
@@ -32,13 +32,13 @@ public class EventDialogFragment extends DialogFragment {
 		super.onCreate(savedInstanceState);
 	}
 	
-	public interface EventDialogListener
+	public interface ListenerEventDialog
 	{
 		public void onDialogEventPositiveClick(DialogFragment dialog);
 		public void onDialogEventNegativeClick(DialogFragment dialog);
 	}
 	
-	EventDialogListener mListener;
+	ListenerEventDialog mListener;
 	
 	@Override
 	public void onAttach(Activity activity)
@@ -46,14 +46,14 @@ public class EventDialogFragment extends DialogFragment {
 		super.onAttach(activity);
 		try
 		{
-			// Instantiate the AddDialogListener so we can send events to the host
-			mListener = (EventDialogListener) activity;
+			// Instantiate the ListenerAddDialog so we can send events to the host
+			mListener = (ListenerEventDialog) activity;
 		}
 		catch (ClassCastException e)
 		{
 			// The activity doesn't implement the interface, throw exception
             throw new ClassCastException(activity.toString()
-                    + " must implement AddDialogListener");
+                    + " must implement ListenerAddDialog");
 		}
 	}
 	
@@ -69,13 +69,13 @@ public class EventDialogFragment extends DialogFragment {
                .setPositiveButton(R.string.submit, new DialogInterface.OnClickListener() {
                    public void onClick(DialogInterface dialog, int id) {
                        // Send the positive button event back to the host activity
-                       mListener.onDialogEventPositiveClick(EventDialogFragment.this);
+                       mListener.onDialogEventPositiveClick(DialogFragmentEvent.this);
                    }
                })
                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
                    public void onClick(DialogInterface dialog, int id) {
                        // Send the negative button event back to the host activity
-                       mListener.onDialogEventNegativeClick(EventDialogFragment.this);
+                       mListener.onDialogEventNegativeClick(DialogFragmentEvent.this);
                    }
                })
                .setTitle(R.string.event_details);

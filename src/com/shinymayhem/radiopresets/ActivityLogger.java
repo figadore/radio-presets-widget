@@ -24,7 +24,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.util.Log;
 
-public class Logger extends Activity{
+public class ActivityLogger extends Activity{
 	
 	public void log(Object caller, String text)
 	{
@@ -74,7 +74,7 @@ public class Logger extends Activity{
 	    	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
 	    	str += "\n";
 	    	str = sdf.format(cal.getTime()) + "\t\t" + str;
-			file = context.openFileOutput(MainActivity.LOG_FILENAME, Context.MODE_APPEND);
+			file = context.openFileOutput(ActivityMain.LOG_FILENAME, Context.MODE_APPEND);
 			file.write(str.getBytes());
 			file.flush();
 			file.close();
@@ -134,7 +134,7 @@ public class Logger extends Activity{
 	    	str += "\n";
 	    	str = sdf.format(cal.getTime()) + "\t\t" + str;
 	    	Context context = (Context)caller;
-			file = context.openFileOutput(MainActivity.LOG_FILENAME, Context.MODE_APPEND);
+			file = context.openFileOutput(ActivityMain.LOG_FILENAME, Context.MODE_APPEND);
 			file.write(str.getBytes());
 			file.flush();
 			file.close();

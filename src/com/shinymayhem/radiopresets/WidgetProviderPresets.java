@@ -31,9 +31,9 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.RemoteViews;
 
-public class PresetButtonsWidgetProvider extends AppWidgetProvider {
+public class WidgetProviderPresets extends AppWidgetProvider {
 	
-	protected Logger mLogger = new Logger();
+	protected ActivityLogger mLogger = new ActivityLogger();
 	private final int TALL_WIDGET = 100;
 	protected RemoteViews mViews;
 	protected Context mContext;
@@ -58,15 +58,15 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 		super.onReceive(context, intent);	
 		String action = intent.getAction();
 		log(action,"v");
-		log(MainActivity.ACTION_UPDATE_TEXT,"v");
-		if (action.equals(MainActivity.ACTION_UPDATE_TEXT))
+		log(ActivityMain.ACTION_UPDATE_TEXT,"v");
+		if (action.equals(ActivityMain.ACTION_UPDATE_TEXT))
 		{
 			log("update text action", "v");
 			Bundle extras = intent.getExtras();
-			String station = extras.getString(MainActivity.EXTRA_STATION);
-			String status = extras.getString(MainActivity.EXTRA_STATUS);
-			String artist = extras.getString(MainActivity.EXTRA_ARTIST);
-			String song = extras.getString(MainActivity.EXTRA_SONG);
+			String station = extras.getString(ActivityMain.EXTRA_STATION);
+			String status = extras.getString(ActivityMain.EXTRA_STATUS);
+			String artist = extras.getString(ActivityMain.EXTRA_ARTIST);
+			String song = extras.getString(ActivityMain.EXTRA_SONG);
 			this.updateText(station, status, artist, song);
 		}
 		else
@@ -91,7 +91,7 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 		log("updating text:" + station + "," + status, "v");
 		//mContext = context;
 		AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(mContext);
-		ComponentName provider = new ComponentName(mContext, com.shinymayhem.radiopresets.PresetButtonsWidgetProvider.class);
+		ComponentName provider = new ComponentName(mContext, com.shinymayhem.radiopresets.WidgetProviderPresets.class);
 		int[] appWidgetIds = appWidgetManager.getAppWidgetIds(provider);
 		
 		final int N = appWidgetIds.length;
@@ -185,7 +185,7 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 	
 	private Intent getMainIntent()
 	{
-		return new Intent(mContext, MainActivity.class);
+		return new Intent(mContext, ActivityMain.class);
 		
 	}
 	
@@ -194,7 +194,7 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 		Intent intent = this.getMainIntent()
 				.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP)
 				.setAction(Intent.ACTION_RUN)
-				.setClass(mContext, MainActivity.class);
+				.setClass(mContext, ActivityMain.class);
         //intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
         PendingIntent pendingIntent = PendingIntent.getActivity(mContext, 0, intent, 0); //Intent.FLAG_ACTIVITY_NEW_TASK
         return pendingIntent;
@@ -204,8 +204,8 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 	{
 		Intent intent = getMainIntent()
 				.setFlags(0)
-				.setAction(RadioPlayer.ACTION_PREVIOUS)
-				.setClass(mContext, RadioPlayer.class);
+				.setAction(ServiceRadioPlayer.ACTION_PREVIOUS)
+				.setClass(mContext, ServiceRadioPlayer.class);
 		return PendingIntent.getService(mContext, 0, intent, 0);
 			 
 	}
@@ -214,8 +214,8 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 	{
 		Intent intent = getMainIntent()
 				.setFlags(0)
-				.setAction(RadioPlayer.ACTION_STOP)
-				.setClass(mContext, RadioPlayer.class);
+				.setAction(ServiceRadioPlayer.ACTION_STOP)
+				.setClass(mContext, ServiceRadioPlayer.class);
 		return PendingIntent.getService(mContext, 0, intent, 0);
 			 
 	}
@@ -224,8 +224,8 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 	{
 		Intent intent = getMainIntent()
 				.setFlags(0)
-				.setAction(RadioPlayer.ACTION_NEXT)
-				.setClass(mContext, RadioPlayer.class);
+				.setAction(ServiceRadioPlayer.ACTION_NEXT)
+				.setClass(mContext, ServiceRadioPlayer.class);
 		return PendingIntent.getService(mContext, 0, intent, 0);
 			 
 	}
@@ -234,10 +234,10 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 	private PendingIntent getPresetIntent(int preset)
 	{
 		Intent playIntent = getMainIntent()
-				.setAction(RadioPlayer.ACTION_PLAY)
+				.setAction(ServiceRadioPlayer.ACTION_PLAY)
 				.setFlags(0)
-				.setClass(mContext, RadioPlayer.class);
-        playIntent.putExtra(MainActivity.EXTRA_STATION_PRESET, preset);
+				.setClass(mContext, ServiceRadioPlayer.class);
+        playIntent.putExtra(ActivityMain.EXTRA_STATION_PRESET, preset);
         PendingIntent presetIntent = PendingIntent.getService(mContext, preset, playIntent, PendingIntent.FLAG_UPDATE_CURRENT); //cancel current sometimes fails. test PendingIntent.FLAG_UPDATE_CURRENT if 0 doesn't work 
         return presetIntent;
 	}
@@ -296,11 +296,11 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 		
 		
 		
-		Uri uri = RadioContentProvider.CONTENT_URI_STATIONS;
-		String[] projection = {RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER};  
+		Uri uri = ContentProviderRadio.CONTENT_URI_STATIONS;
+		String[] projection = {DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER};  
 		String selection = null;
 		String[] selectionArgs = null;
-		String sortOrder = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER;
+		String sortOrder = DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER;
 		Cursor cursor = mContext.getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
 		
 		int stationsCount = cursor.getCount();

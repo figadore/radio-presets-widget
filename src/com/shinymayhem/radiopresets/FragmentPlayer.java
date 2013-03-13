@@ -11,9 +11,9 @@ import android.view.ViewGroup;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 
-public class PlayerFragment extends Fragment {
+public class FragmentPlayer extends Fragment {
 	
-	protected Logger mLogger = new Logger();
+	protected ActivityLogger mLogger = new ActivityLogger();
 	public static final String FRAGMENT_TAG = "com.shinymayhem.radiopresets.PlayerFragmentTag";
 	
 	//define functions that this class depends on for communication with the rest of the app
@@ -112,7 +112,7 @@ public class PlayerFragment extends Fragment {
 	
 	public void log(String text, String level)
 	{
-		mLogger.log(this.getActivity(), "PlayerFragment:\t\t"+text, level);
+		mLogger.log(this.getActivity(), "FragmentPlayer:\t\t"+text, level);
 	}
 
 }

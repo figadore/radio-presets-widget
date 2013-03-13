@@ -56,7 +56,7 @@ import android.view.KeyEvent;
 import android.webkit.URLUtil;
 import android.widget.Toast;
 
-public class RadioPlayer extends Service implements OnPreparedListener, OnInfoListener, OnCompletionListener, OnErrorListener, OnAudioFocusChangeListener {
+public class ServiceRadioPlayer extends Service implements OnPreparedListener, OnInfoListener, OnCompletionListener, OnErrorListener, OnAudioFocusChangeListener {
 	
 	public final static int ONGOING_NOTIFICATION = 1;
 	//public final static String ACTION = "com.shinymayhem.radiopresets.ACTION";
@@ -65,7 +65,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	public final static String ACTION_NEXT = "com.shinymayhem.radiopresets.ACTION_NEXT";
 	public final static String ACTION_PREVIOUS = "com.shinymayhem.radiopresets.ACTION_PREVIOUS";
 	public final static String ACTION_MEDIA_BUTTON = "com.shinymayhem.radiopresets.MEDIA_BUTTON";
-	public String state = STATE_UNINITIALIZED;
+	private String mCurrentPlayerState = STATE_UNINITIALIZED;
 	public final static String STATE_UNINITIALIZED = "Uninitialized";
 	public final static String STATE_INITIALIZING = "Initializing";
 	public final static String STATE_PREPARING = "Preparing";
@@ -84,12 +84,12 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	protected int mNetworkState;
 	protected MediaPlayer mMediaPlayer;
 	protected MediaPlayer mNextPlayer;
-	private NetworkReceiver mReceiver;
-	private NoisyAudioStreamReceiver mNoisyReceiver;
-	private PhoneCallReceiver mPhoneReceiver;
+	private ReceiverNetwork mReceiver;
+	private ReceiverNoisyAudioStream mNoisyReceiver;
+	private ReceiverPhoneCall mPhoneReceiver;
 	private AudioManager mAudioManager;
 	private boolean mMediaButtonEventReceiverRegistered = false;
-	private MediaButtonReceiver mButtonReceiver;// = new MediaButtonReceiver();
+	private ReceiverMediaButton mButtonReceiver;// = new ReceiverMediaButton();
 	//private OnAudioFocusChangeListener mFocusListener;
 	private boolean mAudioFocused = false;
 	protected String mUrl;
@@ -98,15 +98,15 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	protected boolean mInterrupted = false;
 	private final IBinder mBinder = new LocalBinder();
 	protected boolean mBound = false;
-	protected Logger mLogger = new Logger();
+	protected ActivityLogger mLogger = new ActivityLogger();
 	protected Intent mIntent;
 	protected NotificationManager mNotificationManager;
 	
 	public class LocalBinder extends Binder
 	{
-		RadioPlayer getService()
+		ServiceRadioPlayer getService()
 		{
-			return RadioPlayer.this;
+			return ServiceRadioPlayer.this;
 		}
 	}
 
@@ -169,7 +169,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			else if (action.equals(ACTION_PLAY.toString())) //Play intent
 			{
 				log("PLAY action in intent", "v");
-				int preset = Integer.valueOf(intent.getIntExtra(MainActivity.EXTRA_STATION_PRESET, 0));	
+				int preset = Integer.valueOf(intent.getIntExtra(ActivityMain.EXTRA_STATION_PRESET, 0));	
 				log("preset in action:" + String.valueOf(preset), "v");
 				play(preset);
 				//return START_REDELIVER_INTENT;
@@ -213,7 +213,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	public void onPrepared(MediaPlayer mediaPlayer)
 	{
 		log("onPrepared()", "v");
-		if (state.equals(RadioPlayer.STATE_RESTARTING) || state.equals(RadioPlayer.STATE_COMPLETE))
+		if (mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_RESTARTING) || mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_COMPLETE))
 		{
 			log("newPlayer ready", "i");
 		}
@@ -226,7 +226,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 				
 				log("mediaPlayer.start()", "v");
 				mediaPlayer.start();
-				state = RadioPlayer.STATE_PLAYING;
+				mCurrentPlayerState = ServiceRadioPlayer.STATE_PLAYING;
 				if (mInterrupted)
 				{
 					log("set interrupted = false", "v");
@@ -272,7 +272,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			
 			Notification notification = updateNotification("Playing", "Stop", true);
 			mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
-			state = RadioPlayer.STATE_PLAYING;
+			mCurrentPlayerState = ServiceRadioPlayer.STATE_PLAYING;
 			return true;
 			
 		}
@@ -287,7 +287,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 			
 
-			state = RadioPlayer.STATE_BUFFERING;
+			mCurrentPlayerState = ServiceRadioPlayer.STATE_BUFFERING;
 			return true;
 		}
 		else if (what == 703)
@@ -316,7 +316,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		//mediaPlayer.reset();
 		//mediaPlayer.release();
 		log("onCompletion()", "v");
-		state = RadioPlayer.STATE_COMPLETE;
+		mCurrentPlayerState = ServiceRadioPlayer.STATE_COMPLETE;
 		//TODO update notification?
 		if (mInterrupted)
 		{
@@ -339,7 +339,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			mNextPlayer = null;
 			if (mediaPlayer.isPlaying())
 			{
-				state = RadioPlayer.STATE_PLAYING;
+				mCurrentPlayerState = ServiceRadioPlayer.STATE_PLAYING;
 				if (mInterrupted)
 				{
 					log("set interrupted = false", "v");
@@ -372,7 +372,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		{
 			try
 			{
-				if (state != RadioPlayer.STATE_PREPARING)
+				if (!mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_PREPARING))
 				{
 					mediaPlayer.stop();	
 				}
@@ -386,8 +386,8 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			mediaPlayer = null;
 			mMediaPlayer = null;
 		}
-		String oldState = state;
-		state = RadioPlayer.STATE_ERROR;
+		String oldState = mCurrentPlayerState;
+		mCurrentPlayerState = ServiceRadioPlayer.STATE_ERROR;
 		//TextView status = (TextView) findViewById(R.id.status);
 		String statusString = "";
 		if (oldState.equals("Preparing"))
@@ -451,7 +451,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
         	}
         	else
         	{
-        		if (state.equals(STATE_PAUSED))
+        		if (mCurrentPlayerState.equals(STATE_PAUSED))
         		{
         			resume();
         		}
@@ -469,7 +469,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
         	if (mMediaButtonEventReceiverRegistered)
         	{
         		log("unregister button receiver", "v");
-        		mAudioManager.unregisterMediaButtonEventReceiver(new ComponentName(getPackageName(), RemoteControlReceiver.class.getName()));
+        		mAudioManager.unregisterMediaButtonEventReceiver(new ComponentName(getPackageName(), ReceiverRemoteControl.class.getName()));
             	mMediaButtonEventReceiverRegistered = false;	
         	}
         	else
@@ -549,7 +549,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			this.unregisterReceiver(mReceiver);
 			mReceiver = null;
 		}
-		mReceiver = new NetworkReceiver();
+		mReceiver = new ReceiverNetwork();
         log("registering network change broadcast receiver", "v");
 		this.registerReceiver(mReceiver, filter);
 
@@ -566,33 +566,33 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			mButtonReceiver = null;	
 		}
 		log("register media button listener", "v");
-		mButtonReceiver = new MediaButtonReceiver();
+		mButtonReceiver = new ReceiverMediaButton();
 		registerReceiver(mButtonReceiver, new IntentFilter(ACTION_MEDIA_BUTTON));
 		
-		//set RemoteControlReceiver to be the sole receiver of media button actions
+		//set ReceiverRemoteControl to be the sole receiver of media button actions
 		if (mMediaButtonEventReceiverRegistered == false)
 		{
 			log("registering media button listener", "v");
-			mAudioManager.registerMediaButtonEventReceiver(new ComponentName(getPackageName(), RemoteControlReceiver.class.getName()));
+			mAudioManager.registerMediaButtonEventReceiver(new ComponentName(getPackageName(), ReceiverRemoteControl.class.getName()));
 			mMediaButtonEventReceiverRegistered = true;
 		}
 	}
 	
 	protected PendingIntent getPreviousIntent()
 	{
-		Intent intent = new Intent(this, RadioPlayer.class).setAction(ACTION_PREVIOUS);
+		Intent intent = new Intent(this, ServiceRadioPlayer.class).setAction(ACTION_PREVIOUS);
 		return PendingIntent.getService(this, 0, intent, 0);	 
 	}
 	
 	protected PendingIntent getStopIntent()
 	{
-		Intent intent = new Intent(this, RadioPlayer.class).setAction(ACTION_STOP);
+		Intent intent = new Intent(this, ServiceRadioPlayer.class).setAction(ACTION_STOP);
 		return PendingIntent.getService(this, 0, intent, 0);	 
 	}
 	
 	protected PendingIntent getNextIntent()
 	{
-		Intent intent = new Intent(this, RadioPlayer.class).setAction(ACTION_NEXT);
+		Intent intent = new Intent(this, ServiceRadioPlayer.class).setAction(ACTION_NEXT);
 		return PendingIntent.getService(this, 0, intent, 0);	 
 	}
 	
@@ -630,7 +630,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		}
 		
 		this.mPreset = preset; 
-		state = RadioPlayer.STATE_INITIALIZING;
+		mCurrentPlayerState = ServiceRadioPlayer.STATE_INITIALIZING;
 		if (isConnected())
 		{
 			log("setting network type", "v");
@@ -640,7 +640,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		{
 			//TODO handle this, let user know
 			log("setting network state to disconnected", "v");
-			mNetworkState = RadioPlayer.NETWORK_STATE_DISCONNECTED;
+			mNetworkState = ServiceRadioPlayer.NETWORK_STATE_DISCONNECTED;
 			//TODO ask user if it should play on network resume
 			Toast.makeText(this, "tried to play with no network", Toast.LENGTH_LONG).show();
 			log("no network, should be handled by ui? returning", "e");
@@ -648,14 +648,14 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			if (mInterrupted)
 			{
 				log("interrupted, so set state to playing so it will wait for network to resume", "v");
-				state = RadioPlayer.STATE_PLAYING;
+				mCurrentPlayerState = ServiceRadioPlayer.STATE_PLAYING;
 				Notification notification = updateNotification("Waiting for network", "Cancel", true);
 				mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 			}
 			else
 			{
 				log("wasn't interrupted, so remove any notifications and reset to uninitialized", "v");
-				state = RadioPlayer.STATE_UNINITIALIZED;
+				mCurrentPlayerState = ServiceRadioPlayer.STATE_UNINITIALIZED;
 				if (mMediaPlayer != null)
 				{
 					log("media player not null, releasing", "v");
@@ -670,11 +670,11 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		
 		this.mPreset = preset;
 
-		Uri uri = Uri.parse(RadioContentProvider.CONTENT_URI_PRESETS.toString() + "/" + String.valueOf(preset));
-		String[] projection = {RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, RadioDbContract.StationEntry.COLUMN_NAME_TITLE, RadioDbContract.StationEntry.COLUMN_NAME_URL};  
+		Uri uri = Uri.parse(ContentProviderRadio.CONTENT_URI_PRESETS.toString() + "/" + String.valueOf(preset));
+		String[] projection = {DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER, DbContractRadio.EntryStation.COLUMN_NAME_TITLE, DbContractRadio.EntryStation.COLUMN_NAME_URL};  
 		String selection = null;
 		String[] selectionArgs = null;
-		String sortOrder = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER;
+		String sortOrder = DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER;
 		Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
 		int count = cursor.getCount();
 		if (count < 1)
@@ -685,15 +685,15 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		else
 		{
 			cursor.moveToFirst();
-			mPreset = (int)cursor.getLong(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER));
-			mTitle = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_TITLE));
-			mUrl = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));	
+			mPreset = (int)cursor.getLong(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER));
+			mTitle = cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_TITLE));
+			mUrl = cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_URL));	
 		}
 		
 		//begin listen for headphones unplugged
 		if (mNoisyReceiver == null)
 		{
-			mNoisyReceiver = new NoisyAudioStreamReceiver();
+			mNoisyReceiver = new ReceiverNoisyAudioStream();
 			IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
 			registerReceiver(mNoisyReceiver, intentFilter);
 			log("register noisy receiver", "v");	
@@ -707,7 +707,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		//begin listen for phone call
 		if (mPhoneReceiver == null)
 		{
-			mPhoneReceiver = new PhoneCallReceiver();
+			mPhoneReceiver = new ReceiverPhoneCall();
 			IntentFilter intentFilter = new IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
 			registerReceiver(mPhoneReceiver, intentFilter);
 			log("register phone receiver", "v");	
@@ -744,7 +744,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		}
 		initializePlayer(mMediaPlayer); 
 
-		state = RadioPlayer.STATE_PREPARING;
+		mCurrentPlayerState = ServiceRadioPlayer.STATE_PREPARING;
 		
 		Notification notification = updateNotification("Preparing", "Cancel", true);
 		//mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
@@ -761,11 +761,11 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	{
 		log("nextPreset()", "v");
 		mPreset++;
-		Uri uri = Uri.parse(RadioContentProvider.CONTENT_URI_PRESETS.toString() + "/" + String.valueOf(mPreset));
-		String[] projection = {RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER};  
+		Uri uri = Uri.parse(ContentProviderRadio.CONTENT_URI_PRESETS.toString() + "/" + String.valueOf(mPreset));
+		String[] projection = {DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER};  
 		String selection = null;
 		String[] selectionArgs = null;
-		String sortOrder = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER;
+		String sortOrder = DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER;
 		Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
 		int count = cursor.getCount();
 		if (count < 1 && mPreset == 1)
@@ -782,7 +782,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		else
 		{
 			cursor.moveToFirst();
-			mPreset = (int)cursor.getLong(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER));
+			mPreset = (int)cursor.getLong(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER));
 			log("incremented preset, playing " + String.valueOf(mPreset), "v");
 			play();	
 		}
@@ -791,7 +791,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	//FIXME duplicate code from radioContentProvider
 	protected int getMaxPresetNumber()
 	{
-		Uri uri = RadioContentProvider.CONTENT_URI_PRESETS_MAX;
+		Uri uri = ContentProviderRadio.CONTENT_URI_PRESETS_MAX;
 		String[] projection = null;
 		String selection = null;
 		String[] selectionArgs = null;
@@ -801,7 +801,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		if (cursor.getCount() > 0)		
 		{
 			cursor.moveToFirst();
-			preset = cursor.getLong(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER));	
+			preset = cursor.getLong(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER));	
 		}
 		
 		cursor.close();
@@ -815,9 +815,9 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		if (mPreset <= 0)
 		{
 			////call() not supported until api 11
-			//Uri maxUri = RadioContentProvider.CONTENT_URI_PRESETS_MAX;
+			//Uri maxUri = ContentProviderRadio.CONTENT_URI_PRESETS_MAX;
 			//Bundle values = getContentResolver().call(maxUri, "getMaxPresetNumber", null, null);  
-			//mPreset = values.getInt(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER);
+			//mPreset = values.getInt(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER);
 			mPreset = getMaxPresetNumber();
 			if (mPreset == 0) //no stations? 
 			{
@@ -828,11 +828,11 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			//return;
 		}
 		//find out if the desired station exists
-		Uri uri = Uri.parse(RadioContentProvider.CONTENT_URI_PRESETS.toString() + "/" + String.valueOf(mPreset));
-		String[] projection = {RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER};  
+		Uri uri = Uri.parse(ContentProviderRadio.CONTENT_URI_PRESETS.toString() + "/" + String.valueOf(mPreset));
+		String[] projection = {DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER};  
 		String selection = null;
 		String[] selectionArgs = null;
-		String sortOrder = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER;
+		String sortOrder = DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER;
 		Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
 		int count = cursor.getCount();
 		if (count < 1)
@@ -843,7 +843,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		else
 		{
 			cursor.moveToFirst();
-			mPreset = (int)cursor.getLong(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER));
+			mPreset = (int)cursor.getLong(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER));
 			log("decremented preset, playing " + String.valueOf(mPreset), "v");
 			play();	
 		}
@@ -867,11 +867,11 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	protected Intent getDetailsUpdateIntent(String station, String status)
 	{
 		/*
-		//Intent intent = new Intent(this, com.shinymayhem.radiopresets.PresetButtonsWidgetProvider.class);
-		Intent intent = new Intent(MainActivity.ACTION_UPDATE_TEXT);
-		//intent.setAction(MainActivity.ACTION_UPDATE_TEXT);
-		intent.putExtra(com.shinymayhem.radiopresets.MainActivity.EXTRA_STATION, station);
-		intent.putExtra(com.shinymayhem.radiopresets.MainActivity.EXTRA_STATUS, status);
+		//Intent intent = new Intent(this, com.shinymayhem.radiopresets.WidgetProviderPresets.class);
+		Intent intent = new Intent(ActivityMain.ACTION_UPDATE_TEXT);
+		//intent.setAction(ActivityMain.ACTION_UPDATE_TEXT);
+		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_STATION, station);
+		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_STATUS, status);
         //intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
         return intent;
         */
@@ -882,13 +882,13 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	
 	protected Intent getDetailsUpdateIntent(String station, String status, String artist, String song)
 	{
-		//Intent intent = new Intent(this, com.shinymayhem.radiopresets.PresetButtonsWidgetProvider.class);
-		Intent intent = new Intent(MainActivity.ACTION_UPDATE_TEXT);
-		//intent.setAction(MainActivity.ACTION_UPDATE_TEXT);
-		intent.putExtra(com.shinymayhem.radiopresets.MainActivity.EXTRA_STATION, station);
-		intent.putExtra(com.shinymayhem.radiopresets.MainActivity.EXTRA_STATUS, status);
-		intent.putExtra(com.shinymayhem.radiopresets.MainActivity.EXTRA_ARTIST, artist);
-		intent.putExtra(com.shinymayhem.radiopresets.MainActivity.EXTRA_SONG, song);
+		//Intent intent = new Intent(this, com.shinymayhem.radiopresets.WidgetProviderPresets.class);
+		Intent intent = new Intent(ActivityMain.ACTION_UPDATE_TEXT);
+		//intent.setAction(ActivityMain.ACTION_UPDATE_TEXT);
+		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_STATION, station);
+		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_STATUS, status);
+		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_ARTIST, artist);
+		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_SONG, song);
         //intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
         return intent;
 	}
@@ -931,9 +931,9 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		//PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
 		//TODO taskstack builder only available since 4.1
 		TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
-		stackBuilder.addParentStack(MainActivity.class);
+		stackBuilder.addParentStack(ActivityMain.class);
 		//stackBuilder.addNextIntent(nextIntent)
-		Intent resultIntent = new Intent(this, MainActivity.class);
+		Intent resultIntent = new Intent(this, ActivityMain.class);
 		//resultIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP); //why is this not needed? 
 		stackBuilder.addNextIntent(resultIntent);
 		PendingIntent intent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_CANCEL_CURRENT);
@@ -970,7 +970,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		{
 			log("null media player", "w");
 		}
-		else if (state.equals(RadioPlayer.STATE_PREPARING))
+		else if (mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_PREPARING))
 		{
 			log("pause called while preparing", "v");
 			mMediaPlayer.release();
@@ -1007,13 +1007,13 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		{
 			log("noisyReceiver already unregistered", "e");
 		}*/
-		state = STATE_PAUSED;
+		mCurrentPlayerState = STATE_PAUSED;
 	}
 	
 	protected void resume()
 	{
 		log("resume()", "v");
-		/*mNoisyReceiver = new NoisyAudioStreamReceiver();
+		/*mNoisyReceiver = new ReceiverNoisyAudioStream();
 		IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
 		registerReceiver(mNoisyReceiver, intentFilter);
 		log("register noisy receiver", "v");*/
@@ -1027,8 +1027,8 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		
 		/*
 		log("Stop button received, sending stop intent", "v");
-		Intent intent = new Intent(this, RadioPlayer.class);
-		intent.setAction(RadioPlayer.ACTION_STOP);
+		Intent intent = new Intent(this, ServiceRadioPlayer.class);
+		intent.setAction(ServiceRadioPlayer.ACTION_STOP);
 		startService(intent);*/
 		
 		//stop command called, reset interrupted flag
@@ -1038,7 +1038,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		}
 		mInterrupted = false;
 		
-		if (state.equals(RadioPlayer.STATE_STOPPED) || state.equals(RadioPlayer.STATE_END) || state.equals(RadioPlayer.STATE_UNINITIALIZED))
+		if (mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_STOPPED) || mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_END) || mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_UNINITIALIZED))
 		{
 			log("already stopped", "v");
 			return;
@@ -1046,12 +1046,12 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		
 		if (mMediaPlayer == null)
 		{
-			state = RadioPlayer.STATE_STOPPING;
+			mCurrentPlayerState = ServiceRadioPlayer.STATE_STOPPING;
 			log("null media player", "w");
 		}
-		else if (state.equals(RadioPlayer.STATE_PREPARING))
+		else if (mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_PREPARING))
 		{
-			state = RadioPlayer.STATE_STOPPING; //store oldstate to move state change outside of conditionals
+			mCurrentPlayerState = ServiceRadioPlayer.STATE_STOPPING; //store oldstate to move state change outside of conditionals
 			log("stop called while preparing", "v");
 			stopInfo(); //stopForeground(true);
 			mMediaPlayer.release();
@@ -1059,7 +1059,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		}
 		else
 		{
-			state = RadioPlayer.STATE_STOPPING;
+			mCurrentPlayerState = ServiceRadioPlayer.STATE_STOPPING;
 			log("stopping playback", "v");
 			Toast.makeText(this, "Stopping playback", Toast.LENGTH_SHORT).show();
 			stopInfo(); //stopForeground(true);
@@ -1120,7 +1120,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		//log("experimental fix for service autostarting, redeliver-intent flag", "v");
 		//mIntent.setAction(null);
 		
-		state = RadioPlayer.STATE_STOPPED;
+		mCurrentPlayerState = ServiceRadioPlayer.STATE_STOPPED;
 	}
 	
 	//called from unbound, headphones unplugged, notification->stop 
@@ -1132,13 +1132,13 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		{
 			log("not bound, stopping service with stopself", "v");
 			stopSelf();
-			//Intent intent = new Intent(this, RadioPlayer.class);
+			//Intent intent = new Intent(this, ServiceRadioPlayer.class);
 			//stopSelf();
 			//only stops service intent started with play action? not sure. not even sure if that would work
 			//what should happen is 
-			//intent.setAction(RadioPlayer.ACTION_PLAY);
+			//intent.setAction(ServiceRadioPlayer.ACTION_PLAY);
 			//this.stopService(intent);
-			state = RadioPlayer.STATE_END;
+			mCurrentPlayerState = ServiceRadioPlayer.STATE_END;
 		} 
 		else
 		{
@@ -1154,7 +1154,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	protected void restart()
 	{
 		log("restart()", "v");
-		state = RadioPlayer.STATE_RESTARTING;
+		mCurrentPlayerState = ServiceRadioPlayer.STATE_RESTARTING;
 		
 		if (mNextPlayer != null)
 		{
@@ -1211,7 +1211,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		}
 		
 		//check to see if playback completed 
-		if (state == RadioPlayer.STATE_COMPLETE)
+		if (mCurrentPlayerState == ServiceRadioPlayer.STATE_COMPLETE)
 		{
 			log("playback completed", "e");
 			return;
@@ -1255,14 +1255,14 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	public boolean isPlaying()
 	{
 		return (
-				state.equals(RadioPlayer.STATE_BUFFERING) || 
-				state.equals(RadioPlayer.STATE_PLAYING) ||
-				state.equals(RadioPlayer.STATE_PAUSED) ||
-				state.equals(RadioPlayer.STATE_PHONE) ||
-				state.equals(RadioPlayer.STATE_PREPARING) ||
-				state.equals(RadioPlayer.STATE_INITIALIZING) ||
-				state.equals(RadioPlayer.STATE_COMPLETE) || //service should still stay alive and listen for network changes to resume
-				state.equals(RadioPlayer.STATE_RESTARTING)
+				mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_BUFFERING) || 
+				mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_PLAYING) ||
+				mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_PAUSED) ||
+				mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_PHONE) ||
+				mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_PREPARING) ||
+				mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_INITIALIZING) ||
+				mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_COMPLETE) || //service should still stay alive and listen for network changes to resume
+				mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_RESTARTING)
 		);
 	}
 	
@@ -1406,7 +1406,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	
 	
 	
-	public class MediaButtonReceiver extends BroadcastReceiver {
+	public class ReceiverMediaButton extends BroadcastReceiver {
 	    @Override
 	    public void onReceive(Context context, Intent intent) {
 	    	log("received remote control action", "v");
@@ -1430,7 +1430,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	        			break;
 	        		case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
 	        		case KeyEvent.KEYCODE_HEADSETHOOK:
-	        			if (isPlaying() && state != STATE_PAUSED)
+	        			if (isPlaying() && !mCurrentPlayerState.equals(STATE_PAUSED))
 	        			{
 	        				pause();
 	        			}
@@ -1458,10 +1458,10 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	    }
 	}
 	
-	private class NoisyAudioStreamReceiver extends BroadcastReceiver {
+	private class ReceiverNoisyAudioStream extends BroadcastReceiver {
 	    @Override
 	    public void onReceive(Context context, Intent intent) {
-	        if (state != STATE_PHONE && state != STATE_PAUSED && AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
+	        if (!mCurrentPlayerState.equals(STATE_PHONE) && !mCurrentPlayerState.equals(STATE_PAUSED) && AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
 	        	log("headphones unplugged", "v");
 	        	end();
 	        }
@@ -1472,7 +1472,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	    }
 	}
 	
-	private class PhoneCallReceiver extends BroadcastReceiver {
+	private class ReceiverPhoneCall extends BroadcastReceiver {
 	    @Override
 	    public void onReceive(Context context, Intent intent) {
 	    	log("phone call receiver onReceive()", "v");
@@ -1483,11 +1483,11 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	    		if (isPlaying())
 	    		{
 	    			pause();
-	    			state = STATE_PHONE;
+	    			mCurrentPlayerState = STATE_PHONE;
 	    		}
 	    		
 	    	}
-	    	else if (phoneState.equals(TelephonyManager.EXTRA_STATE_IDLE) && state.equals(STATE_PHONE))
+	    	else if (phoneState.equals(TelephonyManager.EXTRA_STATE_IDLE) && mCurrentPlayerState.equals(STATE_PHONE))
 	    	{
 	    		log("resuming after phone call", "v");
 	    		resume();
@@ -1498,7 +1498,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	    		if (isPlaying())
 	    		{
 	    			pause();
-	    			state = STATE_PHONE;
+	    			mCurrentPlayerState = STATE_PHONE;
 	    		}
 	    	}
 	        
@@ -1506,24 +1506,24 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	}
 	
 	//handle network changes
-	public class NetworkReceiver extends BroadcastReceiver {   
+	public class ReceiverNetwork extends BroadcastReceiver {   
 	      
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			log("received network change broadcast", "v");
 			//Log.i(getPackageName(), "received network change broadcast");
-			if (mMediaPlayer == null && state.equals(RadioPlayer.STATE_PREPARING))
+			if (mMediaPlayer == null && mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_PREPARING))
 			{
 				log("recover from disconnect while preparing", "v");
 				//Log.i(getPackageName(), "no media player, don't care about connection updates");
 				play();
 				return;
 			}
-			else if (mMediaPlayer == null && state != RadioPlayer.STATE_UNINITIALIZED)
+			else if (mMediaPlayer == null && !mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_UNINITIALIZED))
 			{
 				log("media player null, will cause problems if connected", "e");
 			}
-			else if (mMediaPlayer != null && state.equals(RadioPlayer.STATE_UNINITIALIZED))
+			else if (mMediaPlayer != null && mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_UNINITIALIZED))
 			{
 				log("-------------------------------", "d");
 				log ("mediaPlayer not null, but uninitialized. how did this happen?", "w");
@@ -1537,19 +1537,19 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 				{
 					
 					str = "network type changed";
-					if (state.equals(RadioPlayer.STATE_UNINITIALIZED))
+					if (mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_UNINITIALIZED))
 					{
 						str += " but uninitialized so it doesn't matter. ";
 					}
-					else if (state.equals(RadioPlayer.STATE_STOPPED) || state.equals(RadioPlayer.STATE_STOPPING))
+					else if (mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_STOPPED) || mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_STOPPING))
 					{
 						str += " but stopped so it doesn't matter. ";
 					}
-					else if (state.equals(RadioPlayer.STATE_END))
+					else if (mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_END))
 					{
 						str += " but ended so it doesn't matter. ";
 					}
-					else if (state.equals(RadioPlayer.STATE_PAUSED) || state.equals(RadioPlayer.STATE_PHONE))
+					else if (mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_PAUSED) || mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_PHONE))
 					{
 						str += " but paused so it doesn't matter. ";
 					}
@@ -1574,12 +1574,12 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 					mNetworkState = newState;
 					
 					//if uninitialized, no preset picked yet. if stopped or paused, don't restart
-					if (state.equals(RadioPlayer.STATE_UNINITIALIZED) || 
-							state.equals(RadioPlayer.STATE_STOPPED) || 
-							state.equals(RadioPlayer.STATE_STOPPING) ||
-							state.equals(RadioPlayer.STATE_PAUSED) || 
-							state.equals(RadioPlayer.STATE_PHONE) || 
-							state.equals(RadioPlayer.STATE_END)
+					if (mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_UNINITIALIZED) || 
+							mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_STOPPED) || 
+							mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_STOPPING) ||
+							mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_PAUSED) || 
+							mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_PHONE) || 
+							mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_END)
 						)
 					{
 						log("unitialized or stopped/paused/ended, don't try to start or restart", "v");
@@ -1606,7 +1606,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 							start = true; 
 						}
 						//can't set nextplayer after complete, so just start fresh
-						if (state.equals(RadioPlayer.STATE_COMPLETE) || start)
+						if (mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_COMPLETE) || start)
 						{
 							log("complete or start=true", "v");
 							
@@ -1635,7 +1635,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 			else
 			{
 				str = "";
-				boolean alreadyDisconnected = (mNetworkState == RadioPlayer.NETWORK_STATE_DISCONNECTED);
+				boolean alreadyDisconnected = (mNetworkState == ServiceRadioPlayer.NETWORK_STATE_DISCONNECTED);
 				if (alreadyDisconnected)
 				{
 					str = "still ";
@@ -1647,16 +1647,16 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 				}
 				str += "not connected. ";
 				str += "old:" + mNetworkState;
-				str += ", new:" + Integer.toString(RadioPlayer.NETWORK_STATE_DISCONNECTED);
+				str += ", new:" + Integer.toString(ServiceRadioPlayer.NETWORK_STATE_DISCONNECTED);
 				log(str, "v");
 				
 				log("setting network state ivar to disconnected", "v");
-				mNetworkState = RadioPlayer.NETWORK_STATE_DISCONNECTED;
+				mNetworkState = ServiceRadioPlayer.NETWORK_STATE_DISCONNECTED;
 				
 
 				//TODO figure out the best thing to do for each state
 				
-				if (state.equals(RadioPlayer.STATE_PREPARING)) //this will lead to a mediaioerror when it reaches prepared
+				if (mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_PREPARING)) //this will lead to a mediaioerror when it reaches prepared
 				{
 					mMediaPlayer.release();
 					mMediaPlayer = null;
@@ -1666,7 +1666,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 					log("network connection lost while preparing? set null mediaplayer", "d");
 					log("-------------------------------", "d");
 				}
-				else if (state.equals(RadioPlayer.STATE_INITIALIZING))
+				else if (mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_INITIALIZING))
 				{
 					if (alreadyDisconnected)
 					{
@@ -1678,7 +1678,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 					}
 					
 				}
-				else if (state.equals(RadioPlayer.STATE_ERROR))
+				else if (mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_ERROR))
 				{
 					Notification notification = updateNotification("Error. Will resume?", "Cancel", true);
 					mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
@@ -1688,23 +1688,23 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 					log("not sure what to do, how did we get here?", "d");
 					log("-------------------------------", "d");
 				}
-				else if (state.equals(RadioPlayer.STATE_STOPPED))
+				else if (mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_STOPPED))
 				{
 					log("disconnected while stopped, don't care", "v");
 				}
-				else if (state.equals(RadioPlayer.STATE_PLAYING))
+				else if (mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_PLAYING))
 				{
 					Notification notification = updateNotification("Waiting for network", "Cancel", true);
 					mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 					log("disconnected while playing. should resume when network does", "v");
 				}
-				else if (state.equals(RadioPlayer.STATE_BUFFERING))
+				else if (mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_BUFFERING))
 				{
 					Notification notification = updateNotification("Waiting for network", "Cancel", true);
 					mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 					log("disconnected while buffering. should resume when network does", "v");
 				}
-				else if (state.equals(RadioPlayer.STATE_UNINITIALIZED))
+				else if (mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_UNINITIALIZED))
 				{
 					if (mMediaPlayer == null)
 					{
@@ -1743,14 +1743,14 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 	
 	private void log(String text, String level)
 	{
-		mLogger.log(this, "State:" + state + ":\t\t\t\t" + text, level);
+		mLogger.log(this, "State:" + mCurrentPlayerState + ":\t\t\t\t" + text, level);
 	}
 	
 	
 	public void clearLog()
 	{
 		//File file = getFileStreamPath(LOG_FILENAME);
-		deleteFile(MainActivity.LOG_FILENAME);
+		deleteFile(ActivityMain.LOG_FILENAME);
 		//logging something should recreate the log file
 		log("log file deleted", "i");
 	}
@@ -1760,8 +1760,8 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		//String path = Environment.getExternalStorageDirectory().getAbsolutePath();
 		String path = getExternalFilesDir(null).getAbsolutePath();
 		
-		File src = getFileStreamPath(MainActivity.LOG_FILENAME); 
-		File dst = new File(path + File.separator + MainActivity.LOG_FILENAME);
+		File src = getFileStreamPath(ActivityMain.LOG_FILENAME); 
+		File dst = new File(path + File.separator + ActivityMain.LOG_FILENAME);
 		try {
 			if (dst.createNewFile())
 			{
@@ -1800,7 +1800,7 @@ public class RadioPlayer extends Service implements OnPreparedListener, OnInfoLi
 		{
 			in.transferTo(0, in.size(), out);
 			String str = "log file copied to ";
-			str += path + File.separator + MainActivity.LOG_FILENAME;
+			str += path + File.separator + ActivityMain.LOG_FILENAME;
 			log(str, "i");
 			if (in != null)
 			{

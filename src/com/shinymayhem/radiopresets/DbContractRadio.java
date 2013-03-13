@@ -22,25 +22,25 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.provider.BaseColumns;
 import android.util.Log;
 
-public class RadioDbContract {
+public class DbContractRadio {
 	
 	
 	private static final String TEXT_TYPE = " TEXT";
 	private static final String COMMA_SEP = ",";
 	private static final String SQL_CREATE_STATIONS =
-	    "CREATE TABLE " + RadioDbContract.StationEntry.TABLE_NAME + " (" +
-		RadioDbContract.StationEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT" + COMMA_SEP +
-		RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER + " INTEGER NOT NULL" + COMMA_SEP +
-	    RadioDbContract.StationEntry.COLUMN_NAME_TITLE + TEXT_TYPE + COMMA_SEP +
-	    RadioDbContract.StationEntry.COLUMN_NAME_URL + TEXT_TYPE + " NOT NULL" +
+	    "CREATE TABLE " + DbContractRadio.EntryStation.TABLE_NAME + " (" +
+		DbContractRadio.EntryStation._ID + " INTEGER PRIMARY KEY AUTOINCREMENT" + COMMA_SEP +
+		DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER + " INTEGER NOT NULL" + COMMA_SEP +
+	    DbContractRadio.EntryStation.COLUMN_NAME_TITLE + TEXT_TYPE + COMMA_SEP +
+	    DbContractRadio.EntryStation.COLUMN_NAME_URL + TEXT_TYPE + " NOT NULL" +
 	    " )";
 	//TODO insert sample stations?
 
-	private static final String SQL_DELETE_STATIONS = "DROP TABLE IF EXISTS " + RadioDbContract.StationEntry.TABLE_NAME;
+	private static final String SQL_DELETE_STATIONS = "DROP TABLE IF EXISTS " + DbContractRadio.EntryStation.TABLE_NAME;
 	
-	private RadioDbContract() {}
+	private DbContractRadio() {}
 	
-	public static abstract class StationEntry implements BaseColumns {
+	public static abstract class EntryStation implements BaseColumns {
 		public static final String TABLE_NAME = "stations";
 	    public static final String COLUMN_NAME_PRESET_NUMBER = "preset_number";
 	    public static final String COLUMN_NAME_TITLE = "title";
@@ -48,12 +48,12 @@ public class RadioDbContract {
 	    
 	}
 	
-	public static class StationsDbHelper extends SQLiteOpenHelper {
+	public static class DbHelperRadio extends SQLiteOpenHelper {
 
 		public static final String DATABASE_NAME = "Radio.db";
 		public static final int DATABASE_VERSION = 3; //if this is changed, update onUpgrade() to not delete data
 		
-		public StationsDbHelper(Context context) {
+		public DbHelperRadio(Context context) {
 			super(context, DATABASE_NAME, null, DATABASE_VERSION);
 		}
 

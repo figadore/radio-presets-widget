@@ -24,7 +24,7 @@ import android.support.v4.app.DialogFragment;
 import android.view.LayoutInflater;
 import android.view.View;
 
-public class AddDialogFragment extends DialogFragment {
+public class DialogFragmentAdd extends DialogFragment {
 
 	
 	@Override
@@ -33,13 +33,13 @@ public class AddDialogFragment extends DialogFragment {
 		super.onCreate(savedInstanceState);
 	}
 	
-	public interface AddDialogListener
+	public interface ListenerAddDialog
 	{
 		public void onDialogPositiveClick(View view);
 		public void onDialogNegativeClick();
 	}
 	
-	AddDialogListener mListener;
+	ListenerAddDialog mListener;
 	
 	@Override
 	public void onAttach(Activity activity)
@@ -47,14 +47,14 @@ public class AddDialogFragment extends DialogFragment {
 		super.onAttach(activity);
 		try
 		{
-			// Instantiate the AddDialogListener so we can send events to the host
-			mListener = (AddDialogListener) activity;
+			// Instantiate the ListenerAddDialog so we can send events to the host
+			mListener = (ListenerAddDialog) activity;
 		}
 		catch (ClassCastException e)
 		{
 			// The activity doesn't implement the interface, throw exception
             throw new ClassCastException(activity.toString()
-                    + " must implement AddDialogListener");
+                    + " must implement ListenerAddDialog");
 		}
 	}
 	

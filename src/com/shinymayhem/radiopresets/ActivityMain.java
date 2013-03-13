@@ -43,14 +43,14 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import com.shinymayhem.radiopresets.AddDialogFragment.AddDialogListener;
-import com.shinymayhem.radiopresets.EventDialogFragment.EventDialogListener;
-import com.shinymayhem.radiopresets.PlayerFragment.PlayerListener;
-import com.shinymayhem.radiopresets.RadioDbContract.StationsDbHelper;
-import com.shinymayhem.radiopresets.RadioPlayer.LocalBinder;
-import com.shinymayhem.radiopresets.StationsFragment.PresetListener;
+import com.shinymayhem.radiopresets.DialogFragmentAdd.ListenerAddDialog;
+import com.shinymayhem.radiopresets.DialogFragmentEvent.ListenerEventDialog;
+import com.shinymayhem.radiopresets.FragmentPlayer.PlayerListener;
+import com.shinymayhem.radiopresets.DbContractRadio.DbHelperRadio;
+import com.shinymayhem.radiopresets.ServiceRadioPlayer.LocalBinder;
+import com.shinymayhem.radiopresets.FragmentStations.PresetListener;
 
-public class MainActivity extends FragmentActivity implements AddDialogListener, EventDialogListener, PresetListener, PlayerListener {
+public class ActivityMain extends FragmentActivity implements ListenerAddDialog, ListenerEventDialog, PresetListener, PlayerListener {
 
 	//string-extra key for intent
 	//public final static String URL = "com.shinymayhem.radiopresets.URL";
@@ -67,11 +67,11 @@ public class MainActivity extends FragmentActivity implements AddDialogListener,
 	public final static String LOG_FILENAME = "log.txt";
 	
 	protected boolean mBound = false;
-	//protected StationsDbHelper mDbHelper;
-	protected RadioPlayer mService;
-	protected StationsDbHelper mDbHelper;
-	protected Logger mLogger = new Logger();
-	protected DetailsReceiver mDetailsReceiver;
+	//protected DbHelperRadio mDbHelper;
+	protected ServiceRadioPlayer mService;
+	protected DbHelperRadio mDbHelper;
+	protected ActivityLogger mLogger = new ActivityLogger();
+	protected ReceiverDetails mDetailsReceiver;
 	
 	protected Context getContext()
 	{
@@ -92,15 +92,15 @@ public class MainActivity extends FragmentActivity implements AddDialogListener,
                 return;
             }
 			
-			PlayerFragment playerFragment = new PlayerFragment();
-			StationsFragment stationsFragment = new StationsFragment();
+			FragmentPlayer playerFragment = new FragmentPlayer();
+			FragmentStations stationsFragment = new FragmentStations();
 			playerFragment.setArguments(getIntent().getExtras());
 			stationsFragment.setArguments(getIntent().getExtras());
 			
 			FragmentManager fragmentManager = getSupportFragmentManager();
 			fragmentManager.beginTransaction()
-					.add(R.id.stations_fragment_container, stationsFragment, StationsFragment.FRAGMENT_TAG)
-					.add(R.id.player_fragment_container, playerFragment, PlayerFragment.FRAGMENT_TAG)
+					.add(R.id.stations_fragment_container, stationsFragment, FragmentStations.FRAGMENT_TAG)
+					.add(R.id.player_fragment_container, playerFragment, FragmentPlayer.FRAGMENT_TAG)
 					.commit();
 		}
 		
@@ -118,7 +118,7 @@ public class MainActivity extends FragmentActivity implements AddDialogListener,
 	protected void bindRadioPlayer()
 	{
 		log("binding radio player", "d");
-		Intent intent = new Intent(this, RadioPlayer.class);
+		Intent intent = new Intent(this, ServiceRadioPlayer.class);
 		intent.setAction(Intent.ACTION_RUN);
 		startService(intent);
 		
@@ -150,7 +150,7 @@ public class MainActivity extends FragmentActivity implements AddDialogListener,
 	private void registerDetailsReceiver()
 	{
 		//register network receiver
-		IntentFilter filter = new IntentFilter(MainActivity.ACTION_UPDATE_TEXT);
+		IntentFilter filter = new IntentFilter(ActivityMain.ACTION_UPDATE_TEXT);
 		if (mDetailsReceiver != null)
 		{
 			log("------------------------------------------", "v");
@@ -161,7 +161,7 @@ public class MainActivity extends FragmentActivity implements AddDialogListener,
 			this.unregisterReceiver(mDetailsReceiver);
 			mDetailsReceiver = null;
 		}
-		mDetailsReceiver = new DetailsReceiver();
+		mDetailsReceiver = new ReceiverDetails();
         log("registering details broadcast receiver", "i");
         //widget doesn't accept localbroadcasts
         //LocalBroadcastManager.getInstance(this).registerReceiver(mDetailsReceiver, filter); 
@@ -241,15 +241,15 @@ public class MainActivity extends FragmentActivity implements AddDialogListener,
 		//int preset = 1; 
 		String title = titleView.getText().toString().trim();
 		String url = urlView.getText().toString().trim();
-		boolean valid = RadioPlayer.validateUrl(url);
+		boolean valid = ServiceRadioPlayer.validateUrl(url);
 		if (valid)
 		{
 			ContentValues values = new ContentValues();
-			//values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, preset);
-	        values.put(RadioDbContract.StationEntry.COLUMN_NAME_TITLE, title);
-	        values.put(RadioDbContract.StationEntry.COLUMN_NAME_URL, url);
-			//CursorLoader var = getLoaderManager().getLoader(MainActivity.LOADER_STATIONS);
-			Uri uri = getContentResolver().insert(RadioContentProvider.CONTENT_URI_STATIONS, values);
+			//values.put(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER, preset);
+	        values.put(DbContractRadio.EntryStation.COLUMN_NAME_TITLE, title);
+	        values.put(DbContractRadio.EntryStation.COLUMN_NAME_URL, url);
+			//CursorLoader var = getLoaderManager().getLoader(ActivityMain.LOADER_STATIONS);
+			Uri uri = getContentResolver().insert(ContentProviderRadio.CONTENT_URI_STATIONS, values);
 			int id = (int) ContentUris.parseId(uri);
 			if (id == -1)
 			{
@@ -259,7 +259,7 @@ public class MainActivity extends FragmentActivity implements AddDialogListener,
 		}
 		else
 		{
-			//FIXME code duplication in StationsFragment
+			//FIXME code duplication in FragmentStations
 			log("URL " + url + " not valid", "v");
 			LayoutInflater inflater = LayoutInflater.from(this);
 			final View editView = inflater.inflate(R.layout.dialog_station_details, null);
@@ -330,8 +330,8 @@ public class MainActivity extends FragmentActivity implements AddDialogListener,
 			log("--------------------------------------", "i");
 			log("Event button pressed", "i");
 			log("--------------------------------------", "i");
-			DialogFragment dialog = new EventDialogFragment();
-			dialog.show(this.getSupportFragmentManager(), "EventDialogFragment");
+			DialogFragment dialog = new DialogFragmentEvent();
+			dialog.show(this.getSupportFragmentManager(), "DialogFragmentEvent");
 			return true;	
 		}
 		return false;
@@ -340,7 +340,7 @@ public class MainActivity extends FragmentActivity implements AddDialogListener,
 	
 	public boolean onKeyUp(int keyCode, KeyEvent event)
 	{
-		PlayerFragment fragment = (PlayerFragment) this.getSupportFragmentManager().findFragmentByTag(PlayerFragment.FRAGMENT_TAG);
+		FragmentPlayer fragment = (FragmentPlayer) this.getSupportFragmentManager().findFragmentByTag(FragmentPlayer.FRAGMENT_TAG);
 		if(fragment != null && (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == KeyEvent.KEYCODE_VOLUME_UP))
         {
 			 fragment.updateSlider();
@@ -351,8 +351,8 @@ public class MainActivity extends FragmentActivity implements AddDialogListener,
 	public void play(int id)
 	{
 		log("Play button received, sending play intent", "d");
-		Intent intent = new Intent(this, RadioPlayer.class);
-		intent.setAction(RadioPlayer.ACTION_PLAY);
+		Intent intent = new Intent(this, ServiceRadioPlayer.class);
+		intent.setAction(ServiceRadioPlayer.ACTION_PLAY);
 		intent.putExtra(EXTRA_STATION_PRESET, id);
 		startService(intent);
 		//mService.play(url);
@@ -387,12 +387,12 @@ public class MainActivity extends FragmentActivity implements AddDialogListener,
 	public void stop(View view)
 	{
 		log("stop(View view)", "v");
-		//Intent intent = new Intent(this, RadioPlayer.class);
+		//Intent intent = new Intent(this, ServiceRadioPlayer.class);
 		//stopService(intent);
 		
 		//log("Stop button received, sending stop intent", "d");
-		//Intent intent = new Intent(this, RadioPlayer.class);
-		//intent.setAction(RadioPlayer.ACTION_STOP);
+		//Intent intent = new Intent(this, ServiceRadioPlayer.class);
+		//intent.setAction(ServiceRadioPlayer.ACTION_STOP);
 		//startService(intent);
 		
 		mService.stop();
@@ -402,7 +402,7 @@ public class MainActivity extends FragmentActivity implements AddDialogListener,
 	//tell service to copy logs to sd card
 	public boolean copy(MenuItem item)
 	{
-		//Intent intent = new Intent(this, RadioPlayer.class);
+		//Intent intent = new Intent(this, ServiceRadioPlayer.class);
 		//stopService(intent);
 		mService.copyLog();
 		return true;
@@ -411,7 +411,7 @@ public class MainActivity extends FragmentActivity implements AddDialogListener,
 	//tell service to clear local logs
 	public boolean clear(MenuItem item)
 	{
-		//Intent intent = new Intent(this, RadioPlayer.class);
+		//Intent intent = new Intent(this, ServiceRadioPlayer.class);
 		//stopService(intent);
 		mService.clearLog();
 		return true;
@@ -449,17 +449,17 @@ public class MainActivity extends FragmentActivity implements AddDialogListener,
 		mLogger.log(this, text, level);
 	}
 	
-	public class DetailsReceiver extends BroadcastReceiver {
+	public class ReceiverDetails extends BroadcastReceiver {
 	    @Override
 	    public void onReceive(Context context, Intent intent) {
-	    	if (intent.getAction().equals(MainActivity.ACTION_UPDATE_TEXT))
+	    	if (intent.getAction().equals(ActivityMain.ACTION_UPDATE_TEXT))
 	    	{
 	    		log("updating main activity text", "w");
 	    		Bundle extras = intent.getExtras();
-				String station = extras.getString(MainActivity.EXTRA_STATION);
-				String status = extras.getString(MainActivity.EXTRA_STATUS);
-				String artist = extras.getString(MainActivity.EXTRA_ARTIST);
-				String song = extras.getString(MainActivity.EXTRA_SONG);
+				String station = extras.getString(ActivityMain.EXTRA_STATION);
+				String status = extras.getString(ActivityMain.EXTRA_STATUS);
+				String artist = extras.getString(ActivityMain.EXTRA_ARTIST);
+				String song = extras.getString(ActivityMain.EXTRA_SONG);
 				updateDetails(station, status, artist, song);
 	    	}
 	    }

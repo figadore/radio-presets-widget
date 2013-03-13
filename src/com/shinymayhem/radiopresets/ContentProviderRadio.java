@@ -27,11 +27,11 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 
-import com.shinymayhem.radiopresets.RadioDbContract.StationsDbHelper;
+import com.shinymayhem.radiopresets.DbContractRadio.DbHelperRadio;
 
-public class RadioContentProvider extends ContentProvider {
+public class ContentProviderRadio extends ContentProvider {
 
-	protected Logger mLogger = new Logger();
+	protected ActivityLogger mLogger = new ActivityLogger();
 	
 	private static final String AUTHORITY = "com.shinymayhem.radiopresets.contentprovider";
 	private static final int URI_STATIONS = 1;
@@ -48,7 +48,7 @@ public class RadioContentProvider extends ContentProvider {
 	public static final Uri CONTENT_URI_STATIONS = Uri.parse("content://" + AUTHORITY + "/" + SEGMENT_STATIONS_BASE);
 	public static final Uri CONTENT_URI_PRESETS = Uri.parse("content://" + AUTHORITY + "/" + SEGMENT_PRESETS_BASE);
 	public static final Uri CONTENT_URI_PRESETS_MAX = Uri.parse("content://" + AUTHORITY + "/" + SEGMENT_PRESET_MAX);
-	private StationsDbHelper mStationsHelper; 
+	private DbHelperRadio mStationsHelper; 
 	
 	private static final UriMatcher sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 	static
@@ -62,7 +62,7 @@ public class RadioContentProvider extends ContentProvider {
 
 	@Override
 	public boolean onCreate() {
-		mStationsHelper = new StationsDbHelper(getContext());
+		mStationsHelper = new DbHelperRadio(getContext());
 		return true;
 	}
 
@@ -76,29 +76,29 @@ public class RadioContentProvider extends ContentProvider {
 		switch (sUriMatcher.match(uri))
 		{
 		case URI_STATIONS: 
-			table = RadioDbContract.StationEntry.TABLE_NAME;
+			table = DbContractRadio.EntryStation.TABLE_NAME;
 			db = mStationsHelper.getReadableDatabase();
 			break;
 		case URI_STATION_ID:
-			table = RadioDbContract.StationEntry.TABLE_NAME;
+			table = DbContractRadio.EntryStation.TABLE_NAME;
 			db = mStationsHelper.getReadableDatabase();
 			long id = ContentUris.parseId(uri);
-			selection = addColumn(RadioDbContract.StationEntry._ID, selection);
+			selection = addColumn(DbContractRadio.EntryStation._ID, selection);
 			selectionArgs = addArg(id, selectionArgs);
 			break;
 		case URI_PRESET:
-			table = RadioDbContract.StationEntry.TABLE_NAME;
+			table = DbContractRadio.EntryStation.TABLE_NAME;
 			db = mStationsHelper.getReadableDatabase();
 			long presetNumber = ContentUris.parseId(uri);
-			selection = addColumn(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, selection);
+			selection = addColumn(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER, selection);
 			selectionArgs = addArg(presetNumber, selectionArgs);
 			break;
 		case URI_PRESET_MAX:
-			table = RadioDbContract.StationEntry.TABLE_NAME;
+			table = DbContractRadio.EntryStation.TABLE_NAME;
 			db = mStationsHelper.getReadableDatabase();
 			//override any projection/selection arguments to get the max
-			String[] newProjection = {"max(" + RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER + ") as " + RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER};
-			//String newSelection = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER + "= max(" + RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER + ")";
+			String[] newProjection = {"max(" + DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER + ") as " + DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER};
+			//String newSelection = DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER + "= max(" + DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER + ")";
 			selection = null;
 			selectionArgs = null;
 			projection = newProjection;
@@ -116,7 +116,7 @@ public class RadioContentProvider extends ContentProvider {
 				having,
 				sortOrder, 
 				limit
-				//Integer.toString(MainActivity.BUTTON_LIMIT)
+				//Integer.toString(ActivityMain.BUTTON_LIMIT)
 			);
 		cursor.setNotificationUri(getContext().getContentResolver(), uri);
 		log("query uri:" + uri, "v");
@@ -132,15 +132,15 @@ public class RadioContentProvider extends ContentProvider {
 		switch (sUriMatcher.match(uri))
 		{
 		case URI_STATIONS:
-			table = RadioDbContract.StationEntry.TABLE_NAME;
+			table = DbContractRadio.EntryStation.TABLE_NAME;
 			db = mStationsHelper.getWritableDatabase();
 			collapse = true;
 			break;
 		case URI_STATION_ID:
-			table = RadioDbContract.StationEntry.TABLE_NAME;
+			table = DbContractRadio.EntryStation.TABLE_NAME;
 			db = mStationsHelper.getWritableDatabase();
 			long id = ContentUris.parseId(uri);
-			selection = addColumn(RadioDbContract.StationEntry._ID, selection);
+			selection = addColumn(DbContractRadio.EntryStation._ID, selection);
 			selectionArgs = addArg(id, selectionArgs);
 			collapse = true;
 			break;
@@ -168,16 +168,16 @@ public class RadioContentProvider extends ContentProvider {
 		switch (sUriMatcher.match(uri))
 		{
 		case URI_STATIONS:
-			table = RadioDbContract.StationEntry.TABLE_NAME;
+			table = DbContractRadio.EntryStation.TABLE_NAME;
 			//if preset isset, make room, otherwise, append
-			if (values.containsKey(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER))
+			if (values.containsKey(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER))
 			{
-				makeRoomForPreset(values.getAsInteger(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER), 0);
+				makeRoomForPreset(values.getAsInteger(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER), 0);
 			}
 			else
 			{
 				int preset = this.getMaxPresetNumber() + 1;
-				values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, preset);
+				values.put(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER, preset);
 			}
 			db = mStationsHelper.getWritableDatabase();
 			
@@ -202,18 +202,18 @@ public class RadioContentProvider extends ContentProvider {
 		switch (sUriMatcher.match(uri))
 		{
 		case URI_STATIONS:
-			table = RadioDbContract.StationEntry.TABLE_NAME;
+			table = DbContractRadio.EntryStation.TABLE_NAME;
 			db = mStationsHelper.getWritableDatabase();
 			break;
 		case URI_STATION_ID:
-			table = RadioDbContract.StationEntry.TABLE_NAME;
+			table = DbContractRadio.EntryStation.TABLE_NAME;
 			db = mStationsHelper.getWritableDatabase();
 			long id = ContentUris.parseId(uri);
-			selection = addColumn(RadioDbContract.StationEntry._ID, selection);
+			selection = addColumn(DbContractRadio.EntryStation._ID, selection);
 			selectionArgs = addArg(id, selectionArgs);
-			if (values.containsKey(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER))
+			if (values.containsKey(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER))
 			{
-				makeRoomForPreset(values.getAsInteger(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER), (int)id);
+				makeRoomForPreset(values.getAsInteger(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER), (int)id);
 			}
 			break;
 		default:
@@ -236,7 +236,7 @@ public class RadioContentProvider extends ContentProvider {
 		Bundle values = new Bundle();
 		if (method == "getMaxPresetNumber")
 		{
-			values.putInt(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, this.getMaxPresetNumber());
+			values.putInt(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER, this.getMaxPresetNumber());
 			return values;
 		}
 		else
@@ -258,7 +258,7 @@ public class RadioContentProvider extends ContentProvider {
 		if (cursor.getCount() > 0)		
 		{
 			cursor.moveToFirst();
-			preset = cursor.getLong(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER));	
+			preset = cursor.getLong(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER));	
 		}
 		
 		cursor.close();
@@ -270,10 +270,10 @@ public class RadioContentProvider extends ContentProvider {
 		//SQLiteDatabase db = mStationsHelper.getReadableDatabase();	
 		log("collapsePresetNumbers()", "v");
 		Uri uri = CONTENT_URI_STATIONS;
-		String[] projection = {RadioDbContract.StationEntry._ID, RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER};
+		String[] projection = {DbContractRadio.EntryStation._ID, DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER};
 		String selection = null;
 		String[] selectionArgs = null;
-		String sortOrder = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER;
+		String sortOrder = DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER;
 		Cursor cursor = this.query(uri, projection, selection, selectionArgs, sortOrder);
 		if (cursor.getCount() > 0)
 		{
@@ -281,11 +281,11 @@ public class RadioContentProvider extends ContentProvider {
 			for (int i = 0; i<cursor.getCount(); i++)
 			{
 				
-				long id = cursor.getLong(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry._ID));
-				long preset = cursor.getLong(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER));
+				long id = cursor.getLong(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation._ID));
+				long preset = cursor.getLong(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER));
 				uri = Uri.parse(CONTENT_URI_STATIONS.toString() + "/" + String.valueOf(id));
 				ContentValues values = new ContentValues();
-				values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, i+1);
+				values.put(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER, i+1);
 				log("setting preset number for " + String.valueOf(id) + " from " + String.valueOf(preset) + " to " + String.valueOf(i+1), "v");
 				this.update(uri, values, selection, selectionArgs);
 				cursor.moveToNext();
@@ -300,21 +300,21 @@ public class RadioContentProvider extends ContentProvider {
 		//TODO change delete to individual to rearrange presets as they are deleted
 		//alternatively, create a collapse function
 		SQLiteDatabase db = mStationsHelper.getWritableDatabase();
-		String column = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER;
+		String column = DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER;
 	
 		//get list of stations that will be updates
 		String[] newSelectionArgs = {String.valueOf(preset+1)};
-		String sql = "select " + RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER +
-				" from " + RadioDbContract.StationEntry.TABLE_NAME + 
+		String sql = "select " + DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER +
+				" from " + DbContractRadio.EntryStation.TABLE_NAME + 
 				" where " + column + ">= ? ";
 		Cursor newCursor = db.rawQuery(sql,	newSelectionArgs);
 		
 		int updatedCount = newCursor.getCount();
-				//(int)newCursor.getLong(newCursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER));
+				//(int)newCursor.getLong(newCursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER));
 		newCursor.close();
 		if (updatedCount > 0)
 		{
-			sql = "update " + RadioDbContract.StationEntry.TABLE_NAME + " " +
+			sql = "update " + DbContractRadio.EntryStation.TABLE_NAME + " " +
 					" set " + column + " = " + column + " - 1 " +
 					" where " + column + ">= " + String.valueOf(preset+1); //TODO sanitize
 			db.execSQL(sql);
@@ -330,8 +330,8 @@ public class RadioContentProvider extends ContentProvider {
 		log("making room for preset:" + preset, "v");
 		//check for existing entry with same preset but different id
 		Uri uri = CONTENT_URI_STATIONS;
-		String[] projection = {RadioDbContract.StationEntry._ID};
-		String selection = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER + " = ? and not " + RadioDbContract.StationEntry._ID + " = ? ";
+		String[] projection = {DbContractRadio.EntryStation._ID};
+		String selection = DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER + " = ? and not " + DbContractRadio.EntryStation._ID + " = ? ";
 		String[] selectionArgs = {String.valueOf(preset), String.valueOf(id)};
 		String sortOrder = null;
 		Cursor cursor = this.query(uri, projection, selection, selectionArgs, sortOrder);
@@ -342,23 +342,23 @@ public class RadioContentProvider extends ContentProvider {
 			log("preset exists, increment it and all above", "v");
 			SQLiteDatabase db;
 			db = mStationsHelper.getWritableDatabase();
-			String column = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER;
+			String column = DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER;
 			/*db.beginTransaction();
 			db.execSQL(sql);*/
 			
 			//get list of stations that will be updates
 			String[] newSelectionArgs = {String.valueOf(preset)};
-			String sql = "select " + RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER +
-					" from " + RadioDbContract.StationEntry.TABLE_NAME + 
+			String sql = "select " + DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER +
+					" from " + DbContractRadio.EntryStation.TABLE_NAME + 
 					" where " + column + ">= ? ";
 			Cursor newCursor = db.rawQuery(sql,	newSelectionArgs);
 			updatedCount = newCursor.getCount();
 			log("incrementing " + String.valueOf(updatedCount) + " presets", "v");
-					//(int)newCursor.getLong(newCursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER));
+					//(int)newCursor.getLong(newCursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER));
 			newCursor.close();
 			if (updatedCount > 0)
 			{
-				sql = "update " + RadioDbContract.StationEntry.TABLE_NAME + " " +
+				sql = "update " + DbContractRadio.EntryStation.TABLE_NAME + " " +
 						" set " + column + " = " + column + " + 1 " +
 						" where " + column + ">= " + String.valueOf(preset); //TODO sanitize
 				db.execSQL(sql);	
@@ -374,7 +374,7 @@ public class RadioContentProvider extends ContentProvider {
 			values.put(column, column + " + 1 ");
 			String whereClause = column + " >= ? ";
 			String[] whereArgs = {String.valueOf(preset)}; 
-			updatedCount = db.update(RadioDbContract.StationEntry.TABLE_NAME, values, whereClause, whereArgs);
+			updatedCount = db.update(DbContractRadio.EntryStation.TABLE_NAME, values, whereClause, whereArgs);
 			*/
 			//newCursor.moveToFirst();
 			
@@ -429,7 +429,7 @@ public class RadioContentProvider extends ContentProvider {
 
 	private void log(String text, String level)
 	{
-		mLogger.log(getContext(), "RadioContentProvider", "RadioContentProvider:\t\t"+text, level);
+		mLogger.log(getContext(), "ContentProviderRadio", "ContentProviderRadio:\t\t"+text, level);
 	}
 	
 

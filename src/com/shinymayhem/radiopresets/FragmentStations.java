@@ -45,18 +45,18 @@ import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
 
-import com.shinymayhem.radiopresets.RadioDbContract.StationsDbHelper;
+import com.shinymayhem.radiopresets.DbContractRadio.DbHelperRadio;
 
-public class StationsFragment extends ListFragment implements LoaderCallbacks<Cursor> /*, 
+public class FragmentStations extends ListFragment implements LoaderCallbacks<Cursor> /*, 
 		OnItemClickListener, OnItemLongClickListener, MultiChoiceModeListener */ {
 
-	protected StationsDbHelper mDbHelper;
+	protected DbHelperRadio mDbHelper;
 	protected Context mContext;
-	protected Logger mLogger = new Logger();
+	protected ActivityLogger mLogger = new ActivityLogger();
 	protected ListView mListView;
 	public static final String FRAGMENT_TAG = "com.shinymayhem.radiopresets.StationsFragmentTag";
 	
-	RadioCursorAdapter mAdapter;
+	CursorAdapterStations mAdapter;
 	
 	public interface PresetListener
 	{
@@ -71,7 +71,7 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		super.onAttach(activity);
 		try
 		{
-			// Instantiate the AddDialogListener so we can send events to the host
+			// Instantiate the ListenerAddDialog so we can send events to the host
 			mListener = (PresetListener) activity;
 		}
 		catch (ClassCastException e)
@@ -92,7 +92,7 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setHasOptionsMenu(true);
-		getLoaderManager().initLoader(MainActivity.LOADER_STATIONS, null, this);
+		getLoaderManager().initLoader(ActivityMain.LOADER_STATIONS, null, this);
 		
 	}
 	
@@ -146,8 +146,8 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		if (item.getItemId() == R.id.add_station)
 		{
 			log("add station button clicked", "v");
-			DialogFragment dialog = new AddDialogFragment();
-			dialog.show(this.getFragmentManager(), "AddDialogFragment");
+			DialogFragment dialog = new DialogFragmentAdd();
+			dialog.show(this.getFragmentManager(), "DialogFragmentAdd");
 			return true;	
 		}
 		return super.onOptionsItemSelected(item);
@@ -160,9 +160,9 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 	{
 		log("onCreateView()", "v");
 
-		//FLAG_REGISTER_CONTENT_OBSERVER makes RadioCursorAdapter.onContentChanged method get called
-		mAdapter = new RadioCursorAdapter(this.getActivity(), null, RadioCursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
-		//mAdapter = new RadioCursorAdapter(this.getActivity(), null, 0);
+		//FLAG_REGISTER_CONTENT_OBSERVER makes CursorAdapterStations.onContentChanged method get called
+		mAdapter = new CursorAdapterStations(this.getActivity(), null, CursorAdapterStations.FLAG_REGISTER_CONTENT_OBSERVER);
+		//mAdapter = new CursorAdapterStations(this.getActivity(), null, 0);
 		
 		this.setListAdapter(mAdapter);
 		mContext = container.getContext();
@@ -204,7 +204,7 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.HONEYCOMB) {
 			//FIXME for some reason the xml attribute for multiple modal isn't working
 			mListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
-			mListView.setMultiChoiceModeListener(new StationMultiChoiceModeListener(this, mListView));
+			mListView.setMultiChoiceModeListener(new MultiChoiceModeListenerStation(this, mListView));
 		}
 		else {
 			//mListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
@@ -298,8 +298,8 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		else //not in selection mode, play clicked item
 		{
 			Cursor cursor = (Cursor)adapterView.getItemAtPosition(position);
-			//final String url = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));
-			final int preset = Integer.valueOf(cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER)));
+			//final String url = cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_URL));
+			final int preset = Integer.valueOf(cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER)));
 			String str= "list item clicked, play preset " + preset + ". view position:";
 			str += Integer.toString(position);
 			str += ", row id:";
@@ -315,8 +315,8 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 	{
 		log("onListItemClick()", "v");
 		Cursor cursor = (Cursor)listView.getItemAtPosition(position);
-		//final String url = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));
-		final int preset = Integer.valueOf(cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER)));
+		//final String url = cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_URL));
+		final int preset = Integer.valueOf(cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER)));
 		String str= "list item clicked, play preset " + preset + ". view position:";
 		str += Integer.toString(position);
 		str += ", row id:";
@@ -347,8 +347,8 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 	    }
 		
 		Cursor cursor = (Cursor)listView.getItemAtPosition(position);
-		//final String url = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));
-		final int preset = Integer.valueOf(cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER)));
+		//final String url = cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_URL));
+		final int preset = Integer.valueOf(cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER)));
 		String str= "list item clicked, play preset " + preset + ". view position:";
 		str += Integer.toString(position);
 		str += ", row id:";
@@ -365,14 +365,14 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 		log("onCreateLoader()", "v");
 		String[] projection = {
-				RadioDbContract.StationEntry._ID,
-				RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER,
-				RadioDbContract.StationEntry.COLUMN_NAME_TITLE,
-				RadioDbContract.StationEntry.COLUMN_NAME_URL
+				DbContractRadio.EntryStation._ID,
+				DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER,
+				DbContractRadio.EntryStation.COLUMN_NAME_TITLE,
+				DbContractRadio.EntryStation.COLUMN_NAME_URL
 		};
 		
-		String sortOrder = RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER + " ASC";
-		Uri uri = RadioContentProvider.CONTENT_URI_STATIONS;
+		String sortOrder = DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER + " ASC";
+		Uri uri = ContentProviderRadio.CONTENT_URI_STATIONS;
 		return new CursorLoader(this.getActivity().getApplicationContext(), uri, projection, null, null, sortOrder);
 	}
 
@@ -381,7 +381,7 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		log("onLoadFinished()", "v");
 		switch(loader.getId())
 		{
-			case MainActivity.LOADER_STATIONS:
+			case ActivityMain.LOADER_STATIONS:
 				mAdapter.swapCursor((Cursor)cursor);
 				this.setEmptyText(getResources().getString(R.string.empty_stations));
 				break;
@@ -393,7 +393,7 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		log("onLoaderReset()", "v");
 		switch(loader.getId())
 		{
-			case MainActivity.LOADER_STATIONS:
+			case ActivityMain.LOADER_STATIONS:
 				mAdapter.swapCursor(null);
 				break;
 		}
@@ -402,7 +402,7 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 	public void delete(long[] ids)
 	{
 		String[] values = new String[ids.length];
-		String where = RadioDbContract.StationEntry._ID + " in (";
+		String where = DbContractRadio.EntryStation._ID + " in (";
 		//String[] values = new String[1];
 		//values[0] = String.valueOf(selected[0]);
 		for (int i=0; i<ids.length; i++)
@@ -412,7 +412,7 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		}
 		where += "'') ";
 		//where= "_id in (?, ?, '')"
-		int deletedCount = getActivity().getContentResolver().delete(RadioContentProvider.CONTENT_URI_STATIONS, where, values);//(RadioContentProvider.CONTENT_URI_STATIONS, selected);
+		int deletedCount = getActivity().getContentResolver().delete(ContentProviderRadio.CONTENT_URI_STATIONS, where, values);//(ContentProviderRadio.CONTENT_URI_STATIONS, selected);
 		log("deleted " + String.valueOf(deletedCount), "v");
 	}
 
@@ -427,12 +427,12 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 	public void edit(int position)
 	{
 		Cursor cursor = (Cursor)mListView.getItemAtPosition(position);
-		String title = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_TITLE));
-		String url = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));
+		String title = cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_TITLE));
+		String url = cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_URL));
 		url += "";
 		LayoutInflater inflater = LayoutInflater.from(mContext);
 		final View editView = inflater.inflate(R.layout.dialog_station_details, null);
-		final long id = cursor.getLong(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry._ID));
+		final long id = cursor.getLong(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation._ID));
 		((EditText)editView.findViewById(R.id.station_title)).setText(title);
 		((EditText)editView.findViewById(R.id.station_url)).setText(url);
 		AlertDialog.Builder builder = new AlertDialog.Builder(this.getContext());
@@ -480,22 +480,22 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 		String title = titleView.getText().toString().trim();
 		String url = urlView.getText().toString().trim();
 		
-		boolean valid = RadioPlayer.validateUrl(url);
+		boolean valid = ServiceRadioPlayer.validateUrl(url);
 		if (valid)
 		{
 			ContentValues values = new ContentValues();
-			//values.put(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER, preset);
-	        values.put(RadioDbContract.StationEntry.COLUMN_NAME_TITLE, title);
-	        values.put(RadioDbContract.StationEntry.COLUMN_NAME_URL, url);
-			//CursorLoader var = getLoaderManager().getLoader(MainActivity.LOADER_STATIONS);
+			//values.put(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER, preset);
+	        values.put(DbContractRadio.EntryStation.COLUMN_NAME_TITLE, title);
+	        values.put(DbContractRadio.EntryStation.COLUMN_NAME_URL, url);
+			//CursorLoader var = getLoaderManager().getLoader(ActivityMain.LOADER_STATIONS);
 	        //TODO see if there is a better way to do this, like addId or something
-	        Uri uri = Uri.parse(RadioContentProvider.CONTENT_URI_STATIONS.toString() + "/" + String.valueOf(id));
+	        Uri uri = Uri.parse(ContentProviderRadio.CONTENT_URI_STATIONS.toString() + "/" + String.valueOf(id));
 			int updatedCount = this.getActivity().getContentResolver().update(uri, values, null, null);
 			log("updated " + updatedCount + " rows.", "v");
 		}
 		else
 		{
-			//code duplication in MainActivity
+			//code duplication in ActivityMain
 			log("URL " + url + " not valid", "v");
 			LayoutInflater inflater = LayoutInflater.from(mContext);
 			final View editView = inflater.inflate(R.layout.dialog_station_details, null);
@@ -579,7 +579,7 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 	
 	public void log(String text, String level)
 	{
-		mLogger.log(this.getActivity(), "StationsFragment:\t\t"+text, level);
+		mLogger.log(this.getActivity(), "FragmentStations:\t\t"+text, level);
 	}
 	
 

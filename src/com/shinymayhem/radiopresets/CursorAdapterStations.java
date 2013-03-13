@@ -27,11 +27,11 @@ import android.widget.TextView;
 
 
 
-public class RadioCursorAdapter extends CursorAdapter {
+public class CursorAdapterStations extends CursorAdapter {
 
 	protected Activity mContext;
 
-	public RadioCursorAdapter(Activity context, Cursor c, int flags) {
+	public CursorAdapterStations(Activity context, Cursor c, int flags) {
 		super(context, c, flags);
 		this.mContext = context;
 		
@@ -42,8 +42,8 @@ public class RadioCursorAdapter extends CursorAdapter {
 		//make cursor available to list item, for onlistitemclick or onitemlongclick
 		//view.setTag(cursor);
 		TextView titleView = (TextView)view.findViewById(R.id.station_title);
-		String text = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_PRESET_NUMBER)) + ". " +
-				cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_TITLE));
+		String text = cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER)) + ". " +
+				cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_TITLE));
 		titleView.setText(text);
 		//ImageView imageView = (ImageView)view.findViewById(R.id.station_drag);
 		/*
@@ -60,7 +60,7 @@ public class RadioCursorAdapter extends CursorAdapter {
 		
 		/*
 		//ListViewItem item = (ListViewItem)titleView.getParent().getParent();
-		final String url = cursor.getString(cursor.getColumnIndexOrThrow(RadioDbContract.StationEntry.COLUMN_NAME_URL));
+		final String url = cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_URL));
 		final Context c = context;
 		
 		
@@ -79,7 +79,7 @@ public class RadioCursorAdapter extends CursorAdapter {
 			public void onClick(View view) {
 				Log.i(getClass().toString(), "titleView.onClick()");
 				//TODO see if this still works, or if context is something else now, in fragment
-				MainActivity activity = (MainActivity) view.getContext();
+				ActivityMain activity = (ActivityMain) view.getContext();
 				ConnectivityManager network = (ConnectivityManager) activity.getSystemService(Context.CONNECTIVITY_SERVICE);
 				NetworkInfo info = network.getActiveNetworkInfo();
 				if (info == null || info.isConnected() == false)
