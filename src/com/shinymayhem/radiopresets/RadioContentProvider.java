@@ -119,7 +119,7 @@ public class RadioContentProvider extends ContentProvider {
 				//Integer.toString(MainActivity.BUTTON_LIMIT)
 			);
 		cursor.setNotificationUri(getContext().getContentResolver(), uri);
-		log("query uri:" + uri, "i");
+		log("query uri:" + uri, "v");
 		return cursor;
 	}
 	
@@ -155,7 +155,7 @@ public class RadioContentProvider extends ContentProvider {
 		}
 		//notify content resolver of data change
 		getContext().getContentResolver().notifyChange(uri, null);
-		log("delete uri:" + uri + ". " + String.valueOf(deletedCount) + " deleted", "i");
+		log("delete uri:" + uri + ". " + String.valueOf(deletedCount) + " deleted", "v");
 		return deletedCount;
 		
 	}
@@ -189,7 +189,7 @@ public class RadioContentProvider extends ContentProvider {
 		long id = db.insert(table, null, values);
 		//notify content resolver of data change
 		getContext().getContentResolver().notifyChange(uri, null);
-		log("insert uri:" + uri + ". id of insert:" + String.valueOf(id), "i");
+		log("insert uri:" + uri + ". id of insert:" + String.valueOf(id), "v");
 		return Uri.parse(SEGMENT_STATIONS_BASE + "/" + id);
 		
 		
@@ -223,7 +223,7 @@ public class RadioContentProvider extends ContentProvider {
 		int updatedCount = db.update(table, values, selection, selectionArgs);
 		//notify content resolver of data change
 		getContext().getContentResolver().notifyChange(uri, null);
-		log("update uri:" + uri + ". " + String.valueOf(updatedCount) + " updated", "i");
+		log("update uri:" + uri + ". " + String.valueOf(updatedCount) + " updated", "v");
 		return updatedCount;
 		
 	}

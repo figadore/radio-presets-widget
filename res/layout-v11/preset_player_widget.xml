@@ -73,7 +73,7 @@
 		        android:textSize="18sp"
 		        android:background="@color/widget_now_playing_background"
 		        android:lines="1"
-		        android:text="@string/widget_initial_song"
+		        android:text="@string/initial_song"
 		        />
 			<TextView
 			    android:id="@+id/widget_artist"
@@ -82,7 +82,7 @@
 		        android:textSize="14sp"
 		        android:background="@color/widget_now_playing_background"
 		        android:lines="1"
-		        android:text="@string/widget_initial_artist"
+		        android:text="@string/initial_artist"
 		        />
 		</LinearLayout>
 		

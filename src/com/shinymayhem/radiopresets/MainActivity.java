@@ -18,12 +18,14 @@ package com.shinymayhem.radiopresets;
 
 
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.database.sqlite.SQLiteException;
 import android.media.AudioManager;
@@ -33,11 +35,13 @@ import android.os.IBinder;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import com.shinymayhem.radiopresets.AddDialogFragment.AddDialogListener;
 import com.shinymayhem.radiopresets.EventDialogFragment.EventDialogListener;
@@ -52,6 +56,12 @@ public class MainActivity extends FragmentActivity implements AddDialogListener,
 	//public final static String URL = "com.shinymayhem.radiopresets.URL";
 	public final static String EXTRA_STATION_PRESET = "com.shinymayhem.radiopresets.STATION_ID";
 	
+	public final static String ACTION_UPDATE_TEXT = "com.shinymayhem.radiopresets.mainactivity.ACTION_UPDATE_TEXT";
+	public final static String EXTRA_STATION = "com.shinymayhem.radiopresets.mainactivity.EXTRA_STATION";
+	public final static String EXTRA_STATUS = "com.shinymayhem.radiopresets.mainactivity.EXTRA_STATUS";
+	public final static String EXTRA_ARTIST = "com.shinymayhem.radiopresets.mainactivity.EXTRA_ARTIST";
+	public final static String EXTRA_SONG = "com.shinymayhem.radiopresets.mainactivity.EXTRA_SONG";
+	
 	//public static final int BUTTON_LIMIT = 25;
 	public static final int LOADER_STATIONS = 0;
 	public final static String LOG_FILENAME = "log.txt";
@@ -61,6 +71,7 @@ public class MainActivity extends FragmentActivity implements AddDialogListener,
 	protected RadioPlayer mService;
 	protected StationsDbHelper mDbHelper;
 	protected Logger mLogger = new Logger();
+	protected DetailsReceiver mDetailsReceiver;
 	
 	protected Context getContext()
 	{
@@ -71,9 +82,8 @@ public class MainActivity extends FragmentActivity implements AddDialogListener,
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
 		log("creating main activity", "d");
-
+		
 		//set content view first so findViewById works
 		setContentView(R.layout.activity_main);
 		
@@ -89,13 +99,137 @@ public class MainActivity extends FragmentActivity implements AddDialogListener,
 			
 			FragmentManager fragmentManager = getSupportFragmentManager();
 			fragmentManager.beginTransaction()
-					.add(R.id.stations_fragment_container, stationsFragment)
-					.add(R.id.player_fragment_container, playerFragment)
+					.add(R.id.stations_fragment_container, stationsFragment, StationsFragment.FRAGMENT_TAG)
+					.add(R.id.player_fragment_container, playerFragment, PlayerFragment.FRAGMENT_TAG)
 					.commit();
 		}
 		
 		
 	}
+	
+	@Override
+	protected void onStart()
+	{
+		super.onStart();
+		log("starting main activity", "d");
+		bindRadioPlayer();
+	}
+	
+	protected void bindRadioPlayer()
+	{
+		log("binding radio player", "d");
+		Intent intent = new Intent(this, RadioPlayer.class);
+		intent.setAction(Intent.ACTION_RUN);
+		startService(intent);
+		
+		//don't call service's onStartCommand, just connect to it so play(url) and other functions are available through ui
+		//bind_above_client so ui might be killed before service, in case of low memory 
+		//bindService(intent, mConnection, Context.BIND_AUTO_CREATE|Context.BIND_ABOVE_CLIENT);
+		//bindService(intent, mConnection, Context.BIND_ABOVE_CLIENT); 
+		bindService(intent, mConnection, 0);
+	}
+	
+	protected void onRestart()
+	{
+		super.onRestart();
+		log("restarting main activity", "d");
+	}
+	
+	protected void onResume()
+	{
+		super.onResume();
+		log("resuming main activity", "d");
+		//while app is visible, volume buttons should adjust music stream volume
+		log("setting volume control stream", "d");
+		setVolumeControlStream(AudioManager.STREAM_MUSIC);
+		
+		registerDetailsReceiver();
+	}
+	
+	//register for details updates
+	private void registerDetailsReceiver()
+	{
+		//register network receiver
+		IntentFilter filter = new IntentFilter(MainActivity.ACTION_UPDATE_TEXT);
+		if (mDetailsReceiver != null)
+		{
+			log("------------------------------------------", "v");
+			log("details receiver already registered, find out why", "w"); 
+			log("------------------------------------------", "v");
+			//widget doesn't accept localbroadcasts
+			//LocalBroadcastManager.getInstance(this).unregisterReceiver(mDetailsReceiver);
+			this.unregisterReceiver(mDetailsReceiver);
+			mDetailsReceiver = null;
+		}
+		mDetailsReceiver = new DetailsReceiver();
+        log("registering details broadcast receiver", "i");
+        //widget doesn't accept localbroadcasts
+        //LocalBroadcastManager.getInstance(this).registerReceiver(mDetailsReceiver, filter); 
+		this.registerReceiver(mDetailsReceiver, filter);
+	}
+	
+	private void unregisterDetailsReceiver()
+	{
+		if (mDetailsReceiver == null)
+		{
+			log("mDetailsReceiver null, probably already unregistered", "v");
+		}
+		else
+		{
+			try
+			{
+				//widget doesn't accept localbroadcasts
+				//LocalBroadcastManager.getInstance(this).unregisterReceiver(mDetailsReceiver);
+				this.unregisterReceiver(mDetailsReceiver);
+				log("unregistering details receiver", "v");
+			}
+			catch (IllegalArgumentException e)
+			{
+				log("details receiver already unregistered", "w");
+			}
+			mDetailsReceiver = null;	
+		}
+	}
+	
+	@Override
+	protected void onStop()
+	{
+		log("stopping main activity", "d");
+		if (mService != null && mService.isPlaying() == false)
+		{
+			mService.stop();
+		}
+		if (mBound)
+		{
+			unbindService(mConnection);
+			mBound = false;
+		}
+		super.onStop();
+	}
+	
+	
+	
+	@Override
+	public void onPause()
+	{
+		log("pausing main activity", "d");
+		super.onPause();
+		unregisterDetailsReceiver();
+		
+	}
+	
+	public void onDestroy()
+	{
+		log("onDestroy()", "d");
+		log("another experimental fix, sometimes 'end' isn't called on service unbound", "d");
+		if (mService != null && !mService.isPlaying())
+		{
+			log("mservice.end()", "d");
+			mService.end();
+		}
+		super.onDestroy();
+	}
+
 	
 	@Override
     public void onDialogPositiveClick(View view) {
@@ -204,7 +338,15 @@ public class MainActivity extends FragmentActivity implements AddDialogListener,
 		
 	}
 	
-
+	public boolean onKeyUp(int keyCode, KeyEvent event)
+	{
+		PlayerFragment fragment = (PlayerFragment) this.getSupportFragmentManager().findFragmentByTag(PlayerFragment.FRAGMENT_TAG);
+		if(fragment != null && (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == KeyEvent.KEYCODE_VOLUME_UP))
+        {
+			 fragment.updateSlider();
+        }
+		return false;
+	}
 	
 	public void play(int id)
 	{
@@ -216,10 +358,10 @@ public class MainActivity extends FragmentActivity implements AddDialogListener,
 		//mService.play(url);
 	}
 	
-	public void setVolume(int percent)
+	public void setVolume(int volume)
 	{
 		log("setVolume()", "v");
-		mService.setVolume(percent);
+		mService.setVolume(volume);
 	}
 	
 
@@ -294,86 +436,33 @@ public class MainActivity extends FragmentActivity implements AddDialogListener,
 		}
 	};
 	
+	protected void updateDetails(String station, String status, String artist, String song)
+	{
+		TextView songText = (TextView) this.findViewById(R.id.player_song_details);
+		TextView stationText = (TextView) this.findViewById(R.id.player_station_details);
+		songText.setText(artist + " - " + song);
+		stationText.setText(station+ " : " + status);
+	}
 
 	private void log(String text, String level)
 	{
 		mLogger.log(this, text, level);
 	}
 	
-	@Override
-	protected void onStart()
-	{
-		super.onStart();
-		log("starting main activity", "d");
-		bindRadioPlayer();
+	public class DetailsReceiver extends BroadcastReceiver {
+	    @Override
+	    public void onReceive(Context context, Intent intent) {
+	    	if (intent.getAction().equals(MainActivity.ACTION_UPDATE_TEXT))
+	    	{
+	    		log("updating main activity text", "w");
+	    		Bundle extras = intent.getExtras();
+				String station = extras.getString(MainActivity.EXTRA_STATION);
+				String status = extras.getString(MainActivity.EXTRA_STATUS);
+				String artist = extras.getString(MainActivity.EXTRA_ARTIST);
+				String song = extras.getString(MainActivity.EXTRA_SONG);
+				updateDetails(station, status, artist, song);
+	    	}
+	    }
 	}
-	
-	protected void bindRadioPlayer()
-	{
-		log("binding radio player", "d");
-		Intent intent = new Intent(this, RadioPlayer.class);
-		intent.setAction(Intent.ACTION_RUN);
-		startService(intent);
-		
-		//don't call service's onStartCommand, just connect to it so play(url) and other functions are available through ui
-		//bind_above_client so ui might be killed before service, in case of low memory 
-		//bindService(intent, mConnection, Context.BIND_AUTO_CREATE|Context.BIND_ABOVE_CLIENT);
-		//bindService(intent, mConnection, Context.BIND_ABOVE_CLIENT); 
-		bindService(intent, mConnection, 0);
-	}
-	
-	protected void onRestart()
-	{
-		super.onRestart();
-		log("restarting main activity", "d");
-	}
-	
-	protected void onResume()
-	{
-		super.onResume();
-		log("resuming main activity", "d");
-		//while app is visible, volume buttons should adjust music stream volume
-		log("setting volume control stream", "d");
-		setVolumeControlStream(AudioManager.STREAM_MUSIC);
-	}
-	
-	@Override
-	protected void onStop()
-	{
-		log("stopping main activity", "d");
-		if (mService != null && mService.isPlaying() == false)
-		{
-			mService.stop();
-		}
-		if (mBound)
-		{
-			unbindService(mConnection);
-			mBound = false;
-		}
-		super.onStop();
-	}
-	
-	
-	
-	@Override
-	public void onPause()
-	{
-		log("pausing main activity", "d");
-		super.onPause();
-		
-	}
-	
-	public void onDestroy()
-	{
-		log("onDestroy()", "d");
-		log("another experimental fix, sometimes 'end' isn't called on service unbound", "d");
-		if (mService != null && !mService.isPlaying())
-		{
-			log("mservice.end()", "d");
-			mService.end();
-		}
-		super.onDestroy();
-	}
-
 
 }

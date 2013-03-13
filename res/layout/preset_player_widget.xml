@@ -26,7 +26,8 @@
 	    android:paddingTop="5dp"
 	    android:paddingBottom="5dp"
 	    android:baselineAligned="false"
-	    android:orientation="horizontal" >
+	    android:orientation="horizontal"
+	    android:background="@color/widget_now_playing_background" >
 		<LinearLayout 
 		    android:id="@+id/widget_station_details"
 		    android:layout_width="fill_parent"
@@ -42,19 +43,39 @@
 			    android:layout_width="match_parent"
 			    android:layout_height="wrap_content"
 		        android:textSize="18sp"
-		        android:background="@color/widget_now_playing_background"
 		        android:lines="1"
 		        android:text="@string/widget_initial_title"
-		        />
+		        android:marqueeRepeatLimit="marquee_forever"
+		        android:scrollHorizontally="true"
+		        android:maxLines="1"
+		        android:focusable="true"
+        		android:focusableInTouchMode="true"
+        		android:duplicateParentState="true"
+		        >
+		        	<requestFocus 
+		        	    android:focusable="true" 
+		        	    android:focusableInTouchMode="true"
+        				android:duplicateParentState="true" />
+		    </TextView>
 			<TextView
 			    android:id="@+id/widget_status"
 			    android:layout_width="match_parent"
 			    android:layout_height="wrap_content"
 		        android:textSize="14sp"
-		        android:background="@color/widget_now_playing_background"
 		        android:lines="1"
 		        android:text="@string/widget_initial_status"
-		        />
+		        android:marqueeRepeatLimit="marquee_forever"
+		        android:scrollHorizontally="true"
+		        android:maxLines="1"
+		        android:focusable="true"
+        		android:focusableInTouchMode="true"
+        		android:duplicateParentState="true"
+		        >
+		        	<requestFocus 
+		        	    android:focusable="true" 
+		        	    android:focusableInTouchMode="true"
+        				android:duplicateParentState="true" />
+		    </TextView>
 		</LinearLayout>
 		<LinearLayout 
 		    android:id="@+id/widget_song_details"
@@ -67,22 +88,26 @@
 		    android:paddingRight="12dp"
 		    android:orientation="vertical" >
 			<TextView
-			    android:id="@+id/widget_song"
-			    android:layout_width="match_parent"
-			    android:layout_height="wrap_content"
-		        android:textSize="18sp"
-		        android:background="@color/widget_now_playing_background"
-		        android:lines="1"
-		        android:text="@string/widget_initial_song"
-		        />
-			<TextView
 			    android:id="@+id/widget_artist"
 			    android:layout_width="match_parent"
 			    android:layout_height="wrap_content"
-		        android:textSize="14sp"
-		        android:background="@color/widget_now_playing_background"
+		        android:textSize="18sp"
 		        android:lines="1"
-		        android:text="@string/widget_initial_artist"
+		        android:text="@string/initial_song"
+		        android:marqueeRepeatLimit="marquee_forever"
+		        android:scrollHorizontally="true"
+		        android:maxLines="1"
+		        />
+			<TextView
+			    android:id="@+id/widget_song"
+			    android:layout_width="match_parent"
+			    android:layout_height="wrap_content"
+		        android:textSize="14sp"
+		        android:lines="1"
+		        android:text="@string/initial_artist"
+		        android:marqueeRepeatLimit="marquee_forever"
+		        android:scrollHorizontally="true"
+		        android:maxLines="1"
 		        />
 		</LinearLayout>
 		

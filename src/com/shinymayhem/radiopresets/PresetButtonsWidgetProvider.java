@@ -40,15 +40,13 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 	private final int MIN_BUTTON_WIDTH = 65; //TODO get from preferences
 	private final int FIXED_WIDTH = 294;
 	private final int FIXED_HEIGHT = 100;
-	public final static String ACTION_UPDATE_TEXT = "com.shinymayhem.radiopresets.intent.update_text";
-	public final static String EXTRA_TEXT1 = "com.shinymayhem.radiopresets.extras.text1";
-	public final static String EXTRA_TEXT2 = "com.shinymayhem.radiopresets.extras.text2";
+	
 	
 	public void onEnabled(Context context)
 	{
 		
 		mContext = context;
-		log("onEnabled()", "i");
+		log("onEnabled()", "v");
 		super.onEnabled(context);
 	}
 	
@@ -56,28 +54,30 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 	{
 		
 		mContext = context;
-		log("onReceive()", "i");
+		log("onReceive()", "v");
 		super.onReceive(context, intent);	
 		String action = intent.getAction();
 		log(action,"v");
-		log(ACTION_UPDATE_TEXT,"v");
-		if (action.equals(ACTION_UPDATE_TEXT))
+		log(MainActivity.ACTION_UPDATE_TEXT,"v");
+		if (action.equals(MainActivity.ACTION_UPDATE_TEXT))
 		{
-			log("update text action", "i");
+			log("update text action", "v");
 			Bundle extras = intent.getExtras();
-			String text1 = extras.getString(EXTRA_TEXT1);
-			String text2 = extras.getString(EXTRA_TEXT2);
-			this.updateText(text1, text2);
+			String station = extras.getString(MainActivity.EXTRA_STATION);
+			String status = extras.getString(MainActivity.EXTRA_STATUS);
+			String artist = extras.getString(MainActivity.EXTRA_ARTIST);
+			String song = extras.getString(MainActivity.EXTRA_SONG);
+			this.updateText(station, status, artist, song);
 		}
 		else
 		{
 			if (intent.getAction() == null)
 			{
-				log("no action", "i");	
+				log("no action", "v");	
 			}
 			else
 			{
-				log("other action:" + String.valueOf(intent.getAction()), "i");	
+				log("other action:" + String.valueOf(intent.getAction()), "v");	
 			}
 			
 			
@@ -86,10 +86,9 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 	}
 	
 	@SuppressLint("NewApi")
-	private void updateText(String text1, String text2)
+	private void updateText(String station, String status, String artist, String song)
 	{
-		Log.i("widget", "updating text:" + text1 + "," + text2);
-		log("onUpdate()", "v");
+		log("updating text:" + station + "," + status, "v");
 		//mContext = context;
 		AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(mContext);
 		ComponentName provider = new ComponentName(mContext, com.shinymayhem.radiopresets.PresetButtonsWidgetProvider.class);
@@ -109,8 +108,10 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
             	this.getViews();
             }
             
-            mViews.setTextViewText(R.id.currently_playing, text1);
-            mViews.setTextViewText(R.id.widget_status, text2);
+            mViews.setTextViewText(R.id.currently_playing, station);
+            mViews.setTextViewText(R.id.widget_status, status);
+            mViews.setTextViewText(R.id.widget_artist, artist);
+            mViews.setTextViewText(R.id.widget_song, song);
             //appWidgetManager.updateAppWidget(provider, mViews);
             appWidgetManager.updateAppWidget(appWidgetId, mViews);
         }
@@ -148,12 +149,12 @@ public class PresetButtonsWidgetProvider extends AppWidgetProvider {
 		//RemoteViews views;
 		if (getHeight(newOptions) >= TALL_WIDGET)
         {
-			Log.i("widget", "tall widget");
+			log("tall widget", "v");
         	this.getPlayerViews(newOptions);
         }
         else
         {
-        	Log.i("widget", "short widget");
+        	log("short widget", "v");
         	this.getButtonViews(newOptions);
         }
 		//return mViews;

@@ -54,6 +54,7 @@ public class StationsFragment extends ListFragment implements LoaderCallbacks<Cu
 	protected Context mContext;
 	protected Logger mLogger = new Logger();
 	protected ListView mListView;
+	public static final String FRAGMENT_TAG = "com.shinymayhem.radiopresets.StationsFragmentTag";
 	
 	RadioCursorAdapter mAdapter;
 	

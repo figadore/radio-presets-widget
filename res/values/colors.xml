@@ -9,6 +9,7 @@
     <color name="item_default">#000000ff</color>
     <color name="widget_now_playing_background">#00000000</color>
     <color name="widget_background">#99333333</color>
+    <color name="player_background">#99333333</color>
 
 
 </resources>

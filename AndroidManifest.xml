@@ -28,6 +28,9 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="com.shinymayhem.radiopresets.mainactivity.ACTION_UPDATE_TEXT" />
+            </intent-filter>
         </activity>
 
         <service
@@ -50,9 +53,10 @@
         <receiver android:name="PresetButtonsWidgetProvider" 
             android:label="A Radio Presets">
 		    <intent-filter>
-		        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-		        <action android:name="com.shinymayhem.radiopresets.PresetButtonsWidgetProvider.ACTION_UPDATE_TEXT" />
-		        <action android:name="com.shinymayhem.radiopresets.intent.update_text" />
+		        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />    
+		    </intent-filter>
+		    <intent-filter>
+		    	<action android:name="com.shinymayhem.radiopresets.mainactivity.ACTION_UPDATE_TEXT" />
 		    </intent-filter>
 		    <meta-data android:name="android.appwidget.provider"
 		               android:resource="@xml/preset_buttons_widget_info" />
