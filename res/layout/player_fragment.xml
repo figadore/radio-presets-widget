@@ -50,7 +50,7 @@
         android:paddingLeft="@dimen/player_horizontal_padding"
         android:paddingRight="@dimen/player_horizontal_padding"
         android:contentDescription="@string/stop"
-        android:background="@android:color/transparent"
+        style="@style/borderlessButtonStyle"
         android:src="@drawable/av_stop"
         android:onClick="stop" />
     <ImageButton
@@ -64,7 +64,7 @@
         android:paddingLeft="@dimen/player_horizontal_padding"
         android:paddingRight="@dimen/player_horizontal_padding"
         android:contentDescription="@string/previous"
-        android:background="@android:color/transparent"
+        style="@style/borderlessButtonStyle"
         android:src="@drawable/av_previous"
         android:onClick="prev" />
     <ImageButton
@@ -78,7 +78,7 @@
         android:paddingLeft="@dimen/player_horizontal_padding"
         android:paddingRight="@dimen/player_horizontal_padding"
         android:contentDescription="@string/next"
-        android:background="@android:color/transparent"
+        style="@style/borderlessButtonStyle"
         android:src="@drawable/av_next"
         android:onClick="next" />
     <FrameLayout

@@ -125,9 +125,9 @@
 	        android:layout_height="wrap_content"
 	        android:layout_alignParentLeft="true"
 	        android:paddingLeft="@dimen/widget_player_padding"
-	    android:paddingRight="@dimen/widget_player_padding"
+	    	android:paddingRight="@dimen/widget_player_padding"
 	        android:contentDescription="@string/launch"
-	        android:background="@android:color/transparent"
+	        style="@style/widgetLaunchButton"
 	        android:src="@drawable/app_icon"
 	        />
 
@@ -137,9 +137,9 @@
 	        android:layout_height="wrap_content"
 	        android:layout_toRightOf="@id/launch_main"
 	        android:paddingLeft="@dimen/widget_player_padding"
-	    android:paddingRight="@dimen/widget_player_padding"
+	   		android:paddingRight="@dimen/widget_player_padding"
 	        android:contentDescription="@string/previous"
-	        android:background="@android:color/transparent"
+	        style="@style/widgetPlayerButton"
 	        android:src="@drawable/av_previous"
 	        />
 		<ImageButton 
@@ -148,9 +148,9 @@
 	        android:layout_height="wrap_content"
 			android:layout_toRightOf="@id/widget_previous"
 	        android:paddingLeft="@dimen/widget_player_padding"
-	    android:paddingRight="@dimen/widget_player_padding"
+	    	android:paddingRight="@dimen/widget_player_padding"
 	        android:contentDescription="@string/stop"
-	        android:background="@android:color/transparent"
+	        style="@style/widgetPlayerButton"
 	        android:src="@drawable/av_stop"
 	        />
 		<ImageButton 
@@ -159,9 +159,9 @@
 	        android:layout_height="wrap_content"
 	       android:layout_toRightOf="@id/widget_stop"
 	        android:paddingLeft="@dimen/widget_player_padding"
-	    android:paddingRight="@dimen/widget_player_padding"
+	    	android:paddingRight="@dimen/widget_player_padding"
 	        android:contentDescription="@string/next"
-	        android:background="@android:color/transparent"
+	        style="@style/widgetPlayerButton"
 	        android:src="@drawable/av_next"
 	        />
 		
