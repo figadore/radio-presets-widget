@@ -908,9 +908,9 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	protected void updateDetails(String title, String status)
 	{
 		Intent intent = this.getDetailsUpdateIntent(title, status);
-		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+		//LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 		
-		//this.sendBroadcast(intent);
+		this.sendBroadcast(intent);
 	}
 	
 	protected Notification updateNotification(String status, String stopText, boolean updateTicker)
