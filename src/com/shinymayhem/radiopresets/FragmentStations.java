@@ -61,6 +61,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
 	public interface PresetListener
 	{
 		public void play(int preset);
+		public void updateDetails();
 	}
 	
 	PresetListener mListener;
@@ -414,6 +415,8 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
 		//where= "_id in (?, ?, '')"
 		int deletedCount = getActivity().getContentResolver().delete(ContentProviderRadio.CONTENT_URI_STATIONS, where, values);//(ContentProviderRadio.CONTENT_URI_STATIONS, selected);
 		log("deleted " + String.valueOf(deletedCount), "v");
+		//TODO handle case where delete affects (above or includes) currently playing station
+		mListener.updateDetails();
 	}
 
 	public void deleteSelected()
@@ -492,6 +495,8 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
 	        Uri uri = Uri.parse(ContentProviderRadio.CONTENT_URI_STATIONS.toString() + "/" + String.valueOf(id));
 			int updatedCount = this.getActivity().getContentResolver().update(uri, values, null, null);
 			log("updated " + updatedCount + " rows.", "v");
+			//TODO handle case where edited currently playing station
+			mListener.updateDetails();
 		}
 		else
 		{

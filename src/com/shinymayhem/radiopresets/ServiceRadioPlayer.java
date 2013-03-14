@@ -50,7 +50,6 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
-import android.support.v4.content.LocalBroadcastManager;
 import android.telephony.TelephonyManager;
 import android.view.KeyEvent;
 import android.webkit.URLUtil;
@@ -161,9 +160,9 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 				//return flag indicating no further action needed if service is stopped by system and later resumes
 				return START_NOT_STICKY;
 			}
-			else if (action.equals(Intent.ACTION_RUN)) //called when service is being bound
+			else if (action.equals(Intent.ACTION_RUN)) //called when service is being bound by player activity
 			{
-				log("service being started before bound", "v");
+				log("service being started probably so it can be bound", "v");
 				return START_NOT_STICKY;
 			}
 			else if (action.equals(ACTION_PLAY.toString())) //Play intent
@@ -529,7 +528,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	private void stopInfo(String status)
 	{
 		stopForeground(true);
-		this.updateDetails(getResources().getString(R.string.widget_initial_title), status);
+		this.updateDetails(getResources().getString(R.string.widget_initial_station), status);
 	}
 	
 	private void stopInfo()
@@ -852,32 +851,13 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	protected void setVolume(int newVolume)
 	{
 		AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-		
-		//int maxVolume = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-		//int newVolume = (int)(((float)(percent))/100*maxVolume);
 		audio.setStreamVolume(AudioManager.STREAM_MUSIC, newVolume, 0);
-		/*log("setting volume to " + String.valueOf(percent), "v");
-		float log1=(float)(Math.log(100-percent)/Math.log(100));
-		log("lowering volume to " +  String.valueOf(log1), "v");
-		mMediaPlayer.setVolume(1-log1, 1-log1);*/
-		
-		
 	}
 	
+	//convenience method
 	protected Intent getDetailsUpdateIntent(String station, String status)
 	{
-		/*
-		//Intent intent = new Intent(this, com.shinymayhem.radiopresets.WidgetProviderPresets.class);
-		Intent intent = new Intent(ActivityMain.ACTION_UPDATE_TEXT);
-		//intent.setAction(ActivityMain.ACTION_UPDATE_TEXT);
-		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_STATION, station);
-		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_STATUS, status);
-        //intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
-        return intent;
-        */
-		String artist = getResources().getString(R.string.initial_artist);
-		String song = getResources().getString(R.string.initial_song);
-		return this.getDetailsUpdateIntent(station, status, artist, song);
+		return this.getDetailsUpdateIntent(station, status, getArtist(), getSong());
 	}
 	
 	protected Intent getDetailsUpdateIntent(String station, String status, String artist, String song)
@@ -893,6 +873,12 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         return intent;
 	}
 	
+	//called whenever widget or activity player details need updating
+	public void updateDetails()
+	{ 
+		updateDetails(getStation(), getStatus());
+	}
+		
 	//when no title specified, default to "[preset]. [station name]"
 	protected void updateDetails(String text)
 	{
@@ -900,16 +886,11 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		//update widget. doesn't receive localbroadcasts
 		//LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 		this.sendBroadcast(intent);
-		
-		
-		
 	}
 	
-	protected void updateDetails(String title, String status)
+	protected void updateDetails(String station, String status)
 	{
-		Intent intent = this.getDetailsUpdateIntent(title, status);
-		//LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-		
+		Intent intent = this.getDetailsUpdateIntent(station, status);
 		this.sendBroadcast(intent);
 	}
 	
@@ -950,6 +931,60 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		this.updateDetails(status);
 		return builder.build();
 	}
+	
+	//get currently playing station, if applicable
+	private String getStation()
+	{
+		String station = getResources().getString(R.string.widget_initial_station);
+		if (mPreset != 0)
+		{
+			station = String.valueOf(mPreset) + ". " + mTitle;
+		}
+		return station;
+	}
+	
+	//get current player status
+	private String getStatus()
+	{
+		String status = getResources().getString(R.string.widget_stopped_status);
+		//TODO replace these with string resources
+		if (mCurrentPlayerState.equals(STATE_BUFFERING))
+		{
+			status = "Buffering";
+		}
+		else if (mCurrentPlayerState.equals(STATE_PREPARING))
+		{
+			status = "Preparing";
+		}
+		else if (!isConnected() && (mCurrentPlayerState.equals(STATE_PLAYING) || mCurrentPlayerState.equals(STATE_PREPARING)))
+		{
+			status = "Waiting for network";
+		}
+		else if (mCurrentPlayerState.equals(STATE_PLAYING))
+		{
+			status = "Playing";
+		}
+		else if (mCurrentPlayerState.equals(STATE_PAUSED) || mCurrentPlayerState.equals(STATE_PHONE))
+		{
+			status = "Paused";
+		}
+		return status;
+	}
+	
+	//get currently playing artist, if applicable
+	private String getArtist()
+	{
+		String artist = getResources().getString(R.string.initial_artist);
+		return artist;
+	}
+	
+	//get currently playing song, if applicable
+	private String getSong()
+	{
+		String song = getResources().getString(R.string.initial_song);
+		return song;
+	}
+	
 	
 	protected void initializePlayer(MediaPlayer player)
 	{
@@ -1266,6 +1301,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		);
 	}
 	
+
 	protected boolean isConnected()
 	{
 		ConnectivityManager network = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);

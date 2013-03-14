@@ -16,6 +16,8 @@
 
 package com.shinymayhem.radiopresets;
 
+import com.shinymayhem.radiopresets.ServiceRadioPlayer.LocalBinder;
+
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.PendingIntent;
@@ -24,10 +26,12 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.util.Log;
 import android.widget.RemoteViews;
 
@@ -40,6 +44,24 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 	private final int MIN_BUTTON_WIDTH = 65; //TODO get from preferences
 	private final int FIXED_WIDTH = 294;
 	private final int FIXED_HEIGHT = 100;
+	protected ServiceRadioPlayer mService;
+	private ServiceConnection mConnection = new ServiceConnection()
+	{
+		@Override
+		public void onServiceConnected(ComponentName className, IBinder service)
+		{
+			log("service connected", "d");
+			LocalBinder binder = (LocalBinder) service;
+			mService = binder.getService();
+			mService.updateDetails();
+			mContext.getApplicationContext().unbindService(mConnection);
+		}
+		@Override
+		public void onServiceDisconnected(ComponentName arg0)
+		{
+			log("service disconnected", "d");
+		}
+	};
 	
 	
 	public void onEnabled(Context context)
@@ -48,6 +70,7 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 		mContext = context;
 		log("onEnabled()", "v");
 		super.onEnabled(context);
+		updateDetails(context);
 	}
 	
 	public void onReceive(Context context, Intent intent)
@@ -133,7 +156,19 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 		Log.i("widget", "new min width:" + String.valueOf(maxWidth));
 		this.getViews(newOptions);
 		appWidgetManager.updateAppWidget(appWidgetId, mViews);
+		//update widget playing details
+		
+		updateDetails(context);
 		//super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions);
+	}
+	
+	private void updateDetails(Context context)
+	{
+		Intent intent = new Intent(context, ServiceRadioPlayer.class);
+		intent.setAction(Intent.ACTION_RUN);
+		context.getApplicationContext().bindService(intent, mConnection, 0); //should unbind itself once connected and details intent sent
+		//mService.updateDetails();
+		//context.unbindService(mConnection);
 	}
 	
 	//default for pre-jellybean, not resizeable, stick with 2x4 
@@ -181,6 +216,7 @@ public class WidgetProviderPresets extends AppWidgetProvider {
             }
             appWidgetManager.updateAppWidget(appWidgetId, mViews);
         }
+        updateDetails(context);
 	}
 	
 	private Intent getMainIntent()

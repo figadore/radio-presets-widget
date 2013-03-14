@@ -20,10 +20,10 @@
     <string name="title">Title</string>
     <string name="url">URL</string>
     <string name="copy">Copy Logs</string>
-    <string name="widget_initial_status">Not started</string>
+    <string name="widget_initial_status">Stopped</string>
     <string name="widget_stopped_status">Stopped</string>
     <string name="widget_error_status">Error</string>
-    <string name="widget_initial_title">Nothing playing</string>
+    <string name="widget_initial_station">Nothing playing</string>
     <string name="initial_song">Unknown song</string>
     <string name="initial_artist">Unknown artist</string>
     <string name="player_initial_station_details">Nothing playing</string>

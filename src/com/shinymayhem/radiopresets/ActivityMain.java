@@ -73,6 +73,26 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 	protected ActivityLogger mLogger = new ActivityLogger();
 	protected ReceiverDetails mDetailsReceiver;
 	
+	private ServiceConnection mConnection = new ServiceConnection()
+	{
+		@Override
+		public void onServiceConnected(ComponentName className, IBinder service)
+		{
+			log("service connected", "d");
+			LocalBinder binder = (LocalBinder) service;
+			mService = binder.getService();
+			mBound = true;
+			mService.updateDetails();
+		}
+		@Override
+		public void onServiceDisconnected(ComponentName arg0)
+		{
+			log("service disconnected", "d");
+			mBound = false;
+		}
+	};
+	
+	
 	protected Context getContext()
 	{
 		return this;
@@ -144,6 +164,13 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
 		
 		registerDetailsReceiver();
+		
+		//update player details
+		//if (mService == null)
+		//{
+//			log("Service not bound yet", "e");
+	//	}
+		//mService.updateDetails();
 	}
 	
 	//register for details updates
@@ -256,6 +283,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 				throw new SQLiteException("Insert failed");
 			}
 			log("uri of addition:" + uri, "v");
+			this.updateDetails();
 		}
 		else
 		{
@@ -418,30 +446,23 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 	}
 	
 
-	private ServiceConnection mConnection = new ServiceConnection()
-	{
-		@Override
-		public void onServiceConnected(ComponentName className, IBinder service)
-		{
-			log("service connected", "d");
-			LocalBinder binder = (LocalBinder) service;
-			mService = binder.getService();
-			mBound = true;
-		}
-		@Override
-		public void onServiceDisconnected(ComponentName arg0)
-		{
-			log("service disconnected", "d");
-			mBound = false;
-		}
-	};
 	
-	protected void updateDetails(String station, String status, String artist, String song)
+	protected void setActivityPlayerDetails(String station, String status, String artist, String song)
 	{
 		TextView songText = (TextView) this.findViewById(R.id.player_song_details);
 		TextView stationText = (TextView) this.findViewById(R.id.player_station_details);
 		songText.setText(artist + " - " + song);
 		stationText.setText(station+ " : " + status);
+	}
+	
+	//calls service's method which sends a broadcast to widget and activity player with current details
+	public void updateDetails()
+	{
+		if (mService == null)
+		{
+			log("service not bound", "e");
+		}
+		mService.updateDetails();
 	}
 
 	private void log(String text, String level)
@@ -454,13 +475,13 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 	    public void onReceive(Context context, Intent intent) {
 	    	if (intent.getAction().equals(ActivityMain.ACTION_UPDATE_TEXT))
 	    	{
-	    		log("updating main activity text", "w");
+	    		log("updating main activity text", "v");
 	    		Bundle extras = intent.getExtras();
 				String station = extras.getString(ActivityMain.EXTRA_STATION);
 				String status = extras.getString(ActivityMain.EXTRA_STATUS);
 				String artist = extras.getString(ActivityMain.EXTRA_ARTIST);
 				String song = extras.getString(ActivityMain.EXTRA_SONG);
-				updateDetails(station, status, artist, song);
+				setActivityPlayerDetails(station, status, artist, song);
 	    	}
 	    }
 	}
