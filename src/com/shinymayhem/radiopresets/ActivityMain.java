@@ -373,7 +373,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
         {
 			 fragment.updateSlider();
         }
-		return false;
+		return super.onKeyUp(keyCode, event);
 	}
 	
 	public void play(int id)
