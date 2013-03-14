@@ -80,7 +80,7 @@
 	        android:textSize="14sp"
 	        android:background="@color/widget_now_playing_background"
 	        android:lines="1"
-	        android:text="@string/widget_initial_status"
+	        android:text="@string/status_stopped"
 	        />
 	</LinearLayout>
 

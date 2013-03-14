@@ -5,8 +5,8 @@
     <color name="blue">#ff0000ff</color>
     <color name="red">#ffff0000</color>
     <color name="green">#ff00ff00</color>
-    <color name="item_selected">#ff0000ff</color>
-    <color name="item_default">#000000ff</color>
+    <color name="item_selected">#662a84ff</color>
+    <color name="item_default">#00000000</color>
     <color name="widget_now_playing_background">#00000000</color>
     <color name="widget_background">#99333333</color>
     <color name="player_background">#99333333</color>

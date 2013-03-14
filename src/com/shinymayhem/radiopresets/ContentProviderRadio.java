@@ -119,7 +119,7 @@ public class ContentProviderRadio extends ContentProvider {
 				//Integer.toString(ActivityMain.BUTTON_LIMIT)
 			);
 		cursor.setNotificationUri(getContext().getContentResolver(), uri);
-		log("query uri:" + uri, "v");
+		//log("query uri:" + uri, "v");
 		return cursor;
 	}
 	

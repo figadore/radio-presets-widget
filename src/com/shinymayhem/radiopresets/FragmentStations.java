@@ -97,6 +97,13 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
 		
 	}
 	
+	public void refresh()
+	{
+		log("refresh()", "d");
+		getLoaderManager().restartLoader(ActivityMain.LOADER_STATIONS, null, this);
+		getListView().refreshDrawableState();
+	}
+	
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
 		super.onCreateContextMenu(menu, v, menuInfo);
@@ -228,6 +235,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
 	
 
 	//doesn't do anything if multi-choice-modal set (used to use AdapterView as first arg)
+	@SuppressWarnings("deprecation")
 	/*public boolean onItemLongClick(AdapterView<?> adapterView, View view,
 			int position, long id) {
 		String str= "list item longclicked";
@@ -311,6 +319,19 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
 		
 	}*/
 	
+	@SuppressLint("NewApi")
+	public void highlightPosition(int position)
+	{
+		View view = (View) mListView.getChildAt(position);
+		if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.JELLY_BEAN) {
+			view.setBackground(getResources().getDrawable(R.drawable.list_item_background_playing));
+		}
+		else
+		{
+			view.setBackgroundDrawable(getResources().getDrawable(R.drawable.list_item_background_playing));	
+		}
+	}
+	
 	@Override
 	public void onListItemClick(ListView listView, View view, int position, long id)
 	{
@@ -323,6 +344,9 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
 		str += ", row id:";
 		str += Long.toString(id);
 		log(str, "v");
+		//TODO decide whether to do this, or wait for details update intent to refresh the cursorloader and listfragment 
+		//(when highlighting immediately, two could be highlighted at once if old highlight isn't cleared first)
+		//highlightPosition(position);
 		mListener.play(preset);
 		
 		/*

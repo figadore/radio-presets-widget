@@ -152,7 +152,6 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		}
 		else
 		{
-			//TODO find out why service starts again after STOP action in intent (does it still?)
 			String action = intent.getAction();
 			if (action == null)
 			{
@@ -232,13 +231,13 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 				}
 				mInterrupted = false;
 
-				Notification notification = updateNotification("Playing", "Stop", true);
+				Notification notification = updateNotification(getResources().getString(R.string.status_playing), getResources().getString(R.string.stop), true);
 				mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 				startForeground(ONGOING_NOTIFICATION, notification);
 				
 				
 				log("start foreground notification: playing", "v");
-				Toast.makeText(this, "Playing", Toast.LENGTH_SHORT).show();
+				//Toast.makeText(this, "Playing", Toast.LENGTH_SHORT).show();
 			}
 			else if (result == AudioManager.AUDIOFOCUS_REQUEST_FAILED)
 			{
@@ -269,7 +268,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			//	status.setText("Stopped");	
 			}
 			
-			Notification notification = updateNotification("Playing", "Stop", true);
+			Notification notification = updateNotification(getResources().getString(R.string.status_playing), getResources().getString(R.string.stop), true);
 			mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 			mCurrentPlayerState = ServiceRadioPlayer.STATE_PLAYING;
 			return true;
@@ -282,7 +281,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			//Log.i(getPackageName(), "start buffering");
 			//status.setText("Buffering...");
 			
-			Notification notification = updateNotification("Buffering", "Cancel", true);
+			Notification notification = updateNotification(getResources().getString(R.string.status_buffering), getResources().getString(R.string.cancel), true);
 			mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 			
 
@@ -533,7 +532,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	
 	private void stopInfo()
 	{
-		this.stopInfo(getResources().getString(R.string.widget_stopped_status));
+		this.stopInfo(getResources().getString(R.string.status_stopped));
 	}
 	
 	private void registerNetworkReceiver()
@@ -648,7 +647,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			{
 				log("interrupted, so set state to playing so it will wait for network to resume", "v");
 				mCurrentPlayerState = ServiceRadioPlayer.STATE_PLAYING;
-				Notification notification = updateNotification("Waiting for network", "Cancel", true);
+				Notification notification = updateNotification(getResources().getString(R.string.status_waiting_for_network), getResources().getString(R.string.cancel), true);
 				mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 			}
 			else
@@ -745,7 +744,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 
 		mCurrentPlayerState = ServiceRadioPlayer.STATE_PREPARING;
 		
-		Notification notification = updateNotification("Preparing", "Cancel", true);
+		Notification notification = updateNotification(getResources().getString(R.string.status_preparing), getResources().getString(R.string.cancel), true);
 		//mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 		startForeground(ONGOING_NOTIFICATION, notification);
 		//updateDetails("Preparing");
@@ -753,7 +752,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		mMediaPlayer.prepareAsync(); // might take long! (for buffering, etc)
 		log("preparing async", "v");
 		
-		Toast.makeText(this, "Preparing", Toast.LENGTH_SHORT).show();
+		//Toast.makeText(this, "Preparing", Toast.LENGTH_SHORT).show();
 	}
 	
 	protected void nextPreset()
@@ -910,7 +909,6 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			.setLargeIcon(((BitmapDrawable)getResources().getDrawable(R.drawable.app_icon)).getBitmap())
 			.setSmallIcon(R.drawable.app_notification);
 		//PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
-		//TODO taskstack builder only available since 4.1
 		TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
 		stackBuilder.addParentStack(ActivityMain.class);
 		//stackBuilder.addNextIntent(nextIntent)
@@ -931,6 +929,12 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		this.updateDetails(status);
 		return builder.build();
 	}
+
+	//get currently playing preset number
+	public int getPreset()
+	{
+		return mPreset;
+	}
 	
 	//get currently playing station, if applicable
 	private String getStation()
@@ -946,27 +950,26 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	//get current player status
 	private String getStatus()
 	{
-		String status = getResources().getString(R.string.widget_stopped_status);
-		//TODO replace these with string resources
+		String status = getResources().getString(R.string.status_stopped);
 		if (mCurrentPlayerState.equals(STATE_BUFFERING))
 		{
-			status = "Buffering";
+			status = getResources().getString(R.string.status_stopped);
 		}
 		else if (mCurrentPlayerState.equals(STATE_PREPARING))
 		{
-			status = "Preparing";
+			status = getResources().getString(R.string.status_preparing);
 		}
 		else if (!isConnected() && (mCurrentPlayerState.equals(STATE_PLAYING) || mCurrentPlayerState.equals(STATE_PREPARING)))
 		{
-			status = "Waiting for network";
+			status = getResources().getString(R.string.status_waiting_for_network);
 		}
 		else if (mCurrentPlayerState.equals(STATE_PLAYING))
 		{
-			status = "Playing";
+			status = getResources().getString(R.string.status_playing);
 		}
 		else if (mCurrentPlayerState.equals(STATE_PAUSED) || mCurrentPlayerState.equals(STATE_PHONE))
 		{
-			status = "Paused";
+			status = getResources().getString(R.string.status_paused);
 		}
 		return status;
 	}
@@ -1030,7 +1033,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			
 				
 		}
-		Notification notification = updateNotification("Paused", "Cancel", false);
+		Notification notification = updateNotification(getResources().getString(R.string.status_paused), getResources().getString(R.string.cancel), false);
 		mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 		/*try
 		{
@@ -1096,7 +1099,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		{
 			mCurrentPlayerState = ServiceRadioPlayer.STATE_STOPPING;
 			log("stopping playback", "v");
-			Toast.makeText(this, "Stopping playback", Toast.LENGTH_SHORT).show();
+			//Toast.makeText(this, "Stopping playback", Toast.LENGTH_SHORT).show();
 			stopInfo(); //stopForeground(true);
 			mMediaPlayer.stop();
 			if (mAudioFocused == true)
@@ -1417,7 +1420,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	public void onDestroy() {
 		log("onDestroy()", "v");
 		this.stop();
-		Toast.makeText(this, "Stopping service", Toast.LENGTH_SHORT).show();
+		//Toast.makeText(this, "Stopping service", Toast.LENGTH_SHORT).show();
 		//don't need to listen for network changes anymore
 		if (mReceiver != null) {
 			log("unregister network receiver", "v");
@@ -1591,7 +1594,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 					}
 					else if (mInterrupted == false)
 					{
-						Notification notification = updateNotification("Network updated, reconnecting", "Cancel", true);
+						Notification notification = updateNotification(getResources().getString(R.string.status_network_updated), getResources().getString(R.string.cancel), true);
 						mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 						str += " and now interrupted";
 						mInterrupted = true;	
@@ -1690,13 +1693,12 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 				mNetworkState = ServiceRadioPlayer.NETWORK_STATE_DISCONNECTED;
 				
 
-				//TODO figure out the best thing to do for each state
-				
+				//figure out the best thing to do for each state
 				if (mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_PREPARING)) //this will lead to a mediaioerror when it reaches prepared
 				{
 					mMediaPlayer.release();
 					mMediaPlayer = null;
-					Notification notification = updateNotification("Waiting for network", "Cancel", true);
+					Notification notification = updateNotification(getResources().getString(R.string.status_waiting_for_network), getResources().getString(R.string.cancel), true);
 					mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 					log("-------------------------------", "d");
 					log("network connection lost while preparing? set null mediaplayer", "d");
@@ -1716,6 +1718,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 				}
 				else if (mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_ERROR))
 				{
+					//TODO change text
 					Notification notification = updateNotification("Error. Will resume?", "Cancel", true);
 					mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 					mMediaPlayer.release();
@@ -1730,13 +1733,13 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 				}
 				else if (mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_PLAYING))
 				{
-					Notification notification = updateNotification("Waiting for network", "Cancel", true);
+					Notification notification = updateNotification(getResources().getString(R.string.status_waiting_for_network), getResources().getString(R.string.cancel), true);
 					mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 					log("disconnected while playing. should resume when network does", "v");
 				}
 				else if (mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_BUFFERING))
 				{
-					Notification notification = updateNotification("Waiting for network", "Cancel", true);
+					Notification notification = updateNotification(getResources().getString(R.string.status_waiting_for_network), getResources().getString(R.string.cancel), true);
 					mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 					log("disconnected while buffering. should resume when network does", "v");
 				}

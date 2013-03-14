@@ -43,12 +43,12 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.shinymayhem.radiopresets.DbContractRadio.DbHelperRadio;
 import com.shinymayhem.radiopresets.DialogFragmentAdd.ListenerAddDialog;
 import com.shinymayhem.radiopresets.DialogFragmentEvent.ListenerEventDialog;
 import com.shinymayhem.radiopresets.FragmentPlayer.PlayerListener;
-import com.shinymayhem.radiopresets.DbContractRadio.DbHelperRadio;
-import com.shinymayhem.radiopresets.ServiceRadioPlayer.LocalBinder;
 import com.shinymayhem.radiopresets.FragmentStations.PresetListener;
+import com.shinymayhem.radiopresets.ServiceRadioPlayer.LocalBinder;
 
 public class ActivityMain extends FragmentActivity implements ListenerAddDialog, ListenerEventDialog, PresetListener, PlayerListener {
 
@@ -82,7 +82,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 			LocalBinder binder = (LocalBinder) service;
 			mService = binder.getService();
 			mBound = true;
-			mService.updateDetails();
+			updateDetails();
 		}
 		@Override
 		public void onServiceDisconnected(ComponentName arg0)
@@ -102,7 +102,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		log("creating main activity", "d");
+		log("creating main activity", "v");
 		
 		//set content view first so findViewById works
 		setContentView(R.layout.activity_main);
@@ -131,7 +131,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 	protected void onStart()
 	{
 		super.onStart();
-		log("starting main activity", "d");
+		log("starting main activity", "v");
 		bindRadioPlayer();
 	}
 	
@@ -152,15 +152,15 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 	protected void onRestart()
 	{
 		super.onRestart();
-		log("restarting main activity", "d");
+		log("restarting main activity", "v");
 	}
 	
 	protected void onResume()
 	{
 		super.onResume();
-		log("resuming main activity", "d");
+		log("resuming main activity", "v");
 		//while app is visible, volume buttons should adjust music stream volume
-		log("setting volume control stream", "d");
+		log("setting volume control stream", "v");
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
 		
 		registerDetailsReceiver();
@@ -221,7 +221,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 	@Override
 	protected void onStop()
 	{
-		log("stopping main activity", "d");
+		log("stopping main activity", "v");
 		if (mService != null && mService.isPlaying() == false)
 		{
 			mService.stop();
@@ -239,7 +239,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 	@Override
 	public void onPause()
 	{
-		log("pausing main activity", "d");
+		log("pausing main activity", "v");
 		super.onPause();
 		unregisterDetailsReceiver();
 		
@@ -247,7 +247,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 	
 	public void onDestroy()
 	{
-		log("onDestroy()", "d");
+		log("onDestroy()", "v");
 		log("another experimental fix, sometimes 'end' isn't called on service unbound", "d");
 		if (mService != null && !mService.isPlaying())
 		{
@@ -455,14 +455,45 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 		stationText.setText(station+ " : " + status);
 	}
 	
+	public int getPlayingPreset()
+	{
+		//log("getPreset()", "v");
+		int preset;
+		if (mService == null)
+		{
+			log("service not bound", "w");
+			preset = 0;
+		}
+		else
+		{
+			if (mService.isPlaying())
+			{
+				preset = mService.getPreset();
+			}
+			else
+			{
+				preset = 0;
+			}
+		}
+		//log("got preset " + String.valueOf(preset), "v");
+		return preset;
+		
+	}
+	
 	//calls service's method which sends a broadcast to widget and activity player with current details
 	public void updateDetails()
 	{
+		log("updateDetails()", "d");
 		if (mService == null)
 		{
 			log("service not bound", "e");
 		}
-		mService.updateDetails();
+		else
+		{
+			mService.updateDetails();	
+		}
+		
+		
 	}
 
 	private void log(String text, String level)
@@ -482,6 +513,9 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 				String artist = extras.getString(ActivityMain.EXTRA_ARTIST);
 				String song = extras.getString(ActivityMain.EXTRA_SONG);
 				setActivityPlayerDetails(station, status, artist, song);
+				
+				FragmentStations fragment = (FragmentStations) getSupportFragmentManager().findFragmentByTag(FragmentStations.FRAGMENT_TAG);
+				fragment.refresh();
 	    	}
 	    }
 	}

@@ -132,9 +132,14 @@ public class WidgetProviderPresets extends AppWidgetProvider {
             }
             
             mViews.setTextViewText(R.id.currently_playing, station);
-            mViews.setTextViewText(R.id.widget_status, status);
-            mViews.setTextViewText(R.id.widget_artist, artist);
-            mViews.setTextViewText(R.id.widget_song, song);
+            if (status.equals(mContext.getResources().getString(R.string.status_playing)))
+            {
+            	mViews.setTextViewText(R.id.widget_status, status + ":" + artist + " - " + song);	
+            }
+            else
+            {
+            	mViews.setTextViewText(R.id.widget_status, status);
+            }
             //appWidgetManager.updateAppWidget(provider, mViews);
             appWidgetManager.updateAppWidget(appWidgetId, mViews);
         }
@@ -459,7 +464,7 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 	
 	private void log(String text, String level)
 	{
-		mLogger.log(mContext, text, level);
+		//mLogger.log(mContext, text, level);
 		/*String callerClass = "WidgetProvider";
 		String str = text;
 		if (level == "v")

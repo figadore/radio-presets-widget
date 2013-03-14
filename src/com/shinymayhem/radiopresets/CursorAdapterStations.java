@@ -15,9 +15,11 @@
 */
 package com.shinymayhem.radiopresets;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.database.Cursor;
+import android.os.Build;
 import android.support.v4.widget.CursorAdapter;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -37,105 +39,31 @@ public class CursorAdapterStations extends CursorAdapter {
 		
 	}
 
+	@SuppressLint("NewApi")
+	@SuppressWarnings("deprecation")
 	@Override
 	public void bindView(View view, Context context, Cursor cursor) {
-		//make cursor available to list item, for onlistitemclick or onitemlongclick
-		//view.setTag(cursor);
 		TextView titleView = (TextView)view.findViewById(R.id.station_title);
-		String text = cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER)) + ". " +
-				cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_TITLE));
+		int preset = (int)cursor.getLong(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER));
+		String station = cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_TITLE));
+		String text =  String.valueOf(preset) + ". " + station;
 		titleView.setText(text);
-		//ImageView imageView = (ImageView)view.findViewById(R.id.station_drag);
-		/*
-		imageView.setOnClickListener(new OnClickListener()
+		int drawable;
+		if (((ActivityMain) mContext).getPlayingPreset() == preset)
 		{
-
-			@Override
-			public void onClick(View arg0) {
-				Log.i(getClass().toString(), "imageView.onClick()");
-				
-			}
-			
-		});*/
-		
-		/*
-		//ListViewItem item = (ListViewItem)titleView.getParent().getParent();
-		final String url = cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_URL));
-		final Context c = context;
-		
-		
-		
-		class TitleListener implements View.OnLongClickListener, View.OnDragListener, View.OnGenericMotionListener, View.OnClickListener, View.OnTouchListener
-		{
-
-			@Override
-			public boolean onTouch(View view, MotionEvent event) {
-				// TODO Auto-generated method stub
-				Log.i(getClass().toString(), "titleView.onTouch()");
-				return false;
-			}
-
-			@Override
-			public void onClick(View view) {
-				Log.i(getClass().toString(), "titleView.onClick()");
-				//TODO see if this still works, or if context is something else now, in fragment
-				ActivityMain activity = (ActivityMain) view.getContext();
-				ConnectivityManager network = (ConnectivityManager) activity.getSystemService(Context.CONNECTIVITY_SERVICE);
-				NetworkInfo info = network.getActiveNetworkInfo();
-				if (info == null || info.isConnected() == false)
-				{
-					//TextView status = (TextView) findViewById(R.id.status);
-					//status.setText("No network");
-					Toast.makeText(c, "No network", Toast.LENGTH_SHORT).show();
-					Log.i(getClass().toString(), "no network, can't do anything");
-					return;
-				}
-				else
-				{
-					Log.i(getClass().toString(), "play");
-					//TODO have the fragment handle this? or send straight to service? 
-					activity.play(url);
-				}
-				ListView parent = (ListView)view.getParent().getParent();
-				boolean called = parent.callOnClick();
-				if (called)
-				{
-					Log.i(getClass().toString(), "listview onclick attempted");
-				}
-				
-			}
-
-			@Override
-			public boolean onGenericMotion(View view, MotionEvent event) {
-				Log.i(getClass().toString(), "titleView.onGenericMotion()");
-				// TODO Auto-generated method stub
-				return false;
-			}
-
-			@Override
-			public boolean onDrag(View view, DragEvent event) {
-				// TODO Auto-generated method stub
-				Log.i(getClass().toString(), "titleView.onDrag()");
-				return false;
-			}
-
-			@Override
-			public boolean onLongClick(View view) {
-				Log.i(getClass().toString(), "titleView.onLongClick()");
-				// TODO Auto-generated method stub
-				return true;
-			}
-			
+			drawable = R.drawable.list_item_background_playing;
 		}
-		
-		TitleListener titleListener = new TitleListener();
-		titleView.setOnLongClickListener(titleListener);
-		titleView.setOnClickListener(titleListener);
-		*/
-		//titleView.setOnDragListener(titleListener);
-		//titleView.setOnGenericMotionListener(titleListener);
-		//titleView.setOnTouchListener(titleListener);
-		
+		else
+		{
+			drawable = R.drawable.list_item_background;
+		}
+		if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.JELLY_BEAN) {
+			view.setBackground(mContext.getResources().getDrawable(drawable));
+		}
+		else
+		{
+			view.setBackgroundDrawable(mContext.getResources().getDrawable(drawable));	
+		}
 	}
 
 	@Override
