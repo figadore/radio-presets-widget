@@ -20,7 +20,6 @@
     <string name="title">Title</string>
     <string name="url">URL</string>
     <string name="copy">Copy Logs</string>
-    <string name="widget_error_status">Error</string>
     <string name="widget_initial_station">Nothing playing</string>
     <string name="initial_song">Unknown song</string>
     <string name="initial_artist">Unknown artist</string>
@@ -42,6 +41,7 @@
     <string name="status_preparing">Preparing</string>
     <string name="status_playing">Playing</string>
     <string name="status_buffering">Buffering</string>
+    <string name="status_error">Error</string>
     <string name="status_waiting_for_network">Waiting for network</string>
     <string name="status_network_updated">Network updated, reconnecting</string>
 </resources>

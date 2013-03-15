@@ -365,7 +365,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	{
 		log("onError()", "e");
 		//check if mediaPlayer is or needs to be released
-		stopInfo(getResources().getString(R.string.widget_error_status)); //stopForeground(true);
+		
 		if (mediaPlayer != null)
 		{
 			try
@@ -378,7 +378,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			}
 			catch (IllegalStateException e)
 			{
-				log("Illegal state to stop. uninitialized? not yet prepared?", "e");
+				log("Illegal state to stop. uninitialized? not yet prepared?", "w");
 			}
 			mediaPlayer.release();
 			mediaPlayer = null;
@@ -386,6 +386,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		}
 		String oldState = mCurrentPlayerState;
 		mCurrentPlayerState = ServiceRadioPlayer.STATE_ERROR;
+		stopInfo(getResources().getString(R.string.status_error)); //stopForeground(true);
 		//TextView status = (TextView) findViewById(R.id.status);
 		String statusString = "";
 		if (oldState.equals("Preparing"))
@@ -851,6 +852,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	{
 		AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 		audio.setStreamVolume(AudioManager.STREAM_MUSIC, newVolume, 0);
+		log("volume set:" + String.valueOf(audio.getStreamVolume(AudioManager.STREAM_MUSIC)), "v");
 	}
 	
 	//convenience method
@@ -1775,11 +1777,13 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 				{
 					if (mPreset == 0)
 					{
+						//TODO change text
 						Notification notification = updateNotification("bad state detected", "stop?", true);
 						mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 					}
 					else
 					{
+						//TODO change text
 						Notification notification = updateNotification("Waiting for network?", "Cancel", true);
 						mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 					}

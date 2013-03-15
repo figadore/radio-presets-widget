@@ -85,7 +85,7 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 		log("onReceive()", "v");
 		super.onReceive(context, intent);	
 		String action = intent.getAction();
-		log(action,"v");
+		//log(action,"v");
 		log(ActivityMain.ACTION_UPDATE_TEXT,"v");
 		if (action.equals(ActivityMain.ACTION_UPDATE_TEXT))
 		{
@@ -165,7 +165,9 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 	{
 		log("updating text:" + station + "," + status, "v");
 		
-		if (status.equals(mContext.getResources().getString(R.string.status_stopped)))
+		if (status.equals(mContext.getResources().getString(R.string.status_stopped)) 
+				//|| status.equals(mContext.getResources().getString(R.string.status_error))
+				)
 		{
 			mPreset = 0;
 		}
