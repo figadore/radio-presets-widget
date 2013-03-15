@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!--
         Base application theme, dependent on API level. This theme is replaced
@@ -16,9 +16,27 @@
     <style name="AppTheme" parent="AppBaseTheme">
         <!-- All customizations that are NOT specific to a particular API-level can go here. -->
     </style>
-    <!--  
+    
     <style name="borderlessButtonStyle">
-       
+       <item name="android:background">@drawable/btn_default_transparent</item>
     </style>
-	-->
+    <style name="widgetPlayerButton">
+        <item name="android:background">@drawable/appwidget_dark_bg_clickable</item>
+    </style>
+    <style name="widgetLaunchButton">
+       <item name="android:background">@drawable/appwidget_dark_bg_clickable</item>
+    </style>
+    <style name="widgetPresetButton">
+       <item name="android:background">@drawable/appwidget_dark_bg_clickable</item>
+       <item name="android:textColor">@android:color/white</item>
+    </style>
+    <style name="widgetPresetButtonSelected">
+       <item name="android:background">@drawable/appwidget_dark_bg_clickable_selected</item>
+       <item name="android:textColor">@android:color/white</item>
+    </style>
+    <style name="stationEntryButton">
+        <item name="android:textColor">@android:color/white</item>
+	    <item name="android:background">@android:color/transparent</item>
+    </style>
+	
 </resources>

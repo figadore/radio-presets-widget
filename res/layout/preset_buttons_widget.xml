@@ -21,13 +21,12 @@
 	        android:padding="5dp"
 	        android:scaleType="fitCenter"
 	        android:contentDescription="@string/stop"
-	        android:background="@android:color/transparent"
 	        android:src="@drawable/av_stop"
+	        style="@style/widgetPlayerButton"
 	        />
 		<ImageButton
 		    
 		    android:id="@+id/launch_main"
-		    android:background="@android:color/transparent"
 		    android:layout_width="wrap_content"
 		    android:layout_height="0dp"
 		    android:layout_weight="1"
@@ -35,7 +34,9 @@
 		    android:contentDescription="@string/launch"
 		    android:padding="5dp"
 		    android:scaleType="fitCenter"
-		    android:src="@drawable/app_icon" />
+		    android:src="@drawable/app_icon" 
+		    style="@style/widgetPlayerButton"
+		    />
 	
 	</LinearLayout>	
 		
@@ -69,7 +70,7 @@
 	        android:textSize="14sp"
 	        android:background="@color/widget_now_playing_background"
 	        android:lines="1"
-	        android:text="@string/widget_initial_title"
+	        android:text="@string/widget_initial_station"
 	        />
 		<TextView
 		    android:id="@+id/widget_status"
@@ -79,7 +80,7 @@
 	        android:textSize="14sp"
 	        android:background="@color/widget_now_playing_background"
 	        android:lines="1"
-	        android:text="@string/widget_initial_status"
+	        android:text="@string/status_stopped"
 	        />
 	</LinearLayout>
 

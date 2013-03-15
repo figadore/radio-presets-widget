@@ -5,12 +5,7 @@
     android:orientation="vertical"
     android:padding="@dimen/widget_margin" 
     android:background="@color/widget_background">
-	
-	
-	
-	   
-	
-	
+
 	<LinearLayout 
 	    android:layout_width="match_parent"
 	    android:layout_height="@dimen/widget_button_height"
@@ -20,72 +15,52 @@
 	    android:padding="0dp">
 	</LinearLayout>
 	<LinearLayout 
-	    android:id="@+id/widget_playing"
+	    android:id="@+id/widget_station_details"
 	    android:layout_width="fill_parent"
 	    android:layout_height="wrap_content"
 	    android:paddingTop="5dp"
 	    android:paddingBottom="5dp"
-	    android:baselineAligned="false"
-	    android:orientation="horizontal" >
-		<LinearLayout 
-		    android:id="@+id/widget_station_details"
-		    android:layout_width="fill_parent"
+	    android:orientation="vertical" >
+		<TextView
+		    android:id="@+id/currently_playing"
+		    android:layout_width="match_parent"
 		    android:layout_height="wrap_content"
-		    android:layout_weight="1"
-		    android:paddingTop="5dp"
-		    android:paddingBottom="5dp"
-		    android:paddingLeft="12dp"
-		    android:paddingRight="12dp"
-		    android:orientation="vertical" >
-			<TextView
-			    android:id="@+id/currently_playing"
-			    android:layout_width="match_parent"
-			    android:layout_height="wrap_content"
-		        android:textSize="18sp"
-		        android:background="@color/widget_now_playing_background"
-		        android:lines="1"
-		        android:text="@string/widget_initial_title"
-		        />
-			<TextView
-			    android:id="@+id/widget_status"
-			    android:layout_width="match_parent"
-			    android:layout_height="wrap_content"
-		        android:textSize="14sp"
-		        android:background="@color/widget_now_playing_background"
-		        android:lines="1"
-		        android:text="@string/widget_initial_status"
-		        />
-		</LinearLayout>
-		<LinearLayout 
-		    android:id="@+id/widget_song_details"
-		    android:layout_width="fill_parent"
+	        android:textSize="18sp"
+	        android:lines="1"
+	        android:text="@string/widget_initial_station"
+	        android:ellipsize="marquee"
+	        android:marqueeRepeatLimit="marquee_forever"
+	        android:scrollHorizontally="true"
+	        android:maxLines="1"
+	        android:focusable="true"
+       		android:focusableInTouchMode="true"
+       		android:duplicateParentState="true"
+	        >
+	        	<requestFocus 
+	        	    android:focusable="true" 
+	        	    android:focusableInTouchMode="true"
+       				android:duplicateParentState="true" />
+	    </TextView>
+		<TextView
+		    android:id="@+id/widget_status"
+		    android:layout_width="match_parent"
 		    android:layout_height="wrap_content"
-		    android:layout_weight="1"
-		    android:paddingTop="5dp"
-		    android:paddingBottom="5dp"
-		    android:paddingLeft="12dp"
-		    android:paddingRight="12dp"
-		    android:orientation="vertical" >
-			<TextView
-			    android:id="@+id/widget_song"
-			    android:layout_width="match_parent"
-			    android:layout_height="wrap_content"
-		        android:textSize="18sp"
-		        android:background="@color/widget_now_playing_background"
-		        android:lines="1"
-		        android:text="@string/widget_initial_song"
-		        />
-			<TextView
-			    android:id="@+id/widget_artist"
-			    android:layout_width="match_parent"
-			    android:layout_height="wrap_content"
-		        android:textSize="14sp"
-		        android:background="@color/widget_now_playing_background"
-		        android:lines="1"
-		        android:text="@string/widget_initial_artist"
-		        />
-		</LinearLayout>
-		
+	        android:textSize="14sp"
+	        android:lines="1"
+	        android:text="@string/status_stopped"
+	        android:ellipsize="marquee"
+	        android:marqueeRepeatLimit="marquee_forever"
+	        android:scrollHorizontally="true"
+	        android:maxLines="1"
+	        android:focusable="true"
+       		android:focusableInTouchMode="true"
+       		android:duplicateParentState="true"
+	        >
+	        	<requestFocus 
+	        	    android:focusable="true" 
+	        	    android:focusableInTouchMode="true"
+       				android:duplicateParentState="true" />
+	    </TextView>
 	</LinearLayout>
 	<RelativeLayout 
 	    android:layout_width="match_parent"
@@ -100,9 +75,9 @@
 	        android:layout_height="wrap_content"
 	        android:layout_alignParentLeft="true"
 	        android:paddingLeft="@dimen/widget_player_padding"
-	    android:paddingRight="@dimen/widget_player_padding"
+	    	android:paddingRight="@dimen/widget_player_padding"
 	        android:contentDescription="@string/launch"
-	        android:background="@android:color/transparent"
+	        style="@style/widgetLaunchButton"
 	        android:src="@drawable/app_icon"
 	        />
 
@@ -112,9 +87,9 @@
 	        android:layout_height="wrap_content"
 	        android:layout_toRightOf="@id/launch_main"
 	        android:paddingLeft="@dimen/widget_player_padding"
-	    android:paddingRight="@dimen/widget_player_padding"
+	   		android:paddingRight="@dimen/widget_player_padding"
 	        android:contentDescription="@string/previous"
-	        android:background="@android:color/transparent"
+	        style="@style/widgetPlayerButton"
 	        android:src="@drawable/av_previous"
 	        />
 		<ImageButton 
@@ -123,9 +98,9 @@
 	        android:layout_height="wrap_content"
 			android:layout_toRightOf="@id/widget_previous"
 	        android:paddingLeft="@dimen/widget_player_padding"
-	    android:paddingRight="@dimen/widget_player_padding"
+	    	android:paddingRight="@dimen/widget_player_padding"
 	        android:contentDescription="@string/stop"
-	        android:background="@android:color/transparent"
+	        style="@style/widgetPlayerButton"
 	        android:src="@drawable/av_stop"
 	        />
 		<ImageButton 
@@ -134,9 +109,9 @@
 	        android:layout_height="wrap_content"
 	       android:layout_toRightOf="@id/widget_stop"
 	        android:paddingLeft="@dimen/widget_player_padding"
-	    android:paddingRight="@dimen/widget_player_padding"
+	    	android:paddingRight="@dimen/widget_player_padding"
 	        android:contentDescription="@string/next"
-	        android:background="@android:color/transparent"
+	        style="@style/widgetPlayerButton"
 	        android:src="@drawable/av_next"
 	        />
 		

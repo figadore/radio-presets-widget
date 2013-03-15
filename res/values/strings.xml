@@ -2,6 +2,7 @@
 <resources>
 
     <string name="app_name">Radio Presets</string>
+    <string name="widget_presets_name">Radio Presets</string>
     <string name="menu_settings">Settings</string>
     <string name="selected">selected</string>
     <string name="launch">Launch</string>
@@ -19,12 +20,11 @@
     <string name="title">Title</string>
     <string name="url">URL</string>
     <string name="copy">Copy Logs</string>
-    <string name="widget_initial_status">Not started</string>
-    <string name="widget_stopped_status">Stopped</string>
-    <string name="widget_error_status">Error</string>
-    <string name="widget_initial_title">Nothing playing</string>
-    <string name="widget_initial_song">Unknown song</string>
-    <string name="widget_initial_artist">Unknown artist</string>
+    <string name="widget_initial_station">Nothing playing</string>
+    <string name="initial_song">Unknown song</string>
+    <string name="initial_artist">Unknown artist</string>
+    <string name="player_initial_station_details">Nothing playing</string>
+    <string name="player_initial_song_details">Unknown Artist - Unknown Song</string>
     <string name="widget_loading">Loading Radio Presets Widget…</string>
     <string name="empty_stations">No stations added</string>
     <string name="loading_stations">Loading…</string>
@@ -36,6 +36,16 @@
     <string name="drag">Drag and drop</string>
     <string name="stations">com.shinymayhem.radiopresets.stations_file_key</string>
     <string name="widget_button_initial_text">0</string>
-
-
+	<string name="status_stopped">Stopped</string>
+    <string name="status_paused">Paused</string>
+    <string name="status_preparing">Preparing</string>
+    <string name="status_playing">Playing</string>
+    <string name="status_buffering">Buffering</string>
+    <string name="status_error">Error</string>
+    <string name="status_waiting_for_network">Waiting for network</string>
+    <string name="status_network_updated">Network updated, reconnecting</string>
+    <string name="delete_station_confirmation_title">Delete Station</string>
+    <string name="delete_stations_confirmation_title">Delete Stations</string>
+    <string name="delete_station_confirmation_message">Do you want to delete this station?</string>
+    <string name="delete_stations_confirmation_message">Do you want to delete these stations?</string>
 </resources>

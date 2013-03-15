@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.shinymayhem.radiopresets"
     android:versionCode="1"
-    android:versionName="1.0" >
+    android:versionName="0.1.0" > <!-- Major version (major release) . Minor version (new features) . Point (bugfixes) -->
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -21,17 +21,20 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name="com.shinymayhem.radiopresets.MainActivity"
+            android:name="com.shinymayhem.radiopresets.ActivityMain"
             android:launchMode="singleTask"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="com.shinymayhem.radiopresets.mainactivity.ACTION_UPDATE_TEXT" />
+            </intent-filter>
         </activity>
 
         <service
-            android:name="com.shinymayhem.radiopresets.RadioPlayer"
+            android:name="com.shinymayhem.radiopresets.ServiceRadioPlayer"
             android:enabled="true"
             android:permission="android.permission.INTERNET"
             android:exported="true" >
@@ -39,20 +42,21 @@
         
         <provider
 		        android:authorities="com.shinymayhem.radiopresets.contentprovider"
-		        android:name="com.shinymayhem.radiopresets.RadioContentProvider"
+		        android:name="com.shinymayhem.radiopresets.ContentProviderRadio"
 		        android:exported="false" >
     	</provider>
-    	<receiver android:name="RemoteControlReceiver">
+    	<receiver android:name="com.shinymayhem.radiopresets.ReceiverRemoteControl">
     	    <intent-filter>
     	        <action android:name="android.intent.action.MEDIA_BUTTON" />
     	    </intent-filter>
     	</receiver>
-        <receiver android:name="PresetButtonsWidgetProvider" 
-            android:label="A Radio Presets">
+        <receiver android:name="com.shinymayhem.radiopresets.WidgetProviderPresets" 
+            android:label="@string/widget_presets_name">
 		    <intent-filter>
-		        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-		        <action android:name="com.shinymayhem.radiopresets.PresetButtonsWidgetProvider.ACTION_UPDATE_TEXT" />
-		        <action android:name="com.shinymayhem.radiopresets.intent.update_text" />
+		        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />    
+		    </intent-filter>
+		    <intent-filter>
+		    	<action android:name="com.shinymayhem.radiopresets.mainactivity.ACTION_UPDATE_TEXT" />
 		    </intent-filter>
 		    <meta-data android:name="android.appwidget.provider"
 		               android:resource="@xml/preset_buttons_widget_info" />
