@@ -61,6 +61,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 	public final static String EXTRA_STATUS = "com.shinymayhem.radiopresets.mainactivity.EXTRA_STATUS";
 	public final static String EXTRA_ARTIST = "com.shinymayhem.radiopresets.mainactivity.EXTRA_ARTIST";
 	public final static String EXTRA_SONG = "com.shinymayhem.radiopresets.mainactivity.EXTRA_SONG";
+	public final static String EXTRA_PRESET = "com.shinymayhem.radiopresets.mainactivity.EXTRA_PRESET";
 	
 	//public static final int BUTTON_LIMIT = 25;
 	public static final int LOADER_STATIONS = 0;
@@ -466,14 +467,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 		}
 		else
 		{
-			if (mService.isPlaying())
-			{
-				preset = mService.getPreset();
-			}
-			else
-			{
-				preset = 0;
-			}
+			preset = mService.getPlayingPreset(); //returns 0 if not playing
 		}
 		//log("got preset " + String.valueOf(preset), "v");
 		return preset;
@@ -512,6 +506,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 				String status = extras.getString(ActivityMain.EXTRA_STATUS);
 				String artist = extras.getString(ActivityMain.EXTRA_ARTIST);
 				String song = extras.getString(ActivityMain.EXTRA_SONG);
+				//int preset = extras.getInt(ActivityMain.EXTRA_PRESET);
 				setActivityPlayerDetails(station, status, artist, song);
 				
 				FragmentStations fragment = (FragmentStations) getSupportFragmentManager().findFragmentByTag(FragmentStations.FRAGMENT_TAG);

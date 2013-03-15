@@ -30,6 +30,10 @@
        <item name="android:background">@drawable/appwidget_dark_bg_clickable</item>
        <item name="android:textColor">@android:color/white</item>
     </style>
+    <style name="widgetPresetButtonSelected">
+       <item name="android:background">@drawable/appwidget_dark_bg_clickable_selected</item>
+       <item name="android:textColor">@android:color/white</item>
+    </style>
     <style name="stationEntryButton">
         <item name="android:textColor">@android:color/white</item>
 	    <item name="android:background">@android:color/transparent</item>

@@ -856,14 +856,15 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	//convenience method
 	protected Intent getDetailsUpdateIntent(String station, String status)
 	{
-		return this.getDetailsUpdateIntent(station, status, getArtist(), getSong());
+		return this.getDetailsUpdateIntent(station, status, getArtist(), getSong(), getPlayingPreset());
 	}
 	
-	protected Intent getDetailsUpdateIntent(String station, String status, String artist, String song)
+	protected Intent getDetailsUpdateIntent(String station, String status, String artist, String song, int preset)
 	{
 		//Intent intent = new Intent(this, com.shinymayhem.radiopresets.WidgetProviderPresets.class);
 		Intent intent = new Intent(ActivityMain.ACTION_UPDATE_TEXT);
 		//intent.setAction(ActivityMain.ACTION_UPDATE_TEXT);
+		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_PRESET, preset);
 		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_STATION, station);
 		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_STATUS, status);
 		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_ARTIST, artist);
@@ -931,7 +932,18 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	}
 
 	//get currently playing preset number
-	public int getPreset()
+	public int getPlayingPreset()
+	{
+		int preset = 0;
+		if (isPlaying())
+		{
+			preset = mPreset;
+		}
+		return preset;
+	}
+	
+	//get preset, gets even when stopped (if played and still running)
+	public int getPresets()
 	{
 		return mPreset;
 	}

@@ -16,8 +16,6 @@
 
 package com.shinymayhem.radiopresets;
 
-import com.shinymayhem.radiopresets.ServiceRadioPlayer.LocalBinder;
-
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.PendingIntent;
@@ -35,15 +33,21 @@ import android.os.IBinder;
 import android.util.Log;
 import android.widget.RemoteViews;
 
+import com.shinymayhem.radiopresets.ServiceRadioPlayer.LocalBinder;
+
 public class WidgetProviderPresets extends AppWidgetProvider {
 	
 	protected ActivityLogger mLogger = new ActivityLogger();
 	private final int TALL_WIDGET = 100;
 	protected RemoteViews mViews;
 	protected Context mContext;
+	protected int mPreset = 0;
 	private final int MIN_BUTTON_WIDTH = 65; //TODO get from preferences
 	private final int FIXED_WIDTH = 294;
 	private final int FIXED_HEIGHT = 100;
+	private final int[] layoutIds = {R.layout.preset1, R.layout.preset2, R.layout.preset3, R.layout.preset4, R.layout.preset5, R.layout.preset6, R.layout.preset7, R.layout.preset8};
+	private final int[] selectedLayoutIds = {R.layout.preset1_selected, R.layout.preset2_selected, R.layout.preset3_selected, R.layout.preset4_selected, R.layout.preset5_selected, R.layout.preset6_selected, R.layout.preset7_selected, R.layout.preset8_selected};
+	private final int[] buttonIds = {R.id.widget_preset_1, R.id.widget_preset_2, R.id.widget_preset_3, R.id.widget_preset_4, R.id.widget_preset_5, R.id.widget_preset_6, R.id.widget_preset_7, R.id.widget_preset_8};
 	protected ServiceRadioPlayer mService;
 	private ServiceConnection mConnection = new ServiceConnection()
 	{
@@ -86,11 +90,12 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 		{
 			log("update text action", "v");
 			Bundle extras = intent.getExtras();
+			int preset = extras.getInt(ActivityMain.EXTRA_PRESET);
 			String station = extras.getString(ActivityMain.EXTRA_STATION);
 			String status = extras.getString(ActivityMain.EXTRA_STATUS);
 			String artist = extras.getString(ActivityMain.EXTRA_ARTIST);
 			String song = extras.getString(ActivityMain.EXTRA_SONG);
-			this.updateText(station, status, artist, song);
+			this.updateText(station, status, artist, song, preset);
 		}
 		else
 		{
@@ -109,22 +114,33 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 	}
 	
 	@SuppressLint("NewApi")
-	private void updateText(String station, String status, String artist, String song)
+	private void updateText(String station, String status, String artist, String song, int preset)
 	{
 		log("updating text:" + station + "," + status, "v");
+		
+		if (status.equals(mContext.getResources().getString(R.string.status_stopped)))
+		{
+			mPreset = 0;
+		}
+		else
+		{
+			mPreset = preset;
+		}
+		
 		//mContext = context;
 		AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(mContext);
 		ComponentName provider = new ComponentName(mContext, com.shinymayhem.radiopresets.WidgetProviderPresets.class);
 		int[] appWidgetIds = appWidgetManager.getAppWidgetIds(provider);
 		
 		final int N = appWidgetIds.length;
+		boolean playing = status.equals(mContext.getResources().getString(R.string.status_playing));
         // Perform this loop procedure for each App Widget that belongs to this provider
         for (int i=0; i<N; i++) {
             int appWidgetId = appWidgetIds[i];
             if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.JELLY_BEAN)
             {
-            	Bundle newOptions = appWidgetManager.getAppWidgetOptions(appWidgetId);
-                this.getViews(newOptions);	
+            	Bundle options = appWidgetManager.getAppWidgetOptions(appWidgetId);
+                this.getViews(options);	
             }
             else
             {
@@ -132,7 +148,7 @@ public class WidgetProviderPresets extends AppWidgetProvider {
             }
             
             mViews.setTextViewText(R.id.currently_playing, station);
-            if (status.equals(mContext.getResources().getString(R.string.status_playing)))
+            if (playing)
             {
             	mViews.setTextViewText(R.id.widget_status, status + ":" + artist + " - " + song);	
             }
@@ -327,16 +343,13 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 		log("setPresets()", "v");
 		mViews.removeAllViews(R.id.preset_buttons);
 		
-		
 		RemoteViews presetButton;
 		int layoutId;
 		int buttonId;
 		PendingIntent presetIntent;
 		
 		int maxButtons = 1;
-		
-		
-		
+
 		Uri uri = ContentProviderRadio.CONTENT_URI_STATIONS;
 		String[] projection = {DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER};  
 		String selection = null;
@@ -355,15 +368,18 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 		{
 			maxButtons = stationsCount;
 		}
-		
-		
-		int[] layoutIds = {R.layout.preset1, R.layout.preset2, R.layout.preset3, R.layout.preset4, R.layout.preset5, R.layout.preset6, R.layout.preset7, R.layout.preset8};
-		
-		int[] buttonIds = {R.id.widget_preset_1, R.id.widget_preset_2, R.id.widget_preset_3, R.id.widget_preset_4, R.id.widget_preset_5, R.id.widget_preset_6, R.id.widget_preset_7, R.id.widget_preset_8};
-		
+		//int playingPreset = 2;
+
 		for (int preset=1; preset <= maxButtons; preset++) {
+			if (mPreset == preset)
+			{
+				layoutId = selectedLayoutIds[preset-1];
+			}
+			else
+			{
+				layoutId = layoutIds[preset-1];
+			}
 			
-			layoutId = layoutIds[preset-1];
 			buttonId = buttonIds[preset-1];
 			presetButton = new RemoteViews(mContext.getPackageName(), layoutId);
 			//int viewId = presetButton.getLayoutId();
@@ -376,51 +392,6 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 			
 		}
 		cursor.close();
-		
-		
-		
-		/*
-		preset = 2;
-		
-		presetButton = new RemoteViews(mContext.getPackageName(), R.layout.widget_preset_button);
-		viewId = R.id.preset_button;
-		presetButton.setTextViewText(viewId, String.valueOf(preset));
-		
-		 presetIntent = this.getPresetIntent(preset);
-		mViews.setOnClickPendingIntent(viewId, presetIntent);
-		
-		mViews.addView(R.id.preset_buttons, presetButton);
-		
-		
-		preset = 3;
-		
-		presetButton = new RemoteViews(mContext.getPackageName(), R.layout.widget_preset_button);
-		viewId = R.id.preset_button;
-		presetButton.setTextViewText(viewId, String.valueOf(preset));
-		
-		 presetIntent = this.getPresetIntent(preset);
-		mViews.setOnClickPendingIntent(viewId, presetIntent);
-		
-		mViews.addView(R.id.preset_buttons, presetButton);
-		*/
-		
-		/*
-		
-		preset = 3;
-		PendingIntent presetIntent3 = this.getPresetIntent(preset);
-		//presetIntent3 = this.getPresetIntent(preset);
-        mViews.setOnClickPendingIntent(R.id.preset_3, presetIntent3);
-        
-		preset = 2;
-		PendingIntent presetIntent2 = this.getPresetIntent(preset);
-		//presetIntent2 = this.getPresetIntent(preset);
-        mViews.setOnClickPendingIntent(R.id.preset_2, presetIntent2);
-		
-        preset = 1;
-		
-		PendingIntent presetIntent = this.getPresetIntent(preset);
-        mViews.setOnClickPendingIntent(R.id.preset_1, presetIntent);
-		*/
 	}
 
 /*
