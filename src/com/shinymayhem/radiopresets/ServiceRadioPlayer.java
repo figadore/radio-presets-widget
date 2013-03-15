@@ -232,7 +232,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 				mInterrupted = false;
 
 				Notification notification = updateNotification(getResources().getString(R.string.status_playing), getResources().getString(R.string.stop), true);
-				mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
+				mNotificationManager.notify(ONGOING_NOTIFICATION, notification); //duplicate?
 				startForeground(ONGOING_NOTIFICATION, notification);
 				
 				
@@ -890,6 +890,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	
 	protected void updateDetails(String station, String status)
 	{
+		//TODO async task? possibly causing slow responses
 		Intent intent = this.getDetailsUpdateIntent(station, status);
 		this.sendBroadcast(intent);
 	}

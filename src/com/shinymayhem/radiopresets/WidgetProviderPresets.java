@@ -42,6 +42,7 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 	protected RemoteViews mViews;
 	protected Context mContext;
 	protected int mPreset = 0;
+	protected Intent mMainIntent;
 	private final int MIN_BUTTON_WIDTH = 65; //TODO get from preferences
 	private final int FIXED_WIDTH = 294;
 	private final int FIXED_HEIGHT = 100;
@@ -113,6 +114,52 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 		
 	}
 	
+	
+	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+	public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager, int appWidgetId, Bundle newOptions)
+	{
+		mContext = context;
+		log("onAppWidgetOptionsChanged()", "v");
+		Log.i("widget", "onAppWidgetOptionsChanged()");
+		int minHeight = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
+		int maxHeight = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
+		int minWidth = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
+		int maxWidth = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH);
+		Log.i("widget", "new min height:" + String.valueOf(minHeight));
+		Log.i("widget", "new max height:" + String.valueOf(maxHeight));
+		Log.i("widget", "new min width:" + String.valueOf(minWidth));
+		Log.i("widget", "new min width:" + String.valueOf(maxWidth));
+		this.getViews(newOptions);
+		appWidgetManager.updateAppWidget(appWidgetId, mViews);
+		//update widget playing details
+		
+		updateDetails(context);
+		//super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions);
+	}
+	
+
+	@SuppressLint("NewApi")
+	public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+		mContext = context;
+		log("onUpdate()", "v");
+		final int N = appWidgetIds.length;
+        // Perform this loop procedure for each App Widget that belongs to this provider
+        for (int i=0; i<N; i++) {
+            int appWidgetId = appWidgetIds[i];
+            if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.JELLY_BEAN)
+            {
+            	Bundle newOptions = appWidgetManager.getAppWidgetOptions(appWidgetId);
+                this.getViews(newOptions);	
+            }
+            else
+            {
+            	this.getViews();
+            }
+            appWidgetManager.updateAppWidget(appWidgetId, mViews);
+        }
+        updateDetails(context);
+	}
+	
 	@SuppressLint("NewApi")
 	private void updateText(String station, String status, String artist, String song, int preset)
 	{
@@ -160,29 +207,7 @@ public class WidgetProviderPresets extends AppWidgetProvider {
             appWidgetManager.updateAppWidget(appWidgetId, mViews);
         }
 	}
-	
-	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager, int appWidgetId, Bundle newOptions)
-	{
-		mContext = context;
-		log("onAppWidgetOptionsChanged()", "v");
-		Log.i("widget", "onAppWidgetOptionsChanged()");
-		int minHeight = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
-		int maxHeight = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
-		int minWidth = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
-		int maxWidth = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH);
-		Log.i("widget", "new min height:" + String.valueOf(minHeight));
-		Log.i("widget", "new max height:" + String.valueOf(maxHeight));
-		Log.i("widget", "new min width:" + String.valueOf(minWidth));
-		Log.i("widget", "new min width:" + String.valueOf(maxWidth));
-		this.getViews(newOptions);
-		appWidgetManager.updateAppWidget(appWidgetId, mViews);
-		//update widget playing details
-		
-		updateDetails(context);
-		//super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions);
-	}
-	
+
 	private void updateDetails(Context context)
 	{
 		Intent intent = new Intent(context, ServiceRadioPlayer.class);
@@ -218,31 +243,14 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 		//return views;
 	}
 
-	@SuppressLint("NewApi")
-	public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
-		mContext = context;
-		log("onUpdate()", "v");
-		final int N = appWidgetIds.length;
-        // Perform this loop procedure for each App Widget that belongs to this provider
-        for (int i=0; i<N; i++) {
-            int appWidgetId = appWidgetIds[i];
-            if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.JELLY_BEAN)
-            {
-            	Bundle newOptions = appWidgetManager.getAppWidgetOptions(appWidgetId);
-                this.getViews(newOptions);	
-            }
-            else
-            {
-            	this.getViews();
-            }
-            appWidgetManager.updateAppWidget(appWidgetId, mViews);
-        }
-        updateDetails(context);
-	}
 	
 	private Intent getMainIntent()
 	{
-		return new Intent(mContext, ActivityMain.class);
+		if (mMainIntent == null)
+		{
+			mMainIntent = new Intent(mContext, ActivityMain.class);
+		}
+		return mMainIntent;
 		
 	}
 	
@@ -295,7 +303,7 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 				.setFlags(0)
 				.setClass(mContext, ServiceRadioPlayer.class);
         playIntent.putExtra(ActivityMain.EXTRA_STATION_PRESET, preset);
-        PendingIntent presetIntent = PendingIntent.getService(mContext, preset, playIntent, PendingIntent.FLAG_UPDATE_CURRENT); //cancel current sometimes fails. test PendingIntent.FLAG_UPDATE_CURRENT if 0 doesn't work 
+        PendingIntent presetIntent = PendingIntent.getService(mContext, preset, playIntent, PendingIntent.FLAG_UPDATE_CURRENT); //cancel current sometimes fails 
         return presetIntent;
 	}
 	
@@ -435,7 +443,7 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 	
 	private void log(String text, String level)
 	{
-		//mLogger.log(mContext, text, level);
+		mLogger.log(mContext, text, level);
 		/*String callerClass = "WidgetProvider";
 		String str = text;
 		if (level == "v")

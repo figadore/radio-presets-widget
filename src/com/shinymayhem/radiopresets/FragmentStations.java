@@ -99,6 +99,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
 	
 	public void refresh()
 	{
+		//async task? possibly responsible for slow response times
 		log("refresh()", "d");
 		getLoaderManager().restartLoader(ActivityMain.LOADER_STATIONS, null, this);
 		getListView().refreshDrawableState();
@@ -388,6 +389,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
 
 	@Override
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+		//async task? possibly responsible for slow response times
 		log("onCreateLoader()", "v");
 		String[] projection = {
 				DbContractRadio.EntryStation._ID,
