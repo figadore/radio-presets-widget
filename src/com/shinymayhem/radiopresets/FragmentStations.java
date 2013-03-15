@@ -426,25 +426,62 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
 		}
 	}
 	
-	public void delete(long[] ids)
+	//called from onContextItemSelected and onContextItemSelected, depending on android version
+	public void delete(final long[] ids)
 	{
-		String[] values = new String[ids.length];
-		String where = DbContractRadio.EntryStation._ID + " in (";
-		//String[] values = new String[1];
-		//values[0] = String.valueOf(selected[0]);
-		for (int i=0; i<ids.length; i++)
+		 
+        //set message, title, and icon
+		//TODO string resources
+		String title = getResources().getString(R.string.delete_station_confirmation_title);
+		String message = getResources().getString(R.string.delete_station_confirmation_message);
+		if (ids.length > 1)
 		{
-			where += "?, ";
-			values[i] = String.valueOf(ids[i]);
+			title = getResources().getString(R.string.delete_stations_confirmation_title);
+			message = getResources().getString(R.string.delete_stations_confirmation_message);
 		}
-		where += "'') ";
-		//where= "_id in (?, ?, '')"
-		int deletedCount = getActivity().getContentResolver().delete(ContentProviderRadio.CONTENT_URI_STATIONS, where, values);//(ContentProviderRadio.CONTENT_URI_STATIONS, selected);
-		log("deleted " + String.valueOf(deletedCount), "v");
-		//TODO handle case where delete affects (above or includes) currently playing station
-		mListener.updateDetails();
+		AlertDialog deleteStationsDialog = new AlertDialog.Builder(this.getContext())
+        .setTitle(title) 
+        .setMessage(message) 
+
+        .setPositiveButton(getResources().getString(R.string.delete_station), new DialogInterface.OnClickListener() {
+
+            public void onClick(DialogInterface dialog, int whichButton) { 
+            	String[] values = new String[ids.length];
+        		String where = DbContractRadio.EntryStation._ID + " in (";
+        		//String[] values = new String[1];
+        		//values[0] = String.valueOf(selected[0]);
+        		for (int i=0; i<ids.length; i++)
+        		{
+        			where += "?, ";
+        			values[i] = String.valueOf(ids[i]);
+        		}
+        		where += "'') ";
+        		//where= "_id in (?, ?, '')"
+        		int deletedCount = getActivity().getContentResolver().delete(ContentProviderRadio.CONTENT_URI_STATIONS, where, values);//(ContentProviderRadio.CONTENT_URI_STATIONS, selected);
+        		log("deleted " + String.valueOf(deletedCount), "v");
+        		//TODO handle case where delete affects (above or includes) currently playing station
+        		mListener.updateDetails();
+                dialog.dismiss();
+            }   
+
+        })
+
+
+
+        .setNegativeButton(getResources().getString(R.string.cancel), new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+
+                dialog.dismiss();
+
+            }
+        })
+        .create();
+		deleteStationsDialog.show();
+        //return deleteStationsDialog.show();
+		
 	}
 
+	//called from multichoicemodelistenerstation
 	public void deleteSelected()
 	{
 		log("deleting selected", "i");
