@@ -22,9 +22,12 @@ import java.util.Locale;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.AsyncTask;
 import android.util.Log;
 
 public class ActivityLogger extends Activity{
+	
+	protected Context mContext;
 	
 	public void log(Object caller, String text)
 	{
@@ -34,7 +37,7 @@ public class ActivityLogger extends Activity{
 	public void log(Context context, String callerClass, String text, String level)
 	{
 		String str = text;
-		FileOutputStream file;
+		//FileOutputStream file;
 		if (level == "v")
 		{
 			str = "VERBOSE:\t\t" + str;
@@ -66,9 +69,13 @@ public class ActivityLogger extends Activity{
 			str = level + str;
 			Log.e(callerClass, str);
 		}
+		FileWriterTask task = new FileWriterTask();
+		str = callerClass + ":\t\t" + str;
+		mContext = context;
+		task.execute(str);
 		
-		try {
-			str = callerClass + ":\t\t" + str;
+		/*try {
+			
 			Calendar cal = Calendar.getInstance();
 	    	cal.getTime();
 	    	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
@@ -86,14 +93,14 @@ public class ActivityLogger extends Activity{
 		{
 	    	//Toast.makeText(this, "error writing to log file", Toast.LENGTH_SHORT).show();
 	    	e.printStackTrace();
-		}
+		}*/
 	}
 	
 	public void log(Object caller, String text, String level)
 	{
 		String callerClass = caller.getClass().toString();
 		String str = text;
-		FileOutputStream file;
+		
 		if (level == "v")
 		{
 			str = "VERBOSE:\t\t" + str;
@@ -125,29 +132,44 @@ public class ActivityLogger extends Activity{
 			str = level + str;
 			Log.e(callerClass, str);
 		}
+		FileWriterTask task = new FileWriterTask();
+		str = callerClass + ":\t\t" + str;
+		mContext = (Context)caller;
+		task.execute(str);
 		
-		try {
-			str = callerClass + ":\t\t" + str;
-			Calendar cal = Calendar.getInstance();
-	    	cal.getTime();
-	    	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
-	    	str += "\n";
-	    	str = sdf.format(cal.getTime()) + "\t\t" + str;
-	    	Context context = (Context)caller;
-			file = context.openFileOutput(ActivityMain.LOG_FILENAME, Context.MODE_APPEND);
-			file.write(str.getBytes());
-			file.flush();
-			file.close();
-			//TODO switch to temp files before field testing
-			//file = File.createTempFile(fileName, null, this.getCacheDir());
-			//file.
-		}
-		catch (Exception e)
-		{
-	    	//Toast.makeText(this, "error writing to log file", Toast.LENGTH_SHORT).show();
-	    	e.printStackTrace();
-		}
 	}
 	
+	public class FileWriterTask extends AsyncTask<String, Void, Void> {
+		
+		
+		  @Override
+		  protected Void doInBackground(String... params) {
+			  String str = params[0];
+			  FileOutputStream file;
+		    // Do your filewriting here. The text should now be in params[0]
+			  try {
+					
+					Calendar cal = Calendar.getInstance();
+			    	cal.getTime();
+			    	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+			    	str += "\n";
+			    	str = sdf.format(cal.getTime()) + "\t\t" + str;
+			    	//Context context = this;//(Context)caller;
+					file = mContext.openFileOutput(ActivityMain.LOG_FILENAME, Context.MODE_APPEND);
+					file.write(str.getBytes());
+					file.flush();
+					file.close();
+					//TODO switch to temp files before field testing
+					//file = File.createTempFile(fileName, null, this.getCacheDir());
+					//file.
+				}
+				catch (Exception e)
+				{
+			    	//Toast.makeText(this, "error writing to log file", Toast.LENGTH_SHORT).show();
+			    	e.printStackTrace();
+				}
+			  return null;
+		  }
+		}
 	
 }
