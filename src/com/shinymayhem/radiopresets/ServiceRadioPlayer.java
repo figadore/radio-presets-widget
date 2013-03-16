@@ -477,6 +477,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		
 	}
 	
+	//reduce player volume for notifications or other transient audio focus
 	private void duck()
 	{
 		log("duck()", "v");
@@ -504,6 +505,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		}
 	}
 
+	//stop foreground notification and update 'now playing' in widget and activity
 	private void stopInfo(String status)
 	{
 		//remove notification
@@ -514,6 +516,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		mPreset = 0;
 	}
 	
+	//convenience method with default "stopped" status
 	private void stopInfo()
 	{
 		this.stopInfo(getResources().getString(R.string.status_stopped));
@@ -657,7 +660,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		}
 	}
 	
-	
+	//convenience method, play instance variable stored preset
 	protected void play()
 	{
 		log("play()", "v");
@@ -668,8 +671,8 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		play(mPreset);
 	}
 	
-	//called from bound ui, possibly notification action, if implemented
-	//possible start states: any
+	//play specified preset and start notification. asynchronous, so could be called from any state
+	//sets required listeners for broadcast events like headphones unplugged, network change, phone call
 	protected void play(int preset)
 	{
 		log("play(preset)", "v");
@@ -739,8 +742,8 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		
 		
 	}
-	
 
+	//stop music but keep notification and mPreset
 	protected void pause()
 	{
 		log("pause()", "v");
@@ -757,6 +760,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		play(); 
 	}
 	
+	//safe way to completely stop mediaplayer from any state
 	protected void stopAndReleasePlayer(MediaPlayer player)
 	{
 		log("stopAndReleasePlayer()", "v");
@@ -775,6 +779,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		}
 	}
 	
+	//stops music and related broadcast listeners
 	protected void stopPlayer()
 	{
 		this.stopAndReleasePlayer(mMediaPlayer);
@@ -787,7 +792,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		mInterrupted = false;
 	}
 	
-	//called from onDestroy, end
+	//stop music, notifications, and put in stopped state
 	protected void stop()
 	{
 		log("stop()", "v");
@@ -799,7 +804,8 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		mCurrentPlayerState = ServiceRadioPlayer.STATE_STOPPED;
 	}
 	
-	//called from unbound, headphones unplugged, notification->stop 
+	//e.g. called from unbound, headphones unplugged, notification->stop
+	//end service if not bound, do any cleanup necessary
 	protected void end()
 	{
 		log("end()", "v");
@@ -808,19 +814,12 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		{
 			log("not bound, stopping service with stopself", "v");
 			stopSelf();
-			//Intent intent = new Intent(this, ServiceRadioPlayer.class);
-			//stopSelf();
-			//only stops service intent started with play action? not sure. not even sure if that would work
-			//what should happen is 
-			//intent.setAction(ServiceRadioPlayer.ACTION_PLAY);
-			//this.stopService(intent);
 			mCurrentPlayerState = ServiceRadioPlayer.STATE_END;
 		} 
 		else
 		{
 			String str = "still bound";
 			log(str, "v");
-			
 		}
 		
 	}
@@ -1028,7 +1027,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	    //mNotificationManager.notify(ONGOING_NOTIFICATION, builder.build());
 	}
 	
-	
+	//get notification for specified status, allow further actions by returning builder
 	protected NotificationCompat.Builder getUpdateNotification(String status, String stopText, boolean updateTicker)
 	{
 		NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
@@ -1065,12 +1064,14 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		return builder;
 	}
 	
+	//start foreground notification 
 	protected void startForegroundNotification(String status, String stopText, boolean updateTicker)
 	{
 		NotificationCompat.Builder builder = this.getUpdateNotification(status, stopText, updateTicker);
 		startForeground(ONGOING_NOTIFICATION, builder.build());
 	}
 	
+	//update existing foreground notification (or create new non-foreground notification if it doesn't exist)
 	protected void updateNotification(String status, String stopText, boolean updateTicker)
 	{
 		NotificationCompat.Builder builder = this.getUpdateNotification(status, stopText, updateTicker);
