@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 
 import android.annotation.SuppressLint;
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -356,61 +357,49 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		
 		if (mediaPlayer != null)
 		{
-			try
-			{
-				if (!mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_PREPARING))
-				{
-					mediaPlayer.stop();	
-				}
-				log("media player stopped", "v");
-			}
-			catch (IllegalStateException e)
-			{
-				log("Illegal state to stop. uninitialized? not yet prepared?", "w");
-			}
-			mediaPlayer.release();
+			stopAndReleasePlayer(mediaPlayer);
 			mediaPlayer = null;
 			mMediaPlayer = null;
 		}
 		String oldState = mCurrentPlayerState;
 		mCurrentPlayerState = ServiceRadioPlayer.STATE_ERROR;
-		stopInfo(getResources().getString(R.string.status_error)); //stopForeground(true);
-		//TextView status = (TextView) findViewById(R.id.status);
-		String statusString = "";
-		if (oldState.equals("Preparing"))
+		//set 'now playing' to error
+		stopInfo(getResources().getString(R.string.status_error));
+		String title;
+		String text;
+		boolean unknown = false;
+		if (what == MediaPlayer.MEDIA_ERROR_UNKNOWN && extra == -2147483648)
 		{
-			//TODO notify user somehow
-			statusString = "An error occurred while trying to connect to the server. ";
-			if (what == MediaPlayer.MEDIA_ERROR_UNKNOWN && extra == -2147483648)
-			{
-				statusString += "Bad URL or file format?";
-			}
+			title = getResources().getString(R.string.error_title);
+			text = getResources().getString(R.string.error_url_format);
 		}
-		else
+		else if (extra == MediaPlayer.MEDIA_ERROR_IO)
 		{
-			statusString = "Not error while preparing:"; 
+			title = getResources().getString(R.string.error_title);
+			text = getResources().getString(R.string.error_media_io);
 		}
-		if (what == MediaPlayer.MEDIA_ERROR_UNKNOWN && extra == MediaPlayer.MEDIA_ERROR_IO)
+		else if (extra == MediaPlayer.MEDIA_ERROR_TIMED_OUT)
 		{
-			statusString += "Media IO Error";
+			title = getResources().getString(R.string.error_title);
+			text = getResources().getString(R.string.error_timed_out);
 		}
-		else if (what == MediaPlayer.MEDIA_ERROR_UNKNOWN && extra == MediaPlayer.MEDIA_ERROR_TIMED_OUT)
+		else //unknown/unhandled error
 		{
-			statusString += "Timed out";
+			title = getResources().getString(R.string.error_title);
+			text = getResources().getString(R.string.error_unknown);
+			this.getErrorNotification(title, text);
+			unknown = true;
+			
 		}
-		else
+		//show user error notification
+		this.getErrorNotification(title, text);
+		
+		if (unknown)
 		{
-			statusString += what;
-			statusString += ":";
-			statusString += extra;
+			text += ", " + String.valueOf(what) + ":" + String.valueOf(extra);
 		}
-		log(statusString, "e");
-		//status.append(statusString);
-		Toast.makeText(this, statusString, Toast.LENGTH_LONG).show();
-		if (oldState.equals("Preparing"))
-		{
-			stop();
-		}
+		log("Previous:" + oldState + "-" + text, "e");
+		
 		return false;
 		
 	}
@@ -768,8 +757,12 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		{
 			try
 			{
-				player.stop();
-				log("stopped mediaPlayer", "v");
+				if (player.isPlaying())
+				{
+					player.stop();
+					log("stopped mediaPlayer", "v");
+				}
+				log("mediaPlayer not playing", "v");
 			}
 			catch (IllegalStateException e)
 			{
@@ -996,12 +989,25 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		return builder;
 	}*/
 	       
-	//notify user of error, tap to open app, possibly with additional details
-	protected NotificationCompat.Builder getErrorNotification()
+	//notify user of error, tap to open app
+	protected void getErrorNotification(String title, String text)
 	{
-	    NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
-	    	;
-	        return builder;
+		NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
+			.setContentTitle(title)
+			.setContentText(text)
+			.setLargeIcon(((BitmapDrawable)getResources().getDrawable(R.drawable.app_icon)).getBitmap())
+			.setSmallIcon(R.drawable.app_notification);
+		TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+		stackBuilder.addParentStack(ActivityMain.class);
+		Intent resultIntent = new Intent(this, ActivityMain.class); 
+		stackBuilder.addNextIntent(resultIntent);
+		PendingIntent intent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_CANCEL_CURRENT);
+		builder.setContentIntent(intent);
+		builder.setTicker(title);
+		Notification notification = builder.build();
+		notification.flags = Notification.FLAG_AUTO_CANCEL; //set notification to be cleared when tapped
+		//startForeground(ONGOING_NOTIFICATION, builder.build());
+	    mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
 	}
 	
 	//notify user that the service is running and will play once network is available
@@ -1436,7 +1442,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			return false;
 		}
 		//check for empty after prefix
-		if (url == "http://" || url == "https://")
+		if (url.equals("http://") || url.equals("https://"))
 		{
 			return false;
 		}
