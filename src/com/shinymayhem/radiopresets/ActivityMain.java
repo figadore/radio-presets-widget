@@ -223,10 +223,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 	protected void onStop()
 	{
 		log("stopping main activity", "v");
-		if (mService != null && mService.isPlaying() == false)
-		{
-			mService.stop();
-		}
+		
 		if (mBound)
 		{
 			unbindService(mConnection);
@@ -249,12 +246,6 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 	public void onDestroy()
 	{
 		log("onDestroy()", "v");
-		log("another experimental fix, sometimes 'end' isn't called on service unbound", "d");
-		if (mService != null && !mService.isPlaying())
-		{
-			log("mservice.end()", "d");
-			mService.end();
-		}
 		super.onDestroy();
 	}
 

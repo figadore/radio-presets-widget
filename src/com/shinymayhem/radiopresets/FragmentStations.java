@@ -429,9 +429,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
 	//called from onContextItemSelected and onContextItemSelected, depending on android version
 	public void delete(final long[] ids)
 	{
-		 
-        //set message, title, and icon
-		//TODO string resources
+        //delete confirmation dialog, set message, title, and icon
 		String title = getResources().getString(R.string.delete_station_confirmation_title);
 		String message = getResources().getString(R.string.delete_station_confirmation_message);
 		if (ids.length > 1)
@@ -466,19 +464,13 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
 
         })
 
-
-
         .setNegativeButton(getResources().getString(R.string.cancel), new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
-
                 dialog.dismiss();
-
             }
         })
         .create();
 		deleteStationsDialog.show();
-        //return deleteStationsDialog.show();
-		
 	}
 
 	//called from multichoicemodelistenerstation
