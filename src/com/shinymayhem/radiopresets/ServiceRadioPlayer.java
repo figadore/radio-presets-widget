@@ -506,7 +506,9 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 
 	private void stopInfo(String status)
 	{
+		//remove notification
 		stopForeground(true);
+		//update widget and activity player
 		this.updateDetails(getResources().getString(R.string.widget_initial_station), status);
 		//TODO store preset?
 		mPreset = 0;
@@ -655,23 +657,6 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		}
 	}
 	
-	protected PendingIntent getPreviousIntent()
-	{
-		Intent intent = new Intent(this, ServiceRadioPlayer.class).setAction(ACTION_PREVIOUS);
-		return PendingIntent.getService(this, 0, intent, 0);	 
-	}
-	
-	protected PendingIntent getStopIntent()
-	{
-		Intent intent = new Intent(this, ServiceRadioPlayer.class).setAction(ACTION_STOP);
-		return PendingIntent.getService(this, 0, intent, 0);	 
-	}
-	
-	protected PendingIntent getNextIntent()
-	{
-		Intent intent = new Intent(this, ServiceRadioPlayer.class).setAction(ACTION_NEXT);
-		return PendingIntent.getService(this, 0, intent, 0);	 
-	}
 	
 	protected void play()
 	{
@@ -696,9 +681,11 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		
 		this.mPreset = preset; 
 		
+		setStationData(preset);
 		if (!isConnected())
 		{
 			mCurrentPlayerState = ServiceRadioPlayer.STATE_WAITING_FOR_NETWORK;
+			mNetworkState = ServiceRadioPlayer.NETWORK_STATE_DISCONNECTED;
 			this.getWaitingForNetworkNotification();
 		}
 		else
@@ -708,29 +695,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			mNetworkState = this.getConnectionType();
 			this.mPreset = preset;
 
-			Uri uri = Uri.parse(ContentProviderRadio.CONTENT_URI_PRESETS.toString() + "/" + String.valueOf(preset));
-			String[] projection = {DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER, DbContractRadio.EntryStation.COLUMN_NAME_TITLE, DbContractRadio.EntryStation.COLUMN_NAME_URL};  
-			String selection = null;
-			String[] selectionArgs = null;
-			String sortOrder = DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER;
-			Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
-			int count = cursor.getCount();
-			if (count > 1)
-			{
-				log("Duplicate preset detected", "w");
-			}
-			if (count < 1)
-			{
-				log("no results found", "e");
-				throw new SQLiteException("Selected preset not found"); //TODO find correct exception to throw, or handle this some other way
-			}
-			else
-			{
-				cursor.moveToFirst();
-				mPreset = (int)cursor.getLong(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER));
-				mTitle = cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_TITLE));
-				mUrl = cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_URL));	
-			}
+			
 			
 			//begin listen for headphones unplugged
 			registerNoisyReceiver();
@@ -775,6 +740,92 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		
 	}
 	
+
+	protected void pause()
+	{
+		log("pause()", "v");
+		mCurrentPlayerState = STATE_PAUSING;
+		stopPlayer();
+		updateNotification(getResources().getString(R.string.status_paused), getResources().getString(R.string.cancel), false);
+		mCurrentPlayerState = STATE_PAUSED;
+
+	}
+	
+	protected void resume()
+	{
+		log("resume()", "v");
+		play(); 
+	}
+	
+	protected void stopAndReleasePlayer(MediaPlayer player)
+	{
+		log("stopAndReleasePlayer()", "v");
+		if (player != null)
+		{
+			try
+			{
+				player.stop();
+				log("stopped mediaPlayer", "v");
+			}
+			catch (IllegalStateException e)
+			{
+				log("player in wrong state to stop", "v");
+			}
+			player.release();
+		}
+	}
+	
+	protected void stopPlayer()
+	{
+		this.stopAndReleasePlayer(mMediaPlayer);
+		this.abandonAudioFocus();
+		this.unregisterNoisyReceiver();
+		if (mInterrupted)
+		{
+			log("set interrupted = false", "v");
+		}
+		mInterrupted = false;
+	}
+	
+	//called from onDestroy, end
+	protected void stop()
+	{
+		log("stop()", "v");
+		mCurrentPlayerState = ServiceRadioPlayer.STATE_STOPPING;
+		this.stopPlayer();
+		this.stopInfo();
+		this.unregisterPhoneReceiver();
+		
+		mCurrentPlayerState = ServiceRadioPlayer.STATE_STOPPED;
+	}
+	
+	//called from unbound, headphones unplugged, notification->stop 
+	protected void end()
+	{
+		log("end()", "v");
+		stop();
+		if (!mBound)
+		{
+			log("not bound, stopping service with stopself", "v");
+			stopSelf();
+			//Intent intent = new Intent(this, ServiceRadioPlayer.class);
+			//stopSelf();
+			//only stops service intent started with play action? not sure. not even sure if that would work
+			//what should happen is 
+			//intent.setAction(ServiceRadioPlayer.ACTION_PLAY);
+			//this.stopService(intent);
+			mCurrentPlayerState = ServiceRadioPlayer.STATE_END;
+		} 
+		else
+		{
+			String str = "still bound";
+			log(str, "v");
+			
+		}
+		
+	}
+	
+	
 	protected void nextPreset()
 	{
 		log("nextPreset()", "v");
@@ -806,26 +857,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		}
 	}
 	
-	//FIXME duplicate code from radioContentProvider
-	protected int getMaxPresetNumber()
-	{
-		Uri uri = ContentProviderRadio.CONTENT_URI_PRESETS_MAX;
-		String[] projection = null;
-		String selection = null;
-		String[] selectionArgs = null;
-		String sortOrder = null;
-		Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
-		long preset = 0;
-		if (cursor.getCount() > 0)		
-		{
-			cursor.moveToFirst();
-			preset = cursor.getLong(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER));	
-		}
-		
-		cursor.close();
-		return (int)preset;
-	}
-	
+
 	protected void previousPreset()
 	{
 		log("previousPreset()", "v");
@@ -865,6 +897,45 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			log("decremented preset, playing " + String.valueOf(mPreset), "v");
 			play();	
 		}
+	}
+	
+	
+	//FIXME duplicate code from radioContentProvider
+	protected int getMaxPresetNumber()
+	{
+		Uri uri = ContentProviderRadio.CONTENT_URI_PRESETS_MAX;
+		String[] projection = null;
+		String selection = null;
+		String[] selectionArgs = null;
+		String sortOrder = null;
+		Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
+		long preset = 0;
+		if (cursor.getCount() > 0)		
+		{
+			cursor.moveToFirst();
+			preset = cursor.getLong(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER));	
+		}
+		
+		cursor.close();
+		return (int)preset;
+	}
+	
+	protected PendingIntent getPreviousIntent()
+	{
+		Intent intent = new Intent(this, ServiceRadioPlayer.class).setAction(ACTION_PREVIOUS);
+		return PendingIntent.getService(this, 0, intent, 0);	 
+	}
+	
+	protected PendingIntent getStopIntent()
+	{
+		Intent intent = new Intent(this, ServiceRadioPlayer.class).setAction(ACTION_STOP);
+		return PendingIntent.getService(this, 0, intent, 0);	 
+	}
+	
+	protected PendingIntent getNextIntent()
+	{
+		Intent intent = new Intent(this, ServiceRadioPlayer.class).setAction(ACTION_NEXT);
+		return PendingIntent.getService(this, 0, intent, 0);	 
 	}
 	
 	protected void setVolume(int newVolume)
@@ -934,13 +1005,27 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	        return builder;
 	}
 	
-	//notify user that the service is running and will play once network is available. tap to cancel
+	//notify user that the service is running and will play once network is available
 	protected void getWaitingForNetworkNotification()
 	{
+		String status = getResources().getString(R.string.status_waiting_for_network);
 	    NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
-	    	;
-	        //return builder;
-	        mNotificationManager.notify(ONGOING_NOTIFICATION, builder.build());
+			.setContentTitle(String.valueOf(mPreset) + ". " + mTitle)
+			.setContentText(status)
+			.addAction(R.drawable.content_remove, getResources().getString(R.string.cancel), getStopIntent())
+			.setUsesChronometer(true)
+			.setLargeIcon(((BitmapDrawable)getResources().getDrawable(R.drawable.app_icon)).getBitmap())
+			.setSmallIcon(R.drawable.app_notification);
+		TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+		stackBuilder.addParentStack(ActivityMain.class);
+		Intent resultIntent = new Intent(this, ActivityMain.class); 
+		stackBuilder.addNextIntent(resultIntent);
+		PendingIntent intent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_CANCEL_CURRENT);
+		builder.setContentIntent(intent);
+		builder.setTicker(status);
+		this.updateDetails(status);
+		startForeground(ONGOING_NOTIFICATION, builder.build());
+	    //mNotificationManager.notify(ONGOING_NOTIFICATION, builder.build());
 	}
 	
 	
@@ -1062,6 +1147,32 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		return song;
 	}
 	
+	protected void setStationData(int preset)
+	{
+		Uri uri = Uri.parse(ContentProviderRadio.CONTENT_URI_PRESETS.toString() + "/" + String.valueOf(preset));
+		String[] projection = {DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER, DbContractRadio.EntryStation.COLUMN_NAME_TITLE, DbContractRadio.EntryStation.COLUMN_NAME_URL};  
+		String selection = null;
+		String[] selectionArgs = null;
+		String sortOrder = DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER;
+		Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
+		int count = cursor.getCount();
+		if (count > 1)
+		{
+			log("Duplicate preset detected", "w");
+		}
+		if (count < 1)
+		{
+			log("no results found", "e");
+			throw new SQLiteException("Selected preset not found"); //TODO find correct exception to throw, or handle this some other way
+		}
+		else
+		{
+			cursor.moveToFirst();
+			mPreset = (int)cursor.getLong(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER));
+			mTitle = cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_TITLE));
+			mUrl = cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_URL));	
+		}
+	}
 	
 	protected void initializePlayer(MediaPlayer player)
 	{
@@ -1086,104 +1197,6 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		{
 			log("audio focus already abandoned", "v");
 		}
-	}
-	
-	protected void pause()
-	{
-		log("pause()", "v");
-		mCurrentPlayerState = STATE_PAUSING;
-		this.stopAndReleasePlayer(mMediaPlayer);
-		this.abandonAudioFocus();
-		this.unregisterNoisyReceiver();
-		this.unregisterPhoneReceiver();
-		updateNotification(getResources().getString(R.string.status_paused), getResources().getString(R.string.cancel), false);
-		
-		//reset interrupted flag
-		if (mInterrupted)
-		{
-			log("set interrupted = false", "v");
-		}
-		mInterrupted = false;
-		
-		mCurrentPlayerState = STATE_PAUSED;
-		/*try
-		{
-			unregisterReceiver(mNoisyReceiver);
-			mNoisyReceiver = null;
-			log("unregistering noisyReceiver", "v");
-		}
-		catch (IllegalArgumentException e)
-		{
-			log("noisyReceiver already unregistered", "e");
-		}*/
-		
-	}
-	
-	protected void resume()
-	{
-		log("resume()", "v");
-		/*mNoisyReceiver = new ReceiverNoisyAudioStream();
-		IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
-		registerReceiver(mNoisyReceiver, intentFilter);
-		log("register noisy receiver", "v");*/
-		play(); 
-	}
-	
-	protected void stopAndReleasePlayer(MediaPlayer player)
-	{
-		log("stopAndReleasePlayer()", "v");
-		if (player != null)
-		{
-			try
-			{
-				player.stop();
-				log("stopped mediaPlayer", "v");
-			}
-			catch (IllegalStateException e)
-			{
-				log("player in wrong state to stop", "v");
-			}
-			player.release();
-		}
-	}
-	
-	//called from onDestroy, end
-	protected void stop()
-	{
-		log("stop()", "v");
-		
-		this.pause();
-		this.stopInfo();
-		
-		mCurrentPlayerState = ServiceRadioPlayer.STATE_STOPPING;
-		
-		mCurrentPlayerState = ServiceRadioPlayer.STATE_STOPPED;
-	}
-	
-	//called from unbound, headphones unplugged, notification->stop 
-	protected void end()
-	{
-		log("end()", "v");
-		stop();
-		if (!mBound)
-		{
-			log("not bound, stopping service with stopself", "v");
-			stopSelf();
-			//Intent intent = new Intent(this, ServiceRadioPlayer.class);
-			//stopSelf();
-			//only stops service intent started with play action? not sure. not even sure if that would work
-			//what should happen is 
-			//intent.setAction(ServiceRadioPlayer.ACTION_PLAY);
-			//this.stopService(intent);
-			mCurrentPlayerState = ServiceRadioPlayer.STATE_END;
-		} 
-		else
-		{
-			String str = "still bound";
-			log(str, "v");
-			
-		}
-		
 	}
 	
 	//called from onComplete or network change if no network and was playing
