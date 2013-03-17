@@ -50,11 +50,11 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
 import android.telephony.TelephonyManager;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.webkit.URLUtil;
 import android.widget.Toast;
@@ -90,6 +90,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	public final static String EXTRA_METADATA_ARTIST = "artist";
 	public final static String EXTRA_METADATA_SONG = "song";
 	public final static int NETWORK_STATE_DISCONNECTED = -1;
+	public final static int METADATA_REFRESH_INTERVAL = 10000;
 	protected NetworkInfo mNetworkInfo;
 	protected int mNetworkState;
 	protected MediaPlayer mMediaPlayer;
@@ -113,6 +114,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	protected ActivityLogger mLogger = new ActivityLogger();
 	protected Intent mIntent;
 	protected NotificationManager mNotificationManager;
+	protected Handler mMetadataHandler = new Handler(); 
 	
 	public class LocalBinder extends Binder
 	{
@@ -747,8 +749,18 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			
 			//Toast.makeText(this, "Preparing", Toast.LENGTH_SHORT).show();
 			log("get metadata", "v");
-			AsyncTaskMetadata task = new AsyncTaskMetadata();
-			task.execute(mUrl);
+			
+			mMetadataHandler.post(new Runnable(){
+
+				@Override
+				public void run() {
+					log("run metadata handler runnable", "d");
+					AsyncTaskMetadata task = new AsyncTaskMetadata();
+					task.execute(mUrl);
+					mMetadataHandler.postDelayed(this, METADATA_REFRESH_INTERVAL);
+				}
+				
+			});
 		}
 		
 		
@@ -1801,7 +1813,9 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			try 
 	        {
 				streamMeta = new IcyStreamMeta(new URL(urls[0]));
+				log("refreshMeta", "d");
 	            streamMeta.refreshMeta();
+	            log("refreshed meta", "d");
 	            //Log.e("Retrieving MetaData","Refreshed Metadata");
 	        } 
 			catch (MalformedURLException e)
@@ -1820,23 +1834,21 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		{
 			try {
 				String artist = result.getArtist();
-				Log.i("asyncTaskIcyMetadata", "artist:" + artist);
+				log("artist:" + artist, "d");
 				String streamTitle = result.getStreamTitle();
-				Log.i("asyncTaskIcyMetadata", "stream title:" + streamTitle);
+				log("stream title:" + streamTitle, "v");
 				String song = result.getTitle();
-				Log.i("asyncTaskIcyMetadata", "song:" + song);
-				mArtist = artist;
-				mSong = song;
-				updateDetails();
-				/*Intent intent = new Intent();
-				intent.setClassName(getPackageName(), ServiceRadioPlayer.class.toString());
-				intent.setAction(ServiceRadioPlayer.ACTION_SET_METADATA);
-				intent.putExtra(EXTRA_METADATA_ARTIST, artist);
-				intent.putExtra(EXTRA_METADATA_SONG, song);
-				startService(intent);*/
+				log("song:" + song, "d");
+				if (!artist.equals(mArtist) || !song.equals(mSong)) //only update visible metadata if different
+				{
+					mArtist = artist;
+					mSong = song;
+					updateDetails();	
+				}
+				
 			} catch (StringIndexOutOfBoundsException e)
 			{
-				Log.i("asyncTaskIcyMetadata", "no metadata available");
+				log("no metadata available", "d");
 				mArtist = "";
 				mSong = "";
 				updateDetails();
