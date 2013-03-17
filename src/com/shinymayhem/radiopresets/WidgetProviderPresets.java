@@ -24,16 +24,12 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.util.Log;
 import android.widget.RemoteViews;
-
-import com.shinymayhem.radiopresets.ServiceRadioPlayer.LocalBinder;
 
 public class WidgetProviderPresets extends AppWidgetProvider {
 	
@@ -50,6 +46,7 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 	private final int[] selectedLayoutIds = {R.layout.preset1_selected, R.layout.preset2_selected, R.layout.preset3_selected, R.layout.preset4_selected, R.layout.preset5_selected, R.layout.preset6_selected, R.layout.preset7_selected, R.layout.preset8_selected};
 	private final int[] buttonIds = {R.id.widget_preset_1, R.id.widget_preset_2, R.id.widget_preset_3, R.id.widget_preset_4, R.id.widget_preset_5, R.id.widget_preset_6, R.id.widget_preset_7, R.id.widget_preset_8};
 	protected ServiceRadioPlayer mService;
+	/*
 	private ServiceConnection mConnection = new ServiceConnection()
 	{
 		@Override
@@ -67,7 +64,7 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 			log("service disconnected", "d");
 		}
 	};
-	
+	*/
 	
 	public void onEnabled(Context context)
 	{
@@ -82,14 +79,14 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 	{
 		
 		mContext = context;
-		log("onReceive()", "v");
+		log("widget onReceive(" + String.valueOf(intent.getAction()) + ")", "v");
 		super.onReceive(context, intent);	
 		String action = intent.getAction();
 		//log(action,"v");
-		log(ActivityMain.ACTION_UPDATE_TEXT,"v");
+		//log(ActivityMain.ACTION_UPDATE_TEXT,"v");
 		if (action.equals(ActivityMain.ACTION_UPDATE_TEXT))
 		{
-			log("update text action", "v");
+			//log("update text action", "v");
 			Bundle extras = intent.getExtras();
 			int preset = extras.getInt(ActivityMain.EXTRA_PRESET);
 			String station = extras.getString(ActivityMain.EXTRA_STATION);
@@ -106,7 +103,7 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 			}
 			else
 			{
-				log("other action:" + String.valueOf(intent.getAction()), "v");	
+				//log("other action:" + String.valueOf(intent.getAction()), "v");	
 			}
 			
 			
@@ -212,9 +209,13 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 
 	private void updateDetails(Context context)
 	{
+		log("updateDetails()", "v");
 		Intent intent = new Intent(context, ServiceRadioPlayer.class);
-		intent.setAction(Intent.ACTION_RUN);
-		context.getApplicationContext().bindService(intent, mConnection, 0); //should unbind itself once connected and details intent sent
+		intent.setAction(ServiceRadioPlayer.ACTION_UPDATE_WIDGET);
+		context.startService(intent);
+		//log("binding service", "v");
+		//context.bindService(intent, mConnection, 0); //should unbind itself once connected and details intent sent
+		//log("called bind service", "v");
 		//mService.updateDetails();
 		//context.unbindService(mConnection);
 	}

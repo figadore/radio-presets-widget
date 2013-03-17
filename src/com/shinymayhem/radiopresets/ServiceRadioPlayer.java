@@ -64,6 +64,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	public final static String ACTION_NEXT = "com.shinymayhem.radiopresets.ACTION_NEXT";
 	public final static String ACTION_PREVIOUS = "com.shinymayhem.radiopresets.ACTION_PREVIOUS";
 	public final static String ACTION_MEDIA_BUTTON = "com.shinymayhem.radiopresets.MEDIA_BUTTON";
+	public final static String ACTION_UPDATE_WIDGET = "com.shinymayhem.radiopresets.ACTION_UPDATE_WIDGET";
 	private String mCurrentPlayerState = STATE_UNINITIALIZED;
 	public final static String STATE_UNINITIALIZED = "Uninitialized";
 	public final static String STATE_INITIALIZING = "Initializing";
@@ -188,6 +189,22 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			{
 				log("STOP action in intent", "v");	
 				end();
+				return START_NOT_STICKY;
+			}
+			else if (action.equals(ACTION_UPDATE_WIDGET.toString())) //Stop intent
+			{
+				log("UPDATE_WIDGET action in intent", "v");	
+				updateDetails();
+				if (!couldPlay())
+				{
+					log("no reason to keep service alive", "v");
+					end();	
+				}
+				else
+				{
+					log("could play, don't destroy service","v");
+				}
+				
 				return START_NOT_STICKY;
 			}
 			else
@@ -768,6 +785,15 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			{
 				log("player in wrong state to stop", "v");
 			}
+			try
+			{
+				player.reset();
+				log("reset mediaPlayer", "v");
+			}
+			catch (IllegalStateException e)
+			{
+				log("player in wrong state to reset", "v");
+			}
 			player.release();
 		}
 	}
@@ -964,12 +990,9 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	}
 		
 	//when no title specified, default to "[preset]. [station name]"
-	protected void updateDetails(String text)
+	protected void updateDetails(String status)
 	{
-		Intent intent = this.getDetailsUpdateIntent(String.valueOf(mPreset) + ". " + mTitle, text);
-		//update widget. doesn't receive localbroadcasts
-		//LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-		this.sendBroadcast(intent);
+		this.updateDetails(String.valueOf(mPreset) + ". " + mTitle, status);
 	}
 	
 	protected void updateDetails(String station, String status)
@@ -977,6 +1000,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		//TODO async task? possibly causing slow responses
 		Intent intent = this.getDetailsUpdateIntent(station, status);
 		this.sendBroadcast(intent);
+		log("sent broadcast", "v");
 	}
 	
 	/*
@@ -1073,6 +1097,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	//start foreground notification 
 	protected void startForegroundNotification(String status, String stopText, boolean updateTicker)
 	{
+		log("startForegroundNotification()", "v");
 		NotificationCompat.Builder builder = this.getUpdateNotification(status, stopText, updateTicker);
 		startForeground(ONGOING_NOTIFICATION, builder.build());
 	}
@@ -1080,6 +1105,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	//update existing foreground notification (or create new non-foreground notification if it doesn't exist)
 	protected void updateNotification(String status, String stopText, boolean updateTicker)
 	{
+		log("updateNotification()", "v");
 		NotificationCompat.Builder builder = this.getUpdateNotification(status, stopText, updateTicker);
 		mNotificationManager.notify(ONGOING_NOTIFICATION, builder.build());
 		

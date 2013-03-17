@@ -491,7 +491,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 	    public void onReceive(Context context, Intent intent) {
 	    	if (intent.getAction().equals(ActivityMain.ACTION_UPDATE_TEXT))
 	    	{
-	    		log("updating main activity text", "v");
+	    		log("activity onreceive(), updating main activity text", "v");
 	    		Bundle extras = intent.getExtras();
 				String station = extras.getString(ActivityMain.EXTRA_STATION);
 				String status = extras.getString(ActivityMain.EXTRA_STATUS);
