@@ -196,7 +196,7 @@ public class WidgetProviderPresets extends AppWidgetProvider {
             mViews.setTextViewText(R.id.currently_playing, station);
             if (playing)
             {
-            	mViews.setTextViewText(R.id.widget_status, status + ":" + artist + " - " + song);	
+            	mViews.setTextViewText(R.id.widget_status, artist + " - " + song);	
             }
             else
             {

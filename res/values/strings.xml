@@ -21,8 +21,10 @@
     <string name="url">URL</string>
     <string name="copy">Copy Logs</string>
     <string name="widget_initial_station">Nothing playing</string>
-    <string name="initial_song">Unknown song</string>
-    <string name="initial_artist">Unknown artist</string>
+    <string name="unknown_song">Unknown song</string>
+    <string name="unknown_artist">Unknown artist</string>
+    <string name="loading_song">Retrieving song</string>
+    <string name="loading_artist">Retrieving artist</string>
     <string name="player_initial_station_details">Nothing playing</string>
     <string name="player_initial_song_details">Unknown Artist - Unknown Song</string>
     <string name="widget_loading">Loading Radio Presets Widget…</string>

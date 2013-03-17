@@ -21,6 +21,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.channels.FileChannel;
 
 import android.annotation.SuppressLint;
@@ -46,14 +48,18 @@ import android.media.MediaPlayer.OnPreparedListener;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.webkit.URLUtil;
 import android.widget.Toast;
+
+import com.radiopirate.android.service.IcyStreamMeta;
 
 public class ServiceRadioPlayer extends Service implements OnPreparedListener, OnInfoListener, OnCompletionListener, OnErrorListener, OnAudioFocusChangeListener {
 	
@@ -81,6 +87,8 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	public final static String STATE_STOPPED = "Stopped";
 	public final static String STATE_COMPLETE = "Complete";
 	public final static String STATE_END = "Ended";
+	public final static String EXTRA_METADATA_ARTIST = "artist";
+	public final static String EXTRA_METADATA_SONG = "song";
 	public final static int NETWORK_STATE_DISCONNECTED = -1;
 	protected NetworkInfo mNetworkInfo;
 	protected int mNetworkState;
@@ -96,6 +104,8 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	private boolean mAudioFocused = false;
 	protected String mUrl;
 	protected String mTitle;
+	protected String mArtist;
+	protected String mSong;
 	protected int mPreset;
 	protected boolean mInterrupted = false;
 	private final IBinder mBinder = new LocalBinder();
@@ -195,15 +205,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			{
 				log("UPDATE_WIDGET action in intent", "v");	
 				updateDetails();
-				if (!couldPlay())
-				{
-					log("no reason to keep service alive", "v");
-					end();	
-				}
-				else
-				{
-					log("could play, don't destroy service","v");
-				}
+				endIfNotNeeded();
 				
 				return START_NOT_STICKY;
 			}
@@ -744,6 +746,9 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			log("preparing async", "v");
 			
 			//Toast.makeText(this, "Preparing", Toast.LENGTH_SHORT).show();
+			log("get metadata", "v");
+			AsyncTaskMetadata task = new AsyncTaskMetadata();
+			task.execute(mUrl);
 		}
 		
 		
@@ -841,6 +846,20 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			log(str, "v");
 		}
 		
+	}
+	
+	//end service if it isn't playing or going to play
+	protected void endIfNotNeeded()
+	{
+		if (!couldPlay())
+		{
+			log("no reason to keep service alive", "v");
+			end();	
+		}
+		else
+		{
+			log("could play, don't destroy service","v");
+		}
 	}
 	
 	
@@ -1169,14 +1188,30 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	//get currently playing artist, if applicable
 	private String getArtist()
 	{
-		String artist = getResources().getString(R.string.initial_artist);
+		String artist;
+		if (mArtist == null || mArtist == "")
+		{
+			artist = getResources().getString(R.string.unknown_artist);	
+		}
+		else
+		{
+			artist = mArtist;
+		}
 		return artist;
 	}
 	
 	//get currently playing song, if applicable
 	private String getSong()
 	{
-		String song = getResources().getString(R.string.initial_song);
+		String song;
+		if (mSong == null || mSong == "")
+		{
+			song = getResources().getString(R.string.unknown_song);	
+		}
+		else
+		{
+			song = mSong;
+		}
 		return song;
 	}
 	
@@ -1204,6 +1239,8 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			mPreset = (int)cursor.getLong(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER));
 			mTitle = cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_TITLE));
 			mUrl = cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_URL));	
+			mArtist = getResources().getString(R.string.loading_artist);
+			mSong = getResources().getString(R.string.loading_song);
 		}
 	}
 	
@@ -1755,6 +1792,61 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		}
 	}
 
+	public class AsyncTaskMetadata extends AsyncTask<String, Void, IcyStreamMeta> {
 
+		@Override
+		protected IcyStreamMeta doInBackground(String... urls) {
+			
+			IcyStreamMeta streamMeta = null;
+			try 
+	        {
+				streamMeta = new IcyStreamMeta(new URL(urls[0]));
+	            streamMeta.refreshMeta();
+	            //Log.e("Retrieving MetaData","Refreshed Metadata");
+	        } 
+			catch (MalformedURLException e)
+			{
+				
+			}
+	        catch (IOException e) 
+	        {
+	            
+	        }
+	        return streamMeta;
+		}
+		
+		//TODO find out if it is ok that this is an inner class (what if service dies before onPostExecute is reached?)
+		@Override protected void onPostExecute(IcyStreamMeta result)
+		{
+			try {
+				String artist = result.getArtist();
+				Log.i("asyncTaskIcyMetadata", "artist:" + artist);
+				String streamTitle = result.getStreamTitle();
+				Log.i("asyncTaskIcyMetadata", "stream title:" + streamTitle);
+				String song = result.getTitle();
+				Log.i("asyncTaskIcyMetadata", "song:" + song);
+				mArtist = artist;
+				mSong = song;
+				updateDetails();
+				/*Intent intent = new Intent();
+				intent.setClassName(getPackageName(), ServiceRadioPlayer.class.toString());
+				intent.setAction(ServiceRadioPlayer.ACTION_SET_METADATA);
+				intent.putExtra(EXTRA_METADATA_ARTIST, artist);
+				intent.putExtra(EXTRA_METADATA_SONG, song);
+				startService(intent);*/
+			} catch (StringIndexOutOfBoundsException e)
+			{
+				Log.i("asyncTaskIcyMetadata", "no metadata available");
+				mArtist = "";
+				mSong = "";
+				updateDetails();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
+
+	}
 	
 }
