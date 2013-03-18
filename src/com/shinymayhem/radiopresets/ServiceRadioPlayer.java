@@ -21,9 +21,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.channels.FileChannel;
+import java.util.HashMap;
 
 import android.annotation.SuppressLint;
 import android.app.Notification;
@@ -58,8 +57,6 @@ import android.telephony.TelephonyManager;
 import android.view.KeyEvent;
 import android.webkit.URLUtil;
 import android.widget.Toast;
-
-import com.radiopirate.android.service.IcyStreamMeta;
 
 public class ServiceRadioPlayer extends Service implements OnPreparedListener, OnInfoListener, OnCompletionListener, OnErrorListener, OnAudioFocusChangeListener {
 	
@@ -521,9 +518,12 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		//remove notification
 		stopForeground(true);
 		//update widget and activity player
+		mPreset = 0;
+		mSong = "";
+		mArtist = "";
 		this.updateDetails(getResources().getString(R.string.widget_initial_station), status);
 		//TODO store preset?
-		mPreset = 0;
+		
 	}
 	
 	//convenience method with default "stopped" status
@@ -760,8 +760,8 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 					if (isConnected() && shouldPlay())
 					{
 						task.execute(mUrl);
+						mMetadataHandler.postDelayed(this, METADATA_REFRESH_INTERVAL);
 					}
-					mMetadataHandler.postDelayed(this, METADATA_REFRESH_INTERVAL);
 				}
 				
 			});
@@ -1808,59 +1808,39 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		}
 	}
 
-	public class AsyncTaskMetadata extends AsyncTask<String, Void, IcyStreamMeta> {
+	public class AsyncTaskMetadata extends AsyncTask<String, Void, HashMap<String, String>> {
 
 		@Override
-		protected IcyStreamMeta doInBackground(String... urls) {
+		protected HashMap<String, String> doInBackground(String... urls) {
+			String url = urls[0];
 			
-			IcyStreamMeta streamMeta = null;
-			try 
-	        {
-				streamMeta = new IcyStreamMeta(new URL(urls[0]));
-				log("refreshMeta", "d");
-	            streamMeta.refreshMeta();
-	            log("refreshed meta", "d");
-	            //Log.e("Retrieving MetaData","Refreshed Metadata");
-	        } 
-			catch (MalformedURLException e)
+			HashMap<String, String> map = new HashMap<String, String>();
+			String artist = "";
+			String song = "";
+			
+			MetadataParser parser = new MetadataParser();
+			boolean parses = parser.setUrl(url);
+			if (parses)
 			{
-				
+				artist = parser.getArtist();
+				song = parser.getSong();	
 			}
-	        catch (IOException e) 
-	        {
-	            
-	        }
-	        return streamMeta;
+			
+			
+			map.put("artist", artist);
+			map.put("song", song);
+			return map;
 		}
 		
+		
 		//TODO find out if it is ok that this is an inner class (what if service dies before onPostExecute is reached?)
-		@Override protected void onPostExecute(IcyStreamMeta result)
+		@Override protected void onPostExecute(HashMap<String, String> map)
 		{
-			try {
-				String artist = result.getArtist();
-				log("artist:" + artist, "d");
-				String streamTitle = result.getStreamTitle();
-				log("stream title:" + streamTitle, "v");
-				String song = result.getTitle();
-				log("song:" + song, "d");
-				if (!artist.equals(mArtist) || !song.equals(mSong)) //only update visible metadata if different
-				{
-					mArtist = artist;
-					mSong = song;
-					updateDetails();	
-				}
-				
-			} catch (StringIndexOutOfBoundsException e)
-			{
-				log("no metadata available", "d");
-				mArtist = "";
-				mSong = "";
-				updateDetails();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
+			String artist = map.get("artist");
+			String song = map.get("song");
+			mArtist = artist;
+			mSong = song;
+			updateDetails();
 		}
 
 	}
