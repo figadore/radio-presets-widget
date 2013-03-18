@@ -756,7 +756,11 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 				public void run() {
 					log("run metadata handler runnable", "d");
 					AsyncTaskMetadata task = new AsyncTaskMetadata();
-					task.execute(mUrl);
+					//TODO handle io exceptions, probably from this or sub function, probably network related
+					if (isConnected() && shouldPlay())
+					{
+						task.execute(mUrl);
+					}
 					mMetadataHandler.postDelayed(this, METADATA_REFRESH_INTERVAL);
 				}
 				
