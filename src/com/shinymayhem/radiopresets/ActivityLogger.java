@@ -32,6 +32,48 @@ public class ActivityLogger extends Activity{
 	public void log(Object caller, String text)
 	{
 		log(caller, text, "v");
+		
+	}
+	
+	public void log(String tag, String text, String level)
+	{
+		String str = text;
+		//FileOutputStream file;
+		if (level == "v")
+		{
+			str = "VERBOSE:\t\t" + str;
+			Log.v(tag, str);
+		}
+		else if (level == "d")
+		{
+			str = "DEBUG:\t\t" + str;
+			Log.d(tag, str);
+		}
+		else if (level == "i")
+		{
+			str = "INFO:\t\t" + str;
+			Log.i(tag, str);
+		}
+		else if (level == "w")
+		{
+			str = "WARN:\t\t" + str;
+			Log.w(tag, str);
+		}
+		else if (level == "e")
+		{
+			str = "ERROR:\t\t" + str;
+			Log.e(tag, str);
+		}
+		else
+		{
+			Log.e(tag, "new log level");
+			str = level + str;
+			Log.e(tag, str);
+		}
+		FileWriterTask task = new FileWriterTask();
+		str = tag + ":\t\t" + str;
+		mContext = getApplicationContext();
+		task.execute(str);
 	}
 	
 	public void log(Context context, String callerClass, String text, String level)

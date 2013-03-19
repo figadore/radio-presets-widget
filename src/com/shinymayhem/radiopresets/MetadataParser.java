@@ -2,7 +2,10 @@ package com.shinymayhem.radiopresets;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+
+import android.util.Log;
 
 import com.shinymayhem.radiometadata.Parser;
 import com.shinymayhem.radiometadata.ShoutcastV1;
@@ -16,10 +19,17 @@ public class MetadataParser {
 	protected Parser mParser;
 	protected String mUrl;
 	
-	public boolean setUrl(String url)
+	/**
+	 * Iterate through known metadata parsers, checking if they will parse this url, then parsing
+	 * Fails silently
+	 * @param url
+	 * @return hashmap with keys from Parser and their values. empty hashmap on error or no data found
+	 */
+	public HashMap<String, String> getMetadata(String url)
 	{
 		//TODO: check a cache first, with url as key
 		boolean parses = false;
+		HashMap<String, String> map;
 		for (Parser parser : parsers)
 		{
 			if (parser.parsesUrl(url))
@@ -30,16 +40,16 @@ public class MetadataParser {
 				break;
 			}
 		}
-		return parses;
+		if (parses)
+		{
+			map = mParser.getMetadata(url);
+		}
+		else
+		{
+			Log.d("MetadataParser", "No parsers available");
+			map = new HashMap<String, String>();
+		}
+		return map;
 	}
 	
-	public String getArtist()
-	{
-		return mParser.getArtist(mUrl);
-	}
-	
-	public String getSong()
-	{
-		return mParser.getSong(mUrl);
-	}
 }

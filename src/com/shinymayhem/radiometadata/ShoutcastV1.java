@@ -1,8 +1,21 @@
 package com.shinymayhem.radiometadata;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import android.util.Log;
 
 public class ShoutcastV1 implements Parser {
-
+	
+	//protected ActivityLogger mLogger = new ActivityLogger();
+	
 	@Override
 	public boolean parsesUrl(String url) {
 		//TODO
@@ -12,99 +25,85 @@ public class ShoutcastV1 implements Parser {
 		}
 		return false;
 	}
-
+	
 	@Override
-	public String getArtist(String url) {
-		// TODO Auto-generated method stub
-		return "shoutcast artist";
-		/*String str = "";
-		URL url;
+	public HashMap<String, String> getMetadata(String url)
+	{
+		
+		String info;
+		HashMap<String, String> map = new HashMap<String, String>();
 		try
 		{
-			url = new URL(urls[0] + "/7.html");
-			URLConnection con2 = url.openConnection();
-			con2.setRequestProperty("User-Agent", "Mozilla/5.0"); // This bugger right here saved the day!
-
-			Reader r = new InputStreamReader(con2.getInputStream());
-			StringBuilder buf = new StringBuilder();
-
-			while (true) {
-			    int ch = r.read();
-
-			    if (ch < 0)
-			        break;
-
-			    buf.append((char) ch);
-			}
-
-			str = buf.toString();
-			log("html:" + str, "d");
-			
+			info = this.getInfo(url);
+			String artist = info.substring(0, info.indexOf("-"));
+			String song = info.substring(info.indexOf("-") + 1);
+			map.put(Parser.KEY_ARTIST, artist);
+			map.put(Parser.KEY_SONG, song);
+		}
+		catch (StringIndexOutOfBoundsException e)
+		{
+			//no "-" found in info string
+			log("Not a valid metadata string", "d");
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
+			log("Malformed URL", "d");
 			e.printStackTrace();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
+			log("IO Exception", "d");
 			e.printStackTrace();
 		}
 		
-		XmlParser parser = new XmlParser(ServiceRadioPlayer.this);
-		try {
-			String result = parser.getStringFromTag("body", str);
-			log("result:" + result, "i");
-		} catch (IOException e) {
-			log("IOException", "e");
-			e.printStackTrace();
-		} catch (XmlPullParserException e) {
-			// TODO Auto-generated catch block
-			log("XmlPullParserException", "e");
-			e.printStackTrace();
+		return map;
+	}
+
+	private String getInfo(String url) throws MalformedURLException, IOException
+	{
+		String response = "";
+		
+		URL metadataUrl;
+		
+		metadataUrl = new URL(url + "/7.html");
+		URLConnection connection = metadataUrl.openConnection();
+		connection.setRequestProperty("User-Agent", "Mozilla/5.0");
+
+		Reader streamReader = new InputStreamReader(connection.getInputStream());
+		StringBuilder stringBuffer = new StringBuilder();
+		int ch;
+		while (true) {
+		    ch = streamReader.read();
+
+		    if (ch < 0)
+		        break;
+
+		    stringBuffer.append((char) ch);
 		}
-		return str;*/
-		/*
-		 Map<String, String> metadata = new HashMap<String, String>();
-		 String[] metaParts = result.split(",");
-	        Pattern p = Pattern.compile("^([a-zA-Z]+)=\\'(.*)\\'$"); //match pattern <characters>='<any>'
-	        Matcher m;
-	        for (int i = 0; i < metaParts.length; i++) {
-	            m = p.matcher(metaParts[i]);
-	            if (m.find()) {
-	            	String key = ((String) m.group(1)).trim();
-	            	String value = ((String) m.group(2)).trim();
-	                metadata.put(key, value);
-	            }
-	        }*/
-		/*try {
-			String artist = result.getArtist();
-			log("artist:" + artist, "d");
-			String streamTitle = result.getStreamTitle();
-			log("stream title:" + streamTitle, "v");
-			String song = result.getTitle();
-			log("song:" + song, "d");
-			if (!artist.equals(mArtist) || !song.equals(mSong)) //only update visible metadata if different
-			{
-				mArtist = artist;
-				mSong = song;
-				updateDetails();	
-			}
-			
-		} catch (StringIndexOutOfBoundsException e)
+
+		response = stringBuffer.toString();
+		log("7.html:" + response, "d");
+		
+		String info = "";
+		Pattern pattern = Pattern.compile("^.*<body>(.*)</body>.*$");
+		Matcher matcher;
+		matcher = pattern.matcher(response);
+		if (matcher.find())
 		{
-			log("no metadata available", "d");
-			mArtist = "";
-			mSong = "";
-			updateDetails();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			String content = matcher.group(1).trim();
+			String[] fields = content.split(",");
+			info = fields[fields.length-1];
+			log("content:" + content, "d");	
 		}
-		*/
+		else
+		{
+			log("body pattern not found", "d");
+		}
+		return info;
 	}
-
-	@Override
-	public String getSong(String url) {
-		// TODO Auto-generated method stub
-		return "shoutcast song";
+	
+	public void log(String text, String level)
+	{
+		Log.d("ShoutcastV1", text);
 	}
-
+	
+	
 }

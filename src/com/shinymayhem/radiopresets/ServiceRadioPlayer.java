@@ -58,6 +58,8 @@ import android.view.KeyEvent;
 import android.webkit.URLUtil;
 import android.widget.Toast;
 
+import com.shinymayhem.radiometadata.Parser;
+
 public class ServiceRadioPlayer extends Service implements OnPreparedListener, OnInfoListener, OnCompletionListener, OnErrorListener, OnAudioFocusChangeListener {
 	
 	public final static int ONGOING_NOTIFICATION = 1;
@@ -1180,7 +1182,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		String status = getResources().getString(R.string.status_stopped);
 		if (mCurrentPlayerState.equals(STATE_BUFFERING))
 		{
-			status = getResources().getString(R.string.status_stopped);
+			status = getResources().getString(R.string.status_buffering);
 		}
 		else if (mCurrentPlayerState.equals(STATE_PREPARING))
 		{
@@ -1813,33 +1815,16 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		@Override
 		protected HashMap<String, String> doInBackground(String... urls) {
 			String url = urls[0];
-			
-			HashMap<String, String> map = new HashMap<String, String>();
-			String artist = "";
-			String song = "";
-			
 			MetadataParser parser = new MetadataParser();
-			boolean parses = parser.setUrl(url);
-			if (parses)
-			{
-				artist = parser.getArtist();
-				song = parser.getSong();	
-			}
-			
-			
-			map.put("artist", artist);
-			map.put("song", song);
-			return map;
+			return parser.getMetadata(url); 
 		}
 		
 		
 		//TODO find out if it is ok that this is an inner class (what if service dies before onPostExecute is reached?)
 		@Override protected void onPostExecute(HashMap<String, String> map)
 		{
-			String artist = map.get("artist");
-			String song = map.get("song");
-			mArtist = artist;
-			mSong = song;
+			mArtist = (map.containsKey(Parser.KEY_ARTIST))?map.get(Parser.KEY_ARTIST):"";
+			mSong = (map.containsKey(Parser.KEY_SONG))?map.get(Parser.KEY_SONG):"";
 			updateDetails();
 		}
 
