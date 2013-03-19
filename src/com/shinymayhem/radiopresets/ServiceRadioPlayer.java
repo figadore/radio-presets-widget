@@ -113,7 +113,8 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	protected ActivityLogger mLogger = new ActivityLogger();
 	protected Intent mIntent;
 	protected NotificationManager mNotificationManager;
-	protected Handler mMetadataHandler = new Handler(); 
+	protected Handler mMetadataHandler = new Handler();
+	protected MetadataRunnable mMetadataRunnable = new MetadataRunnable();
 	
 	public class LocalBinder extends Binder
 	{
@@ -752,24 +753,61 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			//Toast.makeText(this, "Preparing", Toast.LENGTH_SHORT).show();
 			log("get metadata", "v");
 			
-			mMetadataHandler.post(new Runnable(){
-
-				@Override
-				public void run() {
-					log("run metadata handler runnable", "d");
-					AsyncTaskMetadata task = new AsyncTaskMetadata();
-					//TODO handle io exceptions, probably from this or sub function, probably network related
-					if (isConnected() && shouldPlay())
-					{
-						task.execute(mUrl);
-						mMetadataHandler.postDelayed(this, METADATA_REFRESH_INTERVAL);
-					}
-				}
-				
-			});
+			if (mMetadataRunnable.isRunning())
+			{
+				log("metadata runnable is running", "d");
+			}
+			else
+			{
+				log("metadata runnable is not running", "d");
+				mMetadataRunnable.init();
+				//mMetadataHandler.post(mMetadataRunnable);	
+			}
+			
 		}
 		
 		
+	}
+	
+	private class MetadataRunnable implements Runnable
+	{
+		private boolean run = false;
+		public boolean isRunning()
+		{
+			return run;
+		}
+		
+		public void init()
+		{
+			log("init metadata runnable", "d");
+			run = true;
+			run();
+		}
+		
+		@Override
+		public void run() {
+			if (run)
+			{
+				log("run metadata handler runnable", "d");
+				AsyncTaskMetadata task = new AsyncTaskMetadata();
+				if (isConnected() && shouldPlay())
+				{
+					log("collect metadata", "d");
+					task.execute(mUrl);
+					mMetadataHandler.postDelayed(this, METADATA_REFRESH_INTERVAL);
+					
+				}
+				else
+				{
+					log("no network or not playing, stop collecting metadata", "d");
+					run = false;
+				}
+			}
+			else
+			{
+				log("don't run", "d");
+			}
+		}
 	}
 
 	//stop music but keep notification and mPreset
@@ -792,6 +830,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	//safe way to completely stop mediaplayer from any state
 	protected void stopAndReleasePlayer(MediaPlayer player)
 	{
+		//TODO need to release looping background metadata task here somehow too
 		log("stopAndReleasePlayer()", "v");
 		if (player != null)
 		{
