@@ -81,6 +81,38 @@
         style="@style/borderlessButtonStyle"
         android:src="@drawable/av_next"
         android:onClick="next" />
+    <ImageButton
+        android:id="@+id/dislike_button"
+        android:tag="unselected"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toLeftOf="@id/prev_button"
+        android:layout_below="@id/player_playing"
+        android:paddingBottom="@dimen/player_vertical_padding"
+	    android:paddingTop="@dimen/player_vertical_padding"
+        android:paddingLeft="@dimen/player_horizontal_padding"
+        android:paddingRight="@dimen/player_horizontal_padding"
+        android:contentDescription="@string/previous"
+        style="@style/borderlessButtonStyle"
+        android:src="@drawable/song_dislike"
+        android:onClick="dislike"
+        />
+    <ImageButton
+        android:id="@+id/like_button"
+        android:tag="unselected"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/next_button"
+        android:layout_below="@id/player_playing"
+        android:paddingBottom="@dimen/player_vertical_padding"
+	    android:paddingTop="@dimen/player_vertical_padding"
+        android:paddingLeft="@dimen/player_horizontal_padding"
+        android:paddingRight="@dimen/player_horizontal_padding"
+        android:contentDescription="@string/next"
+        style="@style/borderlessButtonStyle"
+        android:src="@drawable/song_like"
+        android:onClick="like"
+        />
     <FrameLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"

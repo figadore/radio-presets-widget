@@ -28,6 +28,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.database.sqlite.SQLiteException;
+import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -41,6 +42,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.shinymayhem.radiopresets.DbContractRadio.DbHelperRadio;
@@ -401,6 +403,51 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 	{
 		log("prev()", "v");
 		mService.previousPreset();
+	}
+	
+	public void like(View view)
+	{
+		ImageButton button = (ImageButton)view;
+		String tag = (String) button.getTag();
+		Drawable selected = getResources().getDrawable(R.drawable.song_like_selected);
+		Drawable unselected = getResources().getDrawable(R.drawable.song_like);
+		if (tag.equals("selected"))
+		{
+			button.setImageDrawable(unselected);
+			button.setTag("unselected");
+		}
+		else if (tag.equals("unselected"))
+		{
+			button.setImageDrawable(selected);
+			button.setTag("selected");
+		}
+		else
+		{
+			throw new IllegalStateException("Button not selected or unselected");
+		}
+		
+	}
+	
+	public void dislike(View view)
+	{
+		ImageButton button = (ImageButton)view;
+		String tag = (String) button.getTag();
+		Drawable selected = getResources().getDrawable(R.drawable.song_dislike_selected);
+		Drawable unselected = getResources().getDrawable(R.drawable.song_dislike);
+		if (tag.equals("selected"))
+		{
+			button.setImageDrawable(unselected);
+			button.setTag("unselected");
+		}
+		else if (tag.equals("unselected"))
+		{
+			button.setImageDrawable(selected);
+			button.setTag("selected");
+		}
+		else
+		{
+			throw new IllegalStateException("Button not selected or unselected");
+		}
 	}
 	
 /*
