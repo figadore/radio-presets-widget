@@ -7,6 +7,7 @@ import java.util.List;
 
 import android.util.Log;
 
+import com.shinymayhem.radiometadata.JazzRadio;
 import com.shinymayhem.radiometadata.Parser;
 import com.shinymayhem.radiometadata.ShoutcastV1;
 
@@ -14,7 +15,8 @@ public class MetadataParser {
 	
 	//TODO these should be ordered by most popular first
 	private final List<Parser> parsers = new ArrayList<Parser>(Arrays.asList(
-			new ShoutcastV1()
+			new ShoutcastV1(),
+			new JazzRadio()
 	));
 	protected Parser mParser;
 	protected String mUrl;

@@ -3,6 +3,7 @@ package com.shinymayhem.radiometadata;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -18,11 +19,24 @@ public class ShoutcastV1 implements Parser {
 	
 	@Override
 	public boolean parsesUrl(String url) {
-		//TODO
-		if (url.equals("http://streamplus17.leonex.de:39060"))
-		{
-			return true;
-		}
+		
+		try {
+            URL metadataUrl = new URL(url + "/7.html");
+            HttpURLConnection urlc = (HttpURLConnection) metadataUrl.openConnection();
+            urlc.setRequestProperty("User-Agent", "Mozilla/5.0");
+            urlc.setRequestProperty("Connection", "close");
+            urlc.setConnectTimeout(30 * 1000); // Thirty seconds timeout in milliseconds
+            urlc.connect();
+            if (urlc.getResponseCode() == 200) { // Good response
+                return true;
+            }
+        } catch (IOException e) {
+            //fail silently
+        }
+//		if (url.equals("http://streamplus17.leonex.de:39060"))
+//		{
+//			return true;
+//		}
 		return false;
 	}
 	

@@ -755,11 +755,11 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			
 			if (mMetadataRunnable.isRunning())
 			{
-				log("metadata runnable is running", "d");
+				//log("metadata runnable is running", "d");
 			}
 			else
 			{
-				log("metadata runnable is not running", "d");
+				//log("metadata runnable is not running", "d");
 				mMetadataRunnable.init();
 				//mMetadataHandler.post(mMetadataRunnable);	
 			}
@@ -788,11 +788,11 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		public void run() {
 			if (run)
 			{
-				log("run metadata handler runnable", "d");
+				//log("run metadata handler runnable", "v");
 				AsyncTaskMetadata task = new AsyncTaskMetadata();
 				if (isConnected() && shouldPlay())
 				{
-					log("collect metadata", "d");
+					//log("collect metadata", "d");
 					task.execute(mUrl);
 					mMetadataHandler.postDelayed(this, METADATA_REFRESH_INTERVAL);
 					
@@ -1862,9 +1862,19 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		//TODO find out if it is ok that this is an inner class (what if service dies before onPostExecute is reached?)
 		@Override protected void onPostExecute(HashMap<String, String> map)
 		{
-			mArtist = (map.containsKey(Parser.KEY_ARTIST))?map.get(Parser.KEY_ARTIST):"";
-			mSong = (map.containsKey(Parser.KEY_SONG))?map.get(Parser.KEY_SONG):"";
-			updateDetails();
+			String newArtist = (map.containsKey(Parser.KEY_ARTIST))?map.get(Parser.KEY_ARTIST):"";
+			String newSong = (map.containsKey(Parser.KEY_SONG))?map.get(Parser.KEY_SONG):"";
+			if (!newSong.equals(mSong) || !newArtist.equals(newArtist))
+			{
+				mArtist = newArtist;
+				mSong = newSong;
+				updateDetails();	
+			}
+			else
+			{
+				log("same metadata", "v");
+			}
+			
 		}
 
 	}

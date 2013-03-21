@@ -14,7 +14,7 @@ public interface Parser {
 	/**
 	 * Check whether the Parser should handle metadata for the URL
 	 * 
-	 * @param url
+	 * @param url Streaming media url
 	 * @return	Whether the parser reads metadata at the specified URL
 	 */
 	public boolean parsesUrl(String url);

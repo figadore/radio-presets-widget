@@ -5,7 +5,7 @@
     android:minResizeHeight="30dp"
     android:initialLayout="@layout/widget_initial_layout"
     android:resizeMode="vertical|horizontal"
-    android:widgetCategory="home_screen"
+    android:widgetCategory="home_screen|keyguard"
 	>
 </appwidget-provider>
 <!-- android:initialLayout="@layout/widget_initial_layout"
