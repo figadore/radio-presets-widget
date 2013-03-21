@@ -103,7 +103,7 @@ public class ShoutcastV1 implements Parser {
 		if (matcher.find())
 		{
 			String content = matcher.group(1).trim();
-			String[] fields = content.split(",");
+			String[] fields = content.split(",", 7);
 			info = fields[fields.length-1];
 			log("content:" + content, "d");	
 		}
