@@ -66,10 +66,14 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	//public final static String ACTION = "com.shinymayhem.radiopresets.ACTION";
 	public final static String ACTION_STOP = "com.shinymayhem.radiopresets.ACTION_STOP";
 	public final static String ACTION_PLAY = "com.shinymayhem.radiopresets.ACTION_PLAY";
+	public final static String ACTION_PLAY_STREAM = "com.shinymayhem.radiopresets.ACTION_PLAY_STREAM";
 	public final static String ACTION_NEXT = "com.shinymayhem.radiopresets.ACTION_NEXT";
 	public final static String ACTION_PREVIOUS = "com.shinymayhem.radiopresets.ACTION_PREVIOUS";
 	public final static String ACTION_MEDIA_BUTTON = "com.shinymayhem.radiopresets.MEDIA_BUTTON";
 	public final static String ACTION_UPDATE_WIDGET = "com.shinymayhem.radiopresets.ACTION_UPDATE_WIDGET";
+	public final static String ACTION_STREAM_ERROR = "com.shinymayhem.radiopresets.ACTION_STREAM_ERROR";
+	public final static String ACTION_FORMAT_ERROR = "com.shinymayhem.radiopresets.ACTION_FORMAT_ERROR";
+	public final static String ACTION_UNSUPPORTED_FORMAT_ERROR = "com.shinymayhem.radiopresets.ACTION_UNSUPPORTED_FORMAT_ERROR";
 	private String mCurrentPlayerState = STATE_UNINITIALIZED;
 	public final static String STATE_UNINITIALIZED = "Uninitialized";
 	public final static String STATE_INITIALIZING = "Initializing";
@@ -88,6 +92,11 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	public final static String STATE_END = "Ended";
 	public final static String EXTRA_METADATA_ARTIST = "artist";
 	public final static String EXTRA_METADATA_SONG = "song";
+	public final static String EXTRA_URL = "com.shinymayhem.radiopresets.EXTRA_URL";
+	public final static String EXTRA_RESPONSE_CODE = "com.shinymayhem.radiopresets.EXTRA_RESPONSE_CODE";
+	public final static String EXTRA_UPDATE_URL = "com.shinymayhem.radiopresets.EXTRA_UPDATE_URL";
+	public final static String EXTRA_ERROR_MESSAGE = "com.shinymayhem.radiopresets.EXTRA_ERROR_MESSAGE";
+	public final static String EXTRA_FORMAT = "com.shinymayhem.radiopresets.EXTRA_FORMAT";
 	public final static int NETWORK_STATE_DISCONNECTED = -1;
 	public final static int METADATA_REFRESH_INTERVAL = 10000;
 	protected NetworkInfo mNetworkInfo;
@@ -184,6 +193,64 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 				play(preset);
 				//return START_REDELIVER_INTENT;
 				return START_NOT_STICKY; 
+			}
+			else if (action.equals(ACTION_PLAY_STREAM.toString())) //Play intent
+			{
+				log("PLAY_STREAM action in intent", "v");
+				String url = intent.getStringExtra(EXTRA_URL);	
+				log("url in action:" + url, "v");
+				//check whether the url should be updated (for metadata retrieval purposes)
+				boolean updateUrl = intent.getBooleanExtra(EXTRA_UPDATE_URL, false);
+				if (updateUrl)
+				{
+					mUrl = url;
+				}
+				playUrl(url);
+				//return START_REDELIVER_INTENT;
+				return START_NOT_STICKY; 
+			}
+			else if (action.equals(ACTION_UNSUPPORTED_FORMAT_ERROR.toString()))
+			{
+				log("Known unsupported format", "d");
+				String format = intent.getStringExtra(EXTRA_FORMAT);
+				String title = getResources().getString(R.string.error_title);
+				String message = getResources().getString(R.string.error_format) + ":" + format;
+				mCurrentPlayerState = ServiceRadioPlayer.STATE_ERROR;
+				//set 'now playing' to error
+				stopInfo(getResources().getString(R.string.status_error));
+				this.getErrorNotification(title, message);
+				return START_NOT_STICKY;
+			}
+			else if (action.equals(ACTION_FORMAT_ERROR.toString()))
+			{
+				log("Url was unable to play", "d");
+				String message = intent.getStringExtra(EXTRA_ERROR_MESSAGE);
+				String title = getResources().getString(R.string.error_title);
+				mCurrentPlayerState = ServiceRadioPlayer.STATE_ERROR;
+				//set 'now playing' to error
+				stopInfo(getResources().getString(R.string.status_error));
+				this.getErrorNotification(title, message);
+				return START_NOT_STICKY;
+			}
+			else if (action.equals(ACTION_STREAM_ERROR.toString()))
+			{
+				log("Stream error", "d");
+				int responseCode = intent.getIntExtra(EXTRA_RESPONSE_CODE, 0);
+				String title = getResources().getString(R.string.error_title);
+				String message;
+				switch (responseCode)
+				{
+					case 404:
+						message = getResources().getString(R.string.error_not_found);
+						break;
+					default:
+						message = getResources().getString(R.string.error_unknown);
+				}
+				mCurrentPlayerState = ServiceRadioPlayer.STATE_ERROR;
+				//set 'now playing' to error
+				stopInfo(getResources().getString(R.string.status_error));
+				this.getErrorNotification(title, message);
+				return START_NOT_STICKY;
 			}
 			else if (action.equals(ACTION_NEXT.toString())) //Next preset intent
 			{
@@ -696,8 +763,9 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		}
 		
 		this.mPreset = preset; 
-		
+		//set instance variables like mUrl, etc
 		setStationData(preset);
+		
 		if (!isConnected())
 		{
 			mCurrentPlayerState = ServiceRadioPlayer.STATE_WAITING_FOR_NETWORK;
@@ -707,6 +775,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		else
 		{
 			mCurrentPlayerState = ServiceRadioPlayer.STATE_INITIALIZING;
+			
 			log("setting network type", "v");
 			mNetworkState = this.getConnectionType();
 			this.mPreset = preset;
@@ -722,52 +791,71 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			
 			log("creating new media player", "v");
 			this.mMediaPlayer = new MediaPlayer();
-			
 			mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);	
 			
-			//str += mUrl;
-			log("setting datasource for '" + mTitle + "' at '" + mUrl + "'", "v");
-			try
-			{
-				mMediaPlayer.setDataSource(mUrl);
-			}
-			catch (IOException e) 
-			{
-				//TODO handle this somehow, let user know
-				log("setting data source failed", "e");
-				Toast.makeText(this, "Setting data source failed", Toast.LENGTH_SHORT).show();
-				e.printStackTrace();
-			}
-			initializePlayer(mMediaPlayer); 
-
-			mCurrentPlayerState = ServiceRadioPlayer.STATE_PREPARING;
-			
 			this.startForegroundNotification(getResources().getString(R.string.status_preparing), getResources().getString(R.string.cancel), true);
-			//mNotificationManager.notify(ONGOING_NOTIFICATION, notification);
-			//startForeground(ONGOING_NOTIFICATION, notification);
-			//updateDetails("Preparing");
-		
-			mMediaPlayer.prepareAsync(); // might take long! (for buffering, etc)
-			log("preparing async", "v");
 			
-			//Toast.makeText(this, "Preparing", Toast.LENGTH_SHORT).show();
-			log("get metadata", "v");
+			//start service that gets an audio stream from a url
+			Intent intent = new Intent(this, ServiceAudioFormat.class);
+			intent.putExtra(EXTRA_URL, mUrl);
+			startService(intent);
 			
-			if (mMetadataRunnable.isRunning())
-			{
-				//log("metadata runnable is running", "d");
-			}
-			else
-			{
-				//log("metadata runnable is not running", "d");
-				mMetadataRunnable.init();
-				//mMetadataHandler.post(mMetadataRunnable);	
-			}
 			
 		}
+	}
+	
+	private void playUrl(String url)
+	{
+		mCurrentPlayerState = ServiceRadioPlayer.STATE_PREPARING;
+		//get playlist data
+		AsyncTaskPlaylist playlist = new AsyncTaskPlaylist();
+		playlist.execute(mUrl);
+		log("get metadata", "v");
+		if (!mMetadataRunnable.isRunning())
+		{
+			mMetadataRunnable.init();	
+		}	
 		
+		//play url
+		try {
+			//str += mUrl;
+			log("setting datasource for '" + mTitle + "' at '" + url + "'", "v");
+			mMediaPlayer.setDataSource(url);
+			initializePlayer(mMediaPlayer); 
+			
+		} catch (IllegalArgumentException e) {
+			// TODO Auto-generated catch block
+			log("setting data source failed", "e");
+			e.printStackTrace();
+		} catch (SecurityException e) {
+			// TODO Auto-generated catch block
+			log("setting data source failed", "e");
+			e.printStackTrace();
+		} catch (IllegalStateException e) {
+			// TODO Auto-generated catch block
+			log("setting data source failed", "e");
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			//TODO handle this somehow, let user know
+			log("setting data source failed", "e");
+			e.printStackTrace();
+		}
+		
+		mMediaPlayer.prepareAsync(); // might take long! (for buffering, etc)
+		log("preparing async", "v");
 		
 	}
+	
+	public class AsyncTaskPlaylist extends AsyncTask<String, Void, Void> {
+
+		@Override
+		protected Void doInBackground(String... urls) {
+			return null;
+		}
+
+	}
+	
 	
 	private class MetadataRunnable implements Runnable
 	{
@@ -779,7 +867,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		
 		public void init()
 		{
-			log("init metadata runnable", "d");
+			log("init metadata runnable", "v");
 			run = true;
 			run();
 		}
@@ -799,13 +887,13 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 				}
 				else
 				{
-					log("no network or not playing, stop collecting metadata", "d");
+					log("no network or not playing, stop collecting metadata", "v");
 					run = false;
 				}
 			}
 			else
 			{
-				log("don't run", "d");
+				log("don't run", "v");
 			}
 		}
 	}

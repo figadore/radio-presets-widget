@@ -37,7 +37,14 @@
             android:name="com.shinymayhem.radiopresets.ServiceRadioPlayer"
             android:enabled="true"
             android:permission="android.permission.INTERNET"
-            android:exported="true" >
+            android:exported="false" >
+        </service>
+        
+        <service
+            android:name="com.shinymayhem.radiopresets.ServiceAudioFormat"
+            android:enabled="true"
+            android:permission="android.permission.INTERNET"
+            android:exported="false" >
         </service>
         
         <provider

@@ -515,7 +515,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 	//calls service's method which sends a broadcast to widget and activity player with current details
 	public void updateDetails()
 	{
-		log("updateDetails()", "d");
+		log("updateDetails()", "v");
 		if (mService == null)
 		{
 			log("service not bound", "e");
