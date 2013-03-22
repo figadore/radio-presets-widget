@@ -100,7 +100,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
 	public void refresh()
 	{
 		//async task? possibly responsible for slow response times
-		log("refresh()", "d");
+		log("refresh()", "v");
 		getLoaderManager().restartLoader(ActivityMain.LOADER_STATIONS, null, this);
 		getListView().refreshDrawableState();
 	}
