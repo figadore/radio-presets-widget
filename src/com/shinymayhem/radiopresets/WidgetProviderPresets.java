@@ -38,6 +38,8 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 	protected RemoteViews mViews;
 	protected Context mContext;
 	protected int mPreset = 0;
+	protected boolean mLiked = false;
+	protected boolean mDisliked = false;
 	protected Intent mMainIntent;
 	private final int MIN_BUTTON_WIDTH = 65; //TODO get from preferences
 	private final int FIXED_WIDTH = 294;
@@ -84,7 +86,7 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 		String action = intent.getAction();
 		//log(action,"v");
 		//log(ActivityMain.ACTION_UPDATE_TEXT,"v");
-		if (action.equals(ActivityMain.ACTION_UPDATE_TEXT))
+		if (action.equals(ActivityMain.ACTION_UPDATE_INFO))
 		{
 			//log("update text action", "v");
 			Bundle extras = intent.getExtras();
@@ -93,7 +95,9 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 			String status = extras.getString(ActivityMain.EXTRA_STATUS);
 			String artist = extras.getString(ActivityMain.EXTRA_ARTIST);
 			String song = extras.getString(ActivityMain.EXTRA_SONG);
-			this.updateText(station, status, artist, song, preset);
+			boolean liked = extras.getBoolean(ActivityMain.EXTRA_LIKED);
+			boolean disliked = extras.getBoolean(ActivityMain.EXTRA_DISLIKED);
+			this.updateInfo(station, status, artist, song, preset, liked, disliked);
 		}
 		else
 		{
@@ -158,19 +162,24 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 	}
 	
 	@SuppressLint("NewApi")
-	private void updateText(String station, String status, String artist, String song, int preset)
+	private void updateInfo(String station, String status, String artist, String song, int preset, boolean liked, boolean disliked)
 	{
 		log("updating text:" + station + "," + status, "v");
 		
-		if (status.equals(mContext.getResources().getString(R.string.status_stopped)) 
+		if (
+				status.equals(mContext.getResources().getString(R.string.status_stopped)) 
 				//|| status.equals(mContext.getResources().getString(R.string.status_error))
-				)
+			)
 		{
 			mPreset = 0;
+			mLiked = false;
+			mDisliked = false;
 		}
 		else
 		{
 			mPreset = preset;
+			mLiked = liked;
+			mDisliked = disliked;
 		}
 		
 		//mContext = context;
@@ -294,10 +303,28 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 				.setFlags(0)
 				.setAction(ServiceRadioPlayer.ACTION_NEXT)
 				.setClass(mContext, ServiceRadioPlayer.class);
-		return PendingIntent.getService(mContext, 0, intent, 0);
-			 
+		return PendingIntent.getService(mContext, 0, intent, 0);		 
 	}
 	
+	private PendingIntent getLikeIntent(boolean like)
+	{
+		Intent intent = getMainIntent()
+				.setFlags(0)
+				.setAction(ServiceRadioPlayer.ACTION_LIKE)
+				.putExtra(ServiceRadioPlayer.EXTRA_SET_TRUE, like)
+				.setClass(mContext, ServiceRadioPlayer.class);
+		return PendingIntent.getService(mContext, 0, intent, 0);		 
+	}
+	
+	private PendingIntent getDislikeIntent(boolean dislike)
+	{
+		Intent intent = getMainIntent()
+				.setFlags(0)
+				.setAction(ServiceRadioPlayer.ACTION_DISLIKE)
+				.putExtra(ServiceRadioPlayer.EXTRA_SET_TRUE, dislike)
+				.setClass(mContext, ServiceRadioPlayer.class);
+		return PendingIntent.getService(mContext, 0, intent, 0);		 
+	}
 	
 	private PendingIntent getPresetIntent(int preset)
 	{
@@ -340,8 +367,30 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 		PendingIntent stopIntent = this.getStopIntent();
 		mViews.setOnClickPendingIntent(R.id.widget_stop, stopIntent);
 		
+		if (mLiked)
+		{
+			mViews.setImageViewResource(R.id.widget_like_button, R.drawable.song_like_selected);
+		}
+		else
+		{
+			mViews.setImageViewResource(R.id.widget_like_button, R.drawable.song_like);
+		}
 		PendingIntent nextIntent = this.getNextIntent();
 		mViews.setOnClickPendingIntent(R.id.widget_next, nextIntent);
+		
+		if (mDisliked)
+		{
+			mViews.setImageViewResource(R.id.widget_dislike_button, R.drawable.song_dislike_selected);
+		}
+		else
+		{
+			mViews.setImageViewResource(R.id.widget_dislike_button, R.drawable.song_dislike);
+		}
+		PendingIntent likeIntent = this.getLikeIntent(!mLiked);
+		mViews.setOnClickPendingIntent(R.id.widget_like_button, likeIntent);
+		
+		PendingIntent dislikeIntent = this.getDislikeIntent(!mDisliked);
+		mViews.setOnClickPendingIntent(R.id.widget_dislike_button, dislikeIntent);
 		
 		setPresets(options);
         

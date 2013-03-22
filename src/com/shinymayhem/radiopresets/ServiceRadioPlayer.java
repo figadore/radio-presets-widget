@@ -69,6 +69,8 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	public final static String ACTION_PLAY_STREAM = "com.shinymayhem.radiopresets.ACTION_PLAY_STREAM";
 	public final static String ACTION_NEXT = "com.shinymayhem.radiopresets.ACTION_NEXT";
 	public final static String ACTION_PREVIOUS = "com.shinymayhem.radiopresets.ACTION_PREVIOUS";
+	public final static String ACTION_LIKE = "com.shinymayhem.radiopresets.ACTION_LIKE";
+	public final static String ACTION_DISLIKE = "com.shinymayhem.radiopresets.ACTION_DISLIKE";
 	public final static String ACTION_MEDIA_BUTTON = "com.shinymayhem.radiopresets.MEDIA_BUTTON";
 	public final static String ACTION_UPDATE_WIDGET = "com.shinymayhem.radiopresets.ACTION_UPDATE_WIDGET";
 	public final static String ACTION_STREAM_ERROR = "com.shinymayhem.radiopresets.ACTION_STREAM_ERROR";
@@ -97,6 +99,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	public final static String EXTRA_UPDATE_URL = "com.shinymayhem.radiopresets.EXTRA_UPDATE_URL";
 	public final static String EXTRA_ERROR_MESSAGE = "com.shinymayhem.radiopresets.EXTRA_ERROR_MESSAGE";
 	public final static String EXTRA_FORMAT = "com.shinymayhem.radiopresets.EXTRA_FORMAT";
+	public final static String EXTRA_SET_TRUE = "com.shinymayhem.radiopresets.EXTRA_SET_TRUE";
 	public final static int NETWORK_STATE_DISCONNECTED = -1;
 	public final static int METADATA_REFRESH_INTERVAL = 10000;
 	protected NetworkInfo mNetworkInfo;
@@ -1130,19 +1133,21 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	//convenience method
 	protected Intent getDetailsUpdateIntent(String station, String status)
 	{
-		return this.getDetailsUpdateIntent(station, status, getArtist(), getSong(), getPlayingPreset());
+		return this.getDetailsUpdateIntent(station, status, getArtist(), getSong(), getPlayingPreset(), isSongLiked(), isSongDisliked());
 	}
 	
-	protected Intent getDetailsUpdateIntent(String station, String status, String artist, String song, int preset)
+	protected Intent getDetailsUpdateIntent(String station, String status, String artist, String song, int preset, boolean liked, boolean disliked)
 	{
 		//Intent intent = new Intent(this, com.shinymayhem.radiopresets.WidgetProviderPresets.class);
-		Intent intent = new Intent(ActivityMain.ACTION_UPDATE_TEXT);
+		Intent intent = new Intent(ActivityMain.ACTION_UPDATE_INFO);
 		//intent.setAction(ActivityMain.ACTION_UPDATE_TEXT);
 		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_PRESET, preset);
 		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_STATION, station);
 		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_STATUS, status);
 		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_ARTIST, artist);
 		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_SONG, song);
+		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_LIKED, liked);
+		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_DISLIKED, disliked);
         //intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
         return intent;
 	}
@@ -1359,6 +1364,19 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		}
 		return song;
 	}
+	
+	private boolean isSongLiked()
+	{
+		//check mSong and mArtist (lowercased) against like table
+		return false;
+	}
+	
+	private boolean isSongDisliked()
+	{
+		//check mSong and mArtist (lowercased) against dislike table
+		return false;
+	}
+	
 	
 	protected void setStationData(int preset)
 	{
