@@ -30,6 +30,7 @@ import org.apache.http.HttpException;
 import android.app.IntentService;
 import android.content.Intent;
 import android.os.IBinder;
+import android.webkit.URLUtil;
 
 public class ServiceAudioFormat extends IntentService {
 	
@@ -255,7 +256,12 @@ public class ServiceAudioFormat extends IntentService {
 		String line;
 		while ((line = reader.readLine()) != null)
 		{
-			log("read line:" + line, "v");
+			log("read line:" + line, "d");
+			if (!line.startsWith("#") && URLUtil.isHttpUrl(line) || URLUtil.isHttpsUrl(line))
+			{
+				newUrl = line;
+				break;
+			}
 		}
 		return newUrl;
 	}
@@ -272,7 +278,12 @@ public class ServiceAudioFormat extends IntentService {
 		String line;
 		while ((line = reader.readLine()) != null)
 		{
-			log("read line:" + line, "v");
+			log("read line:" + line, "d");
+			if (line.startsWith("File"))
+			{
+				newUrl = line.substring(line.indexOf("=") + 1);
+				break;
+			}
 		}
 		return newUrl;
 	}
@@ -289,7 +300,7 @@ public class ServiceAudioFormat extends IntentService {
 		String line;
 		while ((line = reader.readLine()) != null)
 		{
-			log("read line:" + line, "v");
+			log("read line:" + line, "d");
 		}
 		return newUrl;
 	}
