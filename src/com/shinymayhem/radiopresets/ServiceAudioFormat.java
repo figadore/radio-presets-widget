@@ -76,6 +76,7 @@ public class ServiceAudioFormat extends IntentService {
 		} catch (StreamHttpException e) {
 			updateIntent.setAction(ServiceRadioPlayer.ACTION_STREAM_ERROR);
 			updateIntent.putExtra(ServiceRadioPlayer.EXTRA_RESPONSE_CODE, e.getResponseCode());
+			updateIntent.putExtra(ServiceRadioPlayer.EXTRA_RESPONSE_MESSAGE, e.getResponseMessage());
 		} catch (MalformedURLException e) {
 			updateIntent.setAction(ServiceRadioPlayer.ACTION_FORMAT_ERROR);
 			updateIntent.putExtra(ServiceRadioPlayer.EXTRA_ERROR_MESSAGE, getResources().getString(R.string.error_url));
@@ -91,6 +92,17 @@ public class ServiceAudioFormat extends IntentService {
 		
 	}
 
+	protected void handleHttpResponse(int responseCode, String message) throws IOException, StreamHttpException
+	{
+		//String message = con.getResponseMessage();
+    	log("Server response code:" + String.valueOf(responseCode) + ", message:" +  message, "i");
+    	if (responseCode < 200 || responseCode >= 300)
+    	{
+    		throw new StreamHttpException(responseCode, message);	
+    	}
+    	
+	}
+	
 	protected AudioType processUrl(String url) throws StreamHttpException, IOException {
 		//TODO make recursive, if playlist within playlist
 		//check url first, it is fastest, no network connections needed
@@ -98,20 +110,16 @@ public class ServiceAudioFormat extends IntentService {
 		//now try to handle cases where type could not be determined by url
 		if (type.equals(AudioType.UNKNOWN))
 		{
-			URL streamUrl;
-			streamUrl = new URL(url);
+			//URL streamUrl;
+			/*streamUrl = new URL(url);
 
 			HttpURLConnection con;
 			con = (HttpURLConnection)streamUrl.openConnection();
 			con.setRequestProperty("Connection", "close");
 	        con.connect();
-	        if (con.getResponseCode() > 400)
-	        {
-	        	throw new StreamHttpException(con.getResponseCode(), "Error getting input stream");
-	        }
-	        Map<String, List<String>> headers = con.getHeaderFields();
-	        
-	        mStream = con.getInputStream();
+	        */
+			
+	        Map<String, List<String>> headers = this.getInputStream(url); //con.getInputStream();
 	        
 	        //InputStream stream = con.getInputStream();
 	        if (headers.containsKey("Content-Type")) {
@@ -249,7 +257,7 @@ public class ServiceAudioFormat extends IntentService {
 		log("getUrlFromM3u()", "d");
 		if (mStream == null)
 		{
-			mStream = getInputStream(url);
+			getInputStream(url);
 		}
 		String newUrl = url;
 		BufferedReader reader = new BufferedReader(new InputStreamReader(mStream));
@@ -271,7 +279,7 @@ public class ServiceAudioFormat extends IntentService {
 		log("getUrlFromPls()", "d");
 		if (mStream == null)
 		{
-			mStream = getInputStream(url);
+			getInputStream(url);
 		}
 		String newUrl = url;
 		BufferedReader reader = new BufferedReader(new InputStreamReader(mStream));
@@ -293,7 +301,7 @@ public class ServiceAudioFormat extends IntentService {
 		log("getUrlFromXspf()", "d");
 		if (mStream == null)
 		{
-			mStream = getInputStream(url);
+			getInputStream(url);
 		}
 		String newUrl = url;
 		BufferedReader reader = new BufferedReader(new InputStreamReader(mStream));
@@ -305,18 +313,49 @@ public class ServiceAudioFormat extends IntentService {
 		return newUrl;
 	}
 	
-	private InputStream getInputStream(String url) throws IOException, StreamHttpException
+	private Map<String, List<String>> getInputStream(String url) throws IOException, StreamHttpException
 	{
+		/*
+		URL streamUrl = new URL(url);
+		StreamURLConnection con;
+		con = (StreamURLConnection)streamUrl.openConnection();
+		con.setRequestProperty("Connection", "close");
+        con.connect();
+        int responseCode = con.getResponseCode(); 
+        if (responseCode < 200 || responseCode >= 300)
+        {
+        	this.handleHttpError(con);
+        }*/
 		URL streamUrl = new URL(url);
 		HttpURLConnection con;
 		con = (HttpURLConnection)streamUrl.openConnection();
 		con.setRequestProperty("Connection", "close");
         con.connect();
-        if (con.getResponseCode() > 400)
-        {
-        	throw new StreamHttpException(con.getResponseCode(), "Error getting input stream");
+        Map<String, List<String>> headers = con.getHeaderFields();
+		String statusLine = con.getHeaderField(0);
+        String message = "";
+        int responseCode = -1;
+        if (statusLine.startsWith("HTTP/1.") || statusLine.startsWith("ICY")) {
+            int codePos = statusLine.indexOf(' ');
+            if (codePos > 0) {
+
+                int phrasePos = statusLine.indexOf(' ', codePos+1);
+                if (phrasePos > 0 && phrasePos < statusLine.length()) {
+                    message = statusLine.substring(phrasePos+1);
+                }
+
+                if (phrasePos < 0)
+                    phrasePos = statusLine.length();
+
+                try {
+                    responseCode = Integer.parseInt(statusLine.substring(codePos+1, phrasePos));
+                } catch (NumberFormatException e) { }
+            }
         }
-        return con.getInputStream();
+         
+        this.handleHttpResponse(responseCode, message);
+        mStream = con.getInputStream();
+        return headers;
 	}
 	
 	private void log(String text, String level)
@@ -333,14 +372,20 @@ public class ServiceAudioFormat extends IntentService {
 	private class StreamHttpException extends HttpException
 	{
 		private static final long serialVersionUID = 2499906481918509156L;
-		private int responseCode;
-		public StreamHttpException(int responseCode, String message)
+		private int mResponseCode;
+		private String mResponseMessage;
+		public StreamHttpException(int responseCode, String responseMessage)
 		{
-			this.responseCode=responseCode;
+			this.mResponseCode=responseCode;
+			this.mResponseMessage=responseMessage;
 		}
 		public int getResponseCode()
 		{
-			return responseCode;
+			return mResponseCode;
+		}
+		public String getResponseMessage()
+		{
+			return mResponseMessage;
 		}
 	}
 	
