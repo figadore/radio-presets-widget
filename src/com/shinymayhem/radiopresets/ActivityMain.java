@@ -58,12 +58,14 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 	//public final static String URL = "com.shinymayhem.radiopresets.URL";
 	public final static String EXTRA_STATION_PRESET = "com.shinymayhem.radiopresets.STATION_ID";
 	
-	public final static String ACTION_UPDATE_TEXT = "com.shinymayhem.radiopresets.mainactivity.ACTION_UPDATE_TEXT";
+	public final static String ACTION_UPDATE_INFO = "com.shinymayhem.radiopresets.mainactivity.ACTION_UPDATE_TEXT";
 	public final static String EXTRA_STATION = "com.shinymayhem.radiopresets.mainactivity.EXTRA_STATION";
 	public final static String EXTRA_STATUS = "com.shinymayhem.radiopresets.mainactivity.EXTRA_STATUS";
 	public final static String EXTRA_ARTIST = "com.shinymayhem.radiopresets.mainactivity.EXTRA_ARTIST";
 	public final static String EXTRA_SONG = "com.shinymayhem.radiopresets.mainactivity.EXTRA_SONG";
 	public final static String EXTRA_PRESET = "com.shinymayhem.radiopresets.mainactivity.EXTRA_PRESET";
+	public final static String EXTRA_LIKED = "com.shinymayhem.radiopresets.mainactivity.EXTRA_LIKED";
+	public final static String EXTRA_DISLIKED = "com.shinymayhem.radiopresets.mainactivity.EXTRA_DISLIKED";
 	
 	//public static final int BUTTON_LIMIT = 25;
 	public static final int LOADER_STATIONS = 0;
@@ -180,7 +182,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 	private void registerDetailsReceiver()
 	{
 		//register network receiver
-		IntentFilter filter = new IntentFilter(ActivityMain.ACTION_UPDATE_TEXT);
+		IntentFilter filter = new IntentFilter(ActivityMain.ACTION_UPDATE_INFO);
 		if (mDetailsReceiver != null)
 		{
 			log("------------------------------------------", "v");
@@ -409,17 +411,14 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 	{
 		ImageButton button = (ImageButton)view;
 		String tag = (String) button.getTag();
-		Drawable selected = getResources().getDrawable(R.drawable.song_like_selected);
-		Drawable unselected = getResources().getDrawable(R.drawable.song_like);
+		
 		if (tag.equals("selected"))
 		{
-			button.setImageDrawable(unselected);
-			button.setTag("unselected");
+			this.unsetLiked(button);
 		}
 		else if (tag.equals("unselected"))
 		{
-			button.setImageDrawable(selected);
-			button.setTag("selected");
+			this.setLiked(button);
 		}
 		else
 		{
@@ -428,26 +427,51 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 		
 	}
 	
+	public void setLiked(ImageButton button)
+	{
+		Drawable selected = getResources().getDrawable(R.drawable.song_like_selected);
+		button.setImageDrawable(selected);
+		button.setTag("selected");
+	}
+	
+	public void unsetLiked(ImageButton button)
+	{
+		Drawable unselected = getResources().getDrawable(R.drawable.song_like);
+		button.setImageDrawable(unselected);
+		button.setTag("unselected");
+	}
+	
 	public void dislike(View view)
 	{
 		ImageButton button = (ImageButton)view;
 		String tag = (String) button.getTag();
-		Drawable selected = getResources().getDrawable(R.drawable.song_dislike_selected);
-		Drawable unselected = getResources().getDrawable(R.drawable.song_dislike);
+		
 		if (tag.equals("selected"))
 		{
-			button.setImageDrawable(unselected);
-			button.setTag("unselected");
+			this.unsetDisliked(button);
 		}
 		else if (tag.equals("unselected"))
 		{
-			button.setImageDrawable(selected);
-			button.setTag("selected");
+			this.setDisliked(button);
 		}
 		else
 		{
 			throw new IllegalStateException("Button not selected or unselected");
 		}
+	}
+	
+	public void setDisliked(ImageButton button)
+	{
+		Drawable selected = getResources().getDrawable(R.drawable.song_dislike_selected);
+		button.setImageDrawable(selected);
+		button.setTag("selected");
+	}
+	
+	public void unsetDisliked(ImageButton button)
+	{
+		Drawable unselected = getResources().getDrawable(R.drawable.song_dislike);
+		button.setImageDrawable(unselected);
+		button.setTag("unselected");
 	}
 	
 /*
@@ -486,12 +510,29 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 	
 
 	
-	protected void setActivityPlayerDetails(String station, String status, String artist, String song)
+	protected void setActivityPlayerDetails(String station, String status, String artist, String song, boolean liked, boolean disliked)
 	{
 		TextView songText = (TextView) this.findViewById(R.id.player_song_details);
 		TextView stationText = (TextView) this.findViewById(R.id.player_station_details);
 		songText.setText(artist + " - " + song);
 		stationText.setText(station+ " : " + status);
+		ImageButton likeButton = (ImageButton) findViewById(R.id.like_button);
+		ImageButton dislikeButton = (ImageButton) findViewById(R.id.dislike_button);
+		if (liked)
+		{
+			this.setLiked(likeButton);
+			this.unsetDisliked(dislikeButton);
+		}
+		else if (disliked)
+		{
+			this.unsetLiked(likeButton);
+			this.setDisliked(dislikeButton);
+		}
+		else
+		{
+			this.unsetLiked(likeButton);
+			this.unsetDisliked(dislikeButton);
+		}
 	}
 	
 	public int getPlayingPreset()
@@ -536,7 +577,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 	public class ReceiverDetails extends BroadcastReceiver {
 	    @Override
 	    public void onReceive(Context context, Intent intent) {
-	    	if (intent.getAction().equals(ActivityMain.ACTION_UPDATE_TEXT))
+	    	if (intent.getAction().equals(ActivityMain.ACTION_UPDATE_INFO))
 	    	{
 	    		log("activity onreceive(), updating main activity text", "v");
 	    		Bundle extras = intent.getExtras();
@@ -544,8 +585,10 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 				String status = extras.getString(ActivityMain.EXTRA_STATUS);
 				String artist = extras.getString(ActivityMain.EXTRA_ARTIST);
 				String song = extras.getString(ActivityMain.EXTRA_SONG);
+				boolean liked = extras.getBoolean(ActivityMain.EXTRA_LIKED);
+				boolean disliked = extras.getBoolean(ActivityMain.EXTRA_DISLIKED);
 				//int preset = extras.getInt(ActivityMain.EXTRA_PRESET);
-				setActivityPlayerDetails(station, status, artist, song);
+				setActivityPlayerDetails(station, status, artist, song, liked, disliked);
 				
 				FragmentStations fragment = (FragmentStations) getSupportFragmentManager().findFragmentByTag(FragmentStations.FRAGMENT_TAG);
 				fragment.refresh();
