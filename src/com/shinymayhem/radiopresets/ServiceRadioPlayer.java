@@ -96,6 +96,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	public final static String EXTRA_METADATA_SONG = "song";
 	public final static String EXTRA_URL = "com.shinymayhem.radiopresets.EXTRA_URL";
 	public final static String EXTRA_RESPONSE_CODE = "com.shinymayhem.radiopresets.EXTRA_RESPONSE_CODE";
+	public final static String EXTRA_RESPONSE_MESSAGE = "com.shinymayhem.radiopresets.EXTRA_RESPONSE_MESSAGE";
 	public final static String EXTRA_UPDATE_URL = "com.shinymayhem.radiopresets.EXTRA_UPDATE_URL";
 	public final static String EXTRA_ERROR_MESSAGE = "com.shinymayhem.radiopresets.EXTRA_ERROR_MESSAGE";
 	public final static String EXTRA_FORMAT = "com.shinymayhem.radiopresets.EXTRA_FORMAT";
@@ -237,8 +238,10 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			}
 			else if (action.equals(ACTION_STREAM_ERROR.toString()))
 			{
-				log("Stream error", "d");
+				
 				int responseCode = intent.getIntExtra(EXTRA_RESPONSE_CODE, 0);
+				String responseMessage = intent.getStringExtra(EXTRA_RESPONSE_MESSAGE);
+				log("Stream error. Code:" + String.valueOf(responseCode) + ", Message:" + responseMessage, "d");
 				String title = getResources().getString(R.string.error_title);
 				String message;
 				switch (responseCode)
@@ -246,8 +249,19 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 					case 404:
 						message = getResources().getString(R.string.error_not_found);
 						break;
+					case 400:
+						if (responseMessage.equals("Server Full"))
+						{
+							message = getResources().getString(R.string.error_server_full);
+						}
+						else
+						{
+							message = getResources().getString(R.string.error_unknown);
+							log("Stream error. Code:" + String.valueOf(responseCode) + ", Message:" + responseMessage, "w");
+						}
 					default:
 						message = getResources().getString(R.string.error_unknown);
+						log("Stream error. Code:" + String.valueOf(responseCode) + ", Message:" + responseMessage, "w");
 				}
 				mCurrentPlayerState = ServiceRadioPlayer.STATE_ERROR;
 				//set 'now playing' to error
@@ -1368,7 +1382,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	private boolean isSongLiked()
 	{
 		//check mSong and mArtist (lowercased) against like table
-		return false;
+		return true;
 	}
 	
 	private boolean isSongDisliked()
