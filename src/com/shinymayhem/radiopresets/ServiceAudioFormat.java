@@ -95,7 +95,7 @@ public class ServiceAudioFormat extends IntentService {
 	protected void handleHttpResponse(int responseCode, String message) throws IOException, StreamHttpException
 	{
 		//String message = con.getResponseMessage();
-    	log("Server response code:" + String.valueOf(responseCode) + ", message:" +  message, "i");
+    	log("Server response code:" + String.valueOf(responseCode) + ", message:" +  message, "v");
     	if (responseCode < 200 || responseCode >= 300)
     	{
     		throw new StreamHttpException(responseCode, message);	
@@ -105,6 +105,7 @@ public class ServiceAudioFormat extends IntentService {
 	
 	protected AudioType processUrl(String url) throws StreamHttpException, IOException {
 		//TODO make recursive, if playlist within playlist
+		//TODO look into checking response headers anyway
 		//check url first, it is fastest, no network connections needed
 		AudioType type = getTypeFromString(url);
 		//now try to handle cases where type could not be determined by url

@@ -1382,7 +1382,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	private boolean isSongLiked()
 	{
 		//check mSong and mArtist (lowercased) against like table
-		return true;
+		return false;
 	}
 	
 	private boolean isSongDisliked()
