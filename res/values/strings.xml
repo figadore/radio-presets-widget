@@ -46,7 +46,7 @@
     <string name="error_media_io">Unknown media IO error</string>
     <string name="error_timed_out">Media timed out</string>
     <string name="error_server_full">Server full, max listeners reached</string>
-    <string name="error_unknown">Uknown error</string>
+    <string name="error_unknown">Unknown error</string>
 	<string name="status_stopped">Stopped</string>
     <string name="status_paused">Paused</string>
     <string name="status_preparing">Preparing</string>

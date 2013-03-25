@@ -259,6 +259,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 							message = getResources().getString(R.string.error_unknown);
 							log("Stream error. Code:" + String.valueOf(responseCode) + ", Message:" + responseMessage, "w");
 						}
+						break;
 					default:
 						message = getResources().getString(R.string.error_unknown);
 						log("Stream error. Code:" + String.valueOf(responseCode) + ", Message:" + responseMessage, "w");
