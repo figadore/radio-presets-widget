@@ -290,6 +290,43 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 				end();
 				return START_NOT_STICKY;
 			}
+			else if (action.equals(ACTION_LIKE.toString())) //Stop intent
+			{
+				if (intent.hasExtra(EXTRA_SET_TRUE))
+				{
+					boolean set = intent.getBooleanExtra(EXTRA_SET_TRUE, false);
+					if (set)
+					{
+						log("LIKE action in intent with true", "v");	
+						this.like();
+					}
+					else
+					{
+						log("LIKE action in intent with false", "v");
+						this.unlike();
+					}
+				}
+				
+				return START_NOT_STICKY;
+			}
+			else if (action.equals(ACTION_DISLIKE.toString())) //Stop intent
+			{
+				if (intent.hasExtra(EXTRA_SET_TRUE))
+				{
+					boolean set = intent.getBooleanExtra(EXTRA_SET_TRUE, true);
+					if (set)
+					{
+						log("DISLIKE action in intent with true", "v");	
+						this.dislike();
+					}
+					else
+					{
+						log("DISLIKE action in intent with false", "v");
+						this.undislike();
+					}
+				}
+				return START_NOT_STICKY;
+			}
 			else if (action.equals(ACTION_UPDATE_WIDGET.toString())) //Stop intent
 			{
 				log("UPDATE_WIDGET action in intent", "v");	
@@ -1186,7 +1223,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		//TODO async task? possibly causing slow responses
 		Intent intent = this.getDetailsUpdateIntent(station, status);
 		this.sendBroadcast(intent);
-		log("sent broadcast", "v");
+		log("sent update details broadcast", "v");
 	}
 	
 	/*
@@ -1450,6 +1487,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 				{
 					log("like success", "v");
 					success = true;
+					this.updateDetails();
 				}
 			}
 		}
@@ -1459,6 +1497,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			log("already liked", "d");
 			success = true;
 		}
+		
 		return success;
 	}
 	
@@ -1483,9 +1522,11 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		        {
 		        	log("deleted like(s)", "v");
 		        	success = true;
+		        	this.updateDetails();
 		        }
 			}
 		}
+		
 		return success;
 	}
 	
@@ -1518,6 +1559,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 				{
 					log("dislike success", "v");
 					success = true;
+					this.updateDetails();
 				}
 			}
 		}
@@ -1551,6 +1593,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		        {
 		        	log("deleted dislike(s)", "v");
 		        	success = true;
+		        	this.updateDetails();
 		        }
 			}
 		}

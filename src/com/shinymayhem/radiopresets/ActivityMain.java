@@ -58,7 +58,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 	//public final static String URL = "com.shinymayhem.radiopresets.URL";
 	public final static String EXTRA_STATION_PRESET = "com.shinymayhem.radiopresets.STATION_ID";
 	
-	public final static String ACTION_UPDATE_INFO = "com.shinymayhem.radiopresets.mainactivity.ACTION_UPDATE_TEXT";
+	public final static String ACTION_UPDATE_INFO = "com.shinymayhem.radiopresets.mainactivity.ACTION_UPDATE_INFO";
 	public final static String EXTRA_STATION = "com.shinymayhem.radiopresets.mainactivity.EXTRA_STATION";
 	public final static String EXTRA_STATUS = "com.shinymayhem.radiopresets.mainactivity.EXTRA_STATUS";
 	public final static String EXTRA_ARTIST = "com.shinymayhem.radiopresets.mainactivity.EXTRA_ARTIST";
@@ -415,12 +415,12 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 		if (tag.equals("selected"))
 		{
 			this.unsetLiked(button);
-			this.updateDetails();
+			//this.updateDetails();
 		}
 		else if (tag.equals("unselected"))
 		{
 			this.setLiked(button);
-			this.updateDetails();
+			//this.updateDetails();
 		}
 		else
 		{
@@ -437,12 +437,12 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 		if (tag.equals("selected"))
 		{
 			this.unsetDisliked(button);
-			this.updateDetails();
+			//this.updateDetails();
 		}
 		else if (tag.equals("unselected"))
 		{
 			this.setDisliked(button);
-			this.updateDetails();
+			//this.updateDetails();
 		}
 		else
 		{

@@ -146,6 +146,7 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 		final int N = appWidgetIds.length;
         // Perform this loop procedure for each App Widget that belongs to this provider
         for (int i=0; i<N; i++) {
+        	log("onUpdate looping through widgets. on " + String.valueOf(i) + " of " + String.valueOf(N), "v");
             int appWidgetId = appWidgetIds[i];
             if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.JELLY_BEAN)
             {
@@ -168,7 +169,7 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 		
 		if (
 				status.equals(mContext.getResources().getString(R.string.status_stopped)) 
-				//|| status.equals(mContext.getResources().getString(R.string.status_error))
+				//|| status.equals(mContext.getResources().getString(R.string.status_error)) //why was this commented?
 			)
 		{
 			mPreset = 0;
@@ -191,6 +192,7 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 		boolean playing = status.equals(mContext.getResources().getString(R.string.status_playing));
         // Perform this loop procedure for each App Widget that belongs to this provider
         for (int i=0; i<N; i++) {
+        	log("updateInfo looping through widgets. on " + String.valueOf(i) + " of " + String.valueOf(N), "v");
             int appWidgetId = appWidgetIds[i];
             if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.JELLY_BEAN)
             {
@@ -313,7 +315,7 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 				.setAction(ServiceRadioPlayer.ACTION_LIKE)
 				.putExtra(ServiceRadioPlayer.EXTRA_SET_TRUE, like)
 				.setClass(mContext, ServiceRadioPlayer.class);
-		return PendingIntent.getService(mContext, 0, intent, 0);		 
+		return PendingIntent.getService(mContext, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 	}
 	
 	private PendingIntent getDislikeIntent(boolean dislike)
@@ -323,7 +325,7 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 				.setAction(ServiceRadioPlayer.ACTION_DISLIKE)
 				.putExtra(ServiceRadioPlayer.EXTRA_SET_TRUE, dislike)
 				.setClass(mContext, ServiceRadioPlayer.class);
-		return PendingIntent.getService(mContext, 0, intent, 0);		 
+		return PendingIntent.getService(mContext, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);		 
 	}
 	
 	private PendingIntent getPresetIntent(int preset)
@@ -369,10 +371,12 @@ public class WidgetProviderPresets extends AppWidgetProvider {
 		
 		if (mLiked)
 		{
+			//log("liked", "v");
 			mViews.setImageViewResource(R.id.widget_like_button, R.drawable.song_like_selected);
 		}
 		else
 		{
+			//log("not liked", "v");
 			mViews.setImageViewResource(R.id.widget_like_button, R.drawable.song_like);
 		}
 		PendingIntent nextIntent = this.getNextIntent();
