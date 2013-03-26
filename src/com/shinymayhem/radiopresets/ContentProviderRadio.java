@@ -28,27 +28,45 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 
 import com.shinymayhem.radiopresets.DbContractRadio.DbHelperRadio;
-
+/** Provides CRUD access to db through URIs
+ * 
+ * @author Reese Wilson
+ *
+ */
 public class ContentProviderRadio extends ContentProvider {
 
 	protected ActivityLogger mLogger = new ActivityLogger();
+	private DbHelperRadio mStationsHelper; 
 	
 	private static final String AUTHORITY = "com.shinymayhem.radiopresets.contentprovider";
 	private static final int URI_STATIONS = 1;
 	private static final int URI_STATION_ID = 2;
 	private static final int URI_PRESET = 3;
 	private static final int URI_PRESET_MAX = 4;
+	private static final int URI_LIKES = 5;
+	private static final int URI_DISLIKES = 6;
+	private static final int URI_LIKE_ID = 7;
+	private static final int URI_DISLIKE_ID = 8;
 	
 	//segments
 	private static final String SEGMENT_STATIONS_BASE = "stations";
 	private static final String SEGMENT_PRESETS_BASE = "presets";
 	private static final String SEGMENT_PRESET_MAX = SEGMENT_PRESETS_BASE + "/max";
+	private static final String SEGMENT_LIKES_BASE = "likes";
+	private static final String SEGMENT_DISLIKES_BASE = "dislikes";
 	
-	//make each segment type available
+	//make each segment type available to other classes
+	//content://com.shinymayhem.radiopresets.contentprovider/stations
 	public static final Uri CONTENT_URI_STATIONS = Uri.parse("content://" + AUTHORITY + "/" + SEGMENT_STATIONS_BASE);
+	//content://com.shinymayhem.radiopresets.contentprovider/presets
 	public static final Uri CONTENT_URI_PRESETS = Uri.parse("content://" + AUTHORITY + "/" + SEGMENT_PRESETS_BASE);
+	//content://com.shinymayhem.radiopresets.contentprovider/presets/max
 	public static final Uri CONTENT_URI_PRESETS_MAX = Uri.parse("content://" + AUTHORITY + "/" + SEGMENT_PRESET_MAX);
-	private DbHelperRadio mStationsHelper; 
+	//content://com.shinymayhem.radiopresets.contentprovider/likes
+	public static final Uri CONTENT_URI_LIKES = Uri.parse("content://" + AUTHORITY + "/" + SEGMENT_LIKES_BASE);
+	//content://com.shinymayhem.radiopresets.contentprovider/dislikes
+	public static final Uri CONTENT_URI_DISLIKES = Uri.parse("content://" + AUTHORITY + "/" + SEGMENT_DISLIKES_BASE);
+	
 	
 	private static final UriMatcher sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 	static
@@ -57,6 +75,10 @@ public class ContentProviderRadio extends ContentProvider {
 		sUriMatcher.addURI(AUTHORITY, SEGMENT_STATIONS_BASE+"/#", URI_STATION_ID);
 		sUriMatcher.addURI(AUTHORITY, SEGMENT_PRESETS_BASE+"/#", URI_PRESET);
 		sUriMatcher.addURI(AUTHORITY, SEGMENT_PRESET_MAX, URI_PRESET_MAX);
+		sUriMatcher.addURI(AUTHORITY, SEGMENT_LIKES_BASE, URI_LIKES);
+		sUriMatcher.addURI(AUTHORITY, SEGMENT_DISLIKES_BASE, URI_DISLIKES);
+		sUriMatcher.addURI(AUTHORITY, SEGMENT_LIKES_BASE+"/#", URI_LIKE_ID);
+		sUriMatcher.addURI(AUTHORITY, SEGMENT_DISLIKES_BASE+"/#", URI_DISLIKE_ID);
 	}
 	
 
@@ -103,6 +125,14 @@ public class ContentProviderRadio extends ContentProvider {
 			selectionArgs = null;
 			projection = newProjection;
 			break;
+		case URI_LIKES:
+			table = DbContractRadio.EntryLike.TABLE_NAME;
+			db = mStationsHelper.getReadableDatabase();
+			break;
+		case URI_DISLIKES:
+			table = DbContractRadio.EntryDislike.TABLE_NAME;
+			db = mStationsHelper.getReadableDatabase();
+			break;
 		default:
 			throw new IllegalArgumentException("Unknown query URI:" + uri);
 		}
@@ -128,28 +158,51 @@ public class ContentProviderRadio extends ContentProvider {
 		
 		String table = null;
 		SQLiteDatabase db;
-		boolean collapse = false;
+		boolean collapsePresets = false;
+		long id;
 		switch (sUriMatcher.match(uri))
 		{
 		case URI_STATIONS:
 			table = DbContractRadio.EntryStation.TABLE_NAME;
 			db = mStationsHelper.getWritableDatabase();
-			collapse = true;
+			collapsePresets = true;
 			break;
 		case URI_STATION_ID:
 			table = DbContractRadio.EntryStation.TABLE_NAME;
 			db = mStationsHelper.getWritableDatabase();
-			long id = ContentUris.parseId(uri);
+			id = ContentUris.parseId(uri);
 			selection = addColumn(DbContractRadio.EntryStation._ID, selection);
 			selectionArgs = addArg(id, selectionArgs);
-			collapse = true;
+			collapsePresets = true;
+			break;
+		case URI_LIKES:
+			table = DbContractRadio.EntryLike.TABLE_NAME;
+			db = mStationsHelper.getWritableDatabase();
+			break;
+		case URI_LIKE_ID:
+			table = DbContractRadio.EntryLike.TABLE_NAME;
+			db = mStationsHelper.getWritableDatabase();
+			id = ContentUris.parseId(uri);
+			selection = addColumn(DbContractRadio.EntryLike._ID, selection);
+			selectionArgs = addArg(id, selectionArgs);
+			break;
+		case URI_DISLIKES:
+			table = DbContractRadio.EntryDislike.TABLE_NAME;
+			db = mStationsHelper.getWritableDatabase();
+			break;
+		case URI_DISLIKE_ID:
+			table = DbContractRadio.EntryDislike.TABLE_NAME;
+			db = mStationsHelper.getWritableDatabase();
+			id = ContentUris.parseId(uri);
+			selection = addColumn(DbContractRadio.EntryDislike._ID, selection);
+			selectionArgs = addArg(id, selectionArgs);
 			break;
 		default:
 			throw new IllegalArgumentException("Unknown delete URI:" + uri);
 		}
 
 		int deletedCount = db.delete(table, selection, selectionArgs);
-		if (collapse)
+		if (collapsePresets)
 		{
 			this.collapsePresetNumbers();
 		}
@@ -182,10 +235,38 @@ public class ContentProviderRadio extends ContentProvider {
 			db = mStationsHelper.getWritableDatabase();
 			
 			break;
+		case URI_LIKES:
+			table = DbContractRadio.EntryLike.TABLE_NAME;
+			String artist = values.getAsString(DbContractRadio.EntryLike.COLUMN_NAME_ARTIST);
+			String song = values.getAsString(DbContractRadio.EntryLike.COLUMN_NAME_SONG);
+			long likeId = this.likeExists(artist, song);
+			if (likeId > 0)
+			{
+				String selection = DbContractRadio.EntryLike.COLUMN_NAME_ARTIST + " = ? and " + DbContractRadio.EntryLike.COLUMN_NAME_SONG + " = ? ";
+				String[] selectionArgs = {String.valueOf(artist), String.valueOf(song)};
+				this.update(uri, values, selection, selectionArgs);
+				return Uri.parse(SEGMENT_LIKES_BASE + "/" + String.valueOf(likeId));
+			}
+			db = mStationsHelper.getWritableDatabase();
+			break;
+		case URI_DISLIKES:
+			table = DbContractRadio.EntryDislike.TABLE_NAME;
+			String dislikedArtist = values.getAsString(DbContractRadio.EntryDislike.COLUMN_NAME_ARTIST);
+			String dislikedSong = values.getAsString(DbContractRadio.EntryDislike.COLUMN_NAME_SONG);
+			long dislikeId = this.dislikeExists(dislikedArtist, dislikedSong);
+			if (dislikeId > 0)
+			{
+				String selection = DbContractRadio.EntryDislike.COLUMN_NAME_ARTIST + " = ? and " + DbContractRadio.EntryDislike.COLUMN_NAME_SONG + " = ? ";
+				String[] selectionArgs = {String.valueOf(dislikedArtist), String.valueOf(dislikedSong)};
+				this.update(uri, values, selection, selectionArgs);
+				return Uri.parse(SEGMENT_DISLIKES_BASE + "/" + String.valueOf(dislikeId));
+			}
+			db = mStationsHelper.getWritableDatabase();
+			break;
 		default:
 			throw new IllegalArgumentException("Unknown insert URI:" + uri);
 		}
-		
+
 		long id = db.insert(table, null, values);
 		//notify content resolver of data change
 		getContext().getContentResolver().notifyChange(uri, null);
@@ -199,6 +280,7 @@ public class ContentProviderRadio extends ContentProvider {
 	public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
 		String table = null;
 		SQLiteDatabase db;
+		long id;
 		switch (sUriMatcher.match(uri))
 		{
 		case URI_STATIONS:
@@ -208,13 +290,35 @@ public class ContentProviderRadio extends ContentProvider {
 		case URI_STATION_ID:
 			table = DbContractRadio.EntryStation.TABLE_NAME;
 			db = mStationsHelper.getWritableDatabase();
-			long id = ContentUris.parseId(uri);
+			id = ContentUris.parseId(uri);
 			selection = addColumn(DbContractRadio.EntryStation._ID, selection);
 			selectionArgs = addArg(id, selectionArgs);
-			if (values.containsKey(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER))
+			if (values.containsKey(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER)) //if preset specified, could be updated
 			{
 				makeRoomForPreset(values.getAsInteger(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER), (int)id);
 			}
+			break;
+		case URI_LIKES:
+			table = DbContractRadio.EntryLike.TABLE_NAME;
+			db = mStationsHelper.getWritableDatabase();
+			break;
+		case URI_LIKE_ID:
+			table = DbContractRadio.EntryLike.TABLE_NAME;
+			db = mStationsHelper.getWritableDatabase();
+			id = ContentUris.parseId(uri);
+			selection = addColumn(DbContractRadio.EntryLike._ID, selection);
+			selectionArgs = addArg(id, selectionArgs);
+			break;
+		case URI_DISLIKES:
+			table = DbContractRadio.EntryDislike.TABLE_NAME;
+			db = mStationsHelper.getWritableDatabase();
+			break;
+		case URI_DISLIKE_ID:
+			table = DbContractRadio.EntryDislike.TABLE_NAME;
+			db = mStationsHelper.getWritableDatabase();
+			id = ContentUris.parseId(uri);
+			selection = addColumn(DbContractRadio.EntryDislike._ID, selection);
+			selectionArgs = addArg(id, selectionArgs);
 			break;
 		default:
 			throw new IllegalArgumentException("Unknown query URI:" + uri);
@@ -246,6 +350,43 @@ public class ContentProviderRadio extends ContentProvider {
 		
 	}*/
 	
+	private long likeExists(String artist, String song)
+	{
+		Uri uri = CONTENT_URI_LIKES;
+		String[] projection = {DbContractRadio.EntryLike._ID};
+		String selection = DbContractRadio.EntryLike.COLUMN_NAME_ARTIST + " = ? and " + DbContractRadio.EntryLike.COLUMN_NAME_SONG + " = ? ";
+		String[] selectionArgs = {String.valueOf(artist), String.valueOf(song)};
+		String sortOrder = null;
+		Cursor cursor = this.query(uri, projection, selection, selectionArgs, sortOrder);
+		long id = 0;
+		if (cursor.getCount() > 0)
+		{
+			cursor.moveToFirst();
+			id = cursor.getLong(cursor.getColumnIndex(DbContractRadio.EntryLike._ID));
+		}
+		//cursor.close();
+		return id;
+	}
+	
+	
+	private long dislikeExists(String artist, String song)
+	{
+		Uri uri = CONTENT_URI_DISLIKES;
+		String[] projection = {DbContractRadio.EntryDislike._ID};
+		String selection = DbContractRadio.EntryDislike.COLUMN_NAME_ARTIST + " = ? and " + DbContractRadio.EntryDislike.COLUMN_NAME_SONG + " = ? ";
+		String[] selectionArgs = {String.valueOf(artist), String.valueOf(song)};
+		String sortOrder = null;
+		Cursor cursor = this.query(uri, projection, selection, selectionArgs, sortOrder);
+		long id = 0;
+		if (cursor.getCount() > 0)
+		{
+			cursor.moveToFirst();
+			id = cursor.getLong(cursor.getColumnIndex(DbContractRadio.EntryDislike._ID));
+		}
+		//cursor.close();
+		return id;
+	}
+	
 	private int getMaxPresetNumber()
 	{
 		Uri uri = CONTENT_URI_PRESETS_MAX;
@@ -265,6 +406,10 @@ public class ContentProviderRadio extends ContentProvider {
 		return (int)preset;
 	}
 	
+	/**
+	 * Sets all presets to increment, starting at 1, keeping the existing order. 
+	 * e.g. presets 1, 4 and 6 exist, collapses to 1, 2 and 3. 
+	 */
 	private void collapsePresetNumbers()
 	{
 		//SQLiteDatabase db = mStationsHelper.getReadableDatabase();	
@@ -294,41 +439,17 @@ public class ContentProviderRadio extends ContentProvider {
 		cursor.close();
 		
 	}
-	/*
-	private int fillInPreset(int preset)
-	{
-		//TODO change delete to individual to rearrange presets as they are deleted
-		//alternatively, create a collapse function
-		SQLiteDatabase db = mStationsHelper.getWritableDatabase();
-		String column = DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER;
 	
-		//get list of stations that will be updates
-		String[] newSelectionArgs = {String.valueOf(preset+1)};
-		String sql = "select " + DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER +
-				" from " + DbContractRadio.EntryStation.TABLE_NAME + 
-				" where " + column + ">= ? ";
-		Cursor newCursor = db.rawQuery(sql,	newSelectionArgs);
-		
-		int updatedCount = newCursor.getCount();
-				//(int)newCursor.getLong(newCursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER));
-		newCursor.close();
-		if (updatedCount > 0)
-		{
-			sql = "update " + DbContractRadio.EntryStation.TABLE_NAME + " " +
-					" set " + column + " = " + column + " - 1 " +
-					" where " + column + ">= " + String.valueOf(preset+1); //TODO sanitize
-			db.execSQL(sql);
-		}
-		db.close();
-		
-		//return number of updated stations
-		return updatedCount;
-	}
-	*/
+	/**
+	 * Increments all preset numbers equal to or above the desired new preset number (if any). If update() called and preset number is the same, nothing is done
+	 * @param preset 
+	 * @param id row id of station 
+	 * @return Count of rows updated by this operation
+	 */
 	private int makeRoomForPreset(int preset, int id)
 	{
 		log("making room for preset:" + preset, "v");
-		//check for existing entry with same preset but different id
+		//check for existing entry with same preset but different id (because update() could be called with same id)
 		Uri uri = CONTENT_URI_STATIONS;
 		String[] projection = {DbContractRadio.EntryStation._ID};
 		String selection = DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER + " = ? and not " + DbContractRadio.EntryStation._ID + " = ? ";
@@ -393,7 +514,12 @@ public class ContentProviderRadio extends ContentProvider {
 	}
 	
 	
-	//add id to selection string
+	/**
+	 * add id (or other column) to selection string
+	 * @param column name of column to add
+	 * @param selection current selection string
+	 * @return new selection string
+	 */
 	private String addColumn(String column, String selection)
 	{
 		if (selection == null || selection.isEmpty())
@@ -403,11 +529,15 @@ public class ContentProviderRadio extends ContentProvider {
 		return selection + " and " + column + " = ?";
 	}
 	
-	//add id to selection args
-	//TODO templatize if needed for other types
+	/**
+	 * add id (or other column) to selection args
+	 * @param id
+	 * @param selectionArgs
+	 * @return new string[] selection args
+	 */
+	
 	private String[] addArg(long id, String[] selectionArgs)
 	{
-		
 		List<String> args = new ArrayList<String>();
 		if (selectionArgs != null)
 		{
@@ -418,8 +548,7 @@ public class ContentProviderRadio extends ContentProvider {
 		selectionArgs = args.toArray(new String[0]);
 		return selectionArgs;
 	}
-
-
+	
 	@Override
 	public String getType(Uri uri) {
 		//TODO check if this is right

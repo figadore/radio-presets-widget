@@ -119,6 +119,7 @@ public class DbContractRadio {
 			db.execSQL(SQL_CREATE_STATIONS);
 			db.execSQL(ADD_SAMPLE_STATIONS);
 			db.execSQL(SQL_CREATE_LIKES);
+			db.execSQL(SQL_CREATE_DISLIKES);
 			Log.i(getClass().toString(), "Created database");
 		}
 

@@ -415,10 +415,12 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 		if (tag.equals("selected"))
 		{
 			this.unsetLiked(button);
+			this.updateDetails();
 		}
 		else if (tag.equals("unselected"))
 		{
 			this.setLiked(button);
+			this.updateDetails();
 		}
 		else
 		{
@@ -426,21 +428,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 		}
 		
 	}
-	
-	public void setLiked(ImageButton button)
-	{
-		Drawable selected = getResources().getDrawable(R.drawable.song_like_selected);
-		button.setImageDrawable(selected);
-		button.setTag("selected");
-	}
-	
-	public void unsetLiked(ImageButton button)
-	{
-		Drawable unselected = getResources().getDrawable(R.drawable.song_like);
-		button.setImageDrawable(unselected);
-		button.setTag("unselected");
-	}
-	
+
 	public void dislike(View view)
 	{
 		ImageButton button = (ImageButton)view;
@@ -449,10 +437,12 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 		if (tag.equals("selected"))
 		{
 			this.unsetDisliked(button);
+			this.updateDetails();
 		}
 		else if (tag.equals("unselected"))
 		{
 			this.setDisliked(button);
+			this.updateDetails();
 		}
 		else
 		{
@@ -460,18 +450,87 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 		}
 	}
 	
+	public void setLiked(ImageButton button)
+	{
+		this.setLiked(button, false);
+	}
+	
+	/**
+	 * Sets image button view
+	 * @param button
+	 * @param override whether the button image should be changed regardless of whether service method worked
+	 */
+	public void setLiked(ImageButton button, boolean override)
+	{
+		if ((mService != null && mService.like()) || override)
+		{
+			Drawable selected = getResources().getDrawable(R.drawable.song_like_selected);
+			button.setImageDrawable(selected);
+			button.setTag("selected");	
+		}
+	}
+	
+	public void unsetLiked(ImageButton button)
+	{
+		this.unsetLiked(button, false);
+	}
+	
+	/**
+	 * Sets image button view
+	 * @param button
+	 * @param override whether the button image should be changed regardless of whether service method worked
+	 */
+	public void unsetLiked(ImageButton button, boolean override)
+	{
+		if ((mService != null && mService.unlike()) || override)
+		{
+			Drawable unselected = getResources().getDrawable(R.drawable.song_like);
+			button.setImageDrawable(unselected);
+			button.setTag("unselected");
+		}
+		
+	}
+	
+	
+	/**
+	 * Sets image button view
+	 * @param button
+	 * @param override whether the button image should be changed regardless of whether service method worked
+	 */
+	public void setDisliked(ImageButton button, boolean override)
+	{
+		if ((mService != null && mService.dislike()) || override)
+		{
+			Drawable selected = getResources().getDrawable(R.drawable.song_dislike_selected);
+			button.setImageDrawable(selected);
+			button.setTag("selected");
+		}
+	}
+	
 	public void setDisliked(ImageButton button)
 	{
-		Drawable selected = getResources().getDrawable(R.drawable.song_dislike_selected);
-		button.setImageDrawable(selected);
-		button.setTag("selected");
+		this.setDisliked(button, false);
+	}
+	
+	/**
+	 * Sets image button view
+	 * @param button
+	 * @param override whether the button image should be changed regardless of whether service method worked
+	 */
+	public void unsetDisliked(ImageButton button, boolean override)
+	{
+		if ((mService != null && mService.undislike()) || override)
+		{
+			Drawable unselected = getResources().getDrawable(R.drawable.song_dislike);
+			button.setImageDrawable(unselected);
+			button.setTag("unselected");
+		}
+		
 	}
 	
 	public void unsetDisliked(ImageButton button)
 	{
-		Drawable unselected = getResources().getDrawable(R.drawable.song_dislike);
-		button.setImageDrawable(unselected);
-		button.setTag("unselected");
+		this.unsetDisliked(button, false);
 	}
 	
 /*

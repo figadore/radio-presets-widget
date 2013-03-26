@@ -333,8 +333,9 @@ public class ServiceAudioFormat extends IntentService {
 		con.setRequestProperty("Connection", "close");
         con.connect();
         Map<String, List<String>> headers = con.getHeaderFields();
-		String statusLine = con.getHeaderField(0);
-        String message = "";
+		String statusLine = headers.get(null).get(0); //con.getHeaderField(0);
+		//String statusLine2 = con.getHeaderField(0);
+        String message = statusLine;
         int responseCode = -1;
         if (statusLine.startsWith("HTTP/1.") || statusLine.startsWith("ICY")) {
             int codePos = statusLine.indexOf(' ');

@@ -31,6 +31,8 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -1157,10 +1159,10 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		Intent intent = new Intent(ActivityMain.ACTION_UPDATE_INFO);
 		//intent.setAction(ActivityMain.ACTION_UPDATE_TEXT);
 		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_PRESET, preset);
-		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_STATION, station);
-		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_STATUS, status);
-		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_ARTIST, artist);
-		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_SONG, song);
+		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_STATION, station.trim());
+		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_STATUS, status.trim());
+		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_ARTIST, artist.trim());
+		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_SONG, song.trim());
 		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_LIKED, liked);
 		intent.putExtra(com.shinymayhem.radiopresets.ActivityMain.EXTRA_DISLIKED, disliked);
         //intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -1354,7 +1356,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	private String getArtist()
 	{
 		String artist;
-		if (mArtist == null || mArtist == "")
+		if (mArtist == null || mArtist.trim() == "")
 		{
 			artist = getResources().getString(R.string.unknown_artist);	
 		}
@@ -1362,14 +1364,14 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		{
 			artist = mArtist;
 		}
-		return artist;
+		return artist.trim();
 	}
 	
 	//get currently playing song, if applicable
 	private String getSong()
 	{
 		String song;
-		if (mSong == null || mSong == "")
+		if (mSong == null || mSong.trim() == "")
 		{
 			song = getResources().getString(R.string.unknown_song);	
 		}
@@ -1377,19 +1379,222 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		{
 			song = mSong;
 		}
-		return song;
+		return song.trim();
 	}
 	
 	private boolean isSongLiked()
 	{
-		//check mSong and mArtist (lowercased) against like table
-		return false;
+		//check mSong and mArtist (trimmed) against like table
+		boolean liked = false;
+		if (this.isSongValidForOpinion())
+		{
+			Uri uri = ContentProviderRadio.CONTENT_URI_LIKES;
+			String[] projection = {DbContractRadio.EntryLike._ID};  
+			String selection = DbContractRadio.EntryLike.COLUMN_NAME_ARTIST + " = ? and " + DbContractRadio.EntryLike.COLUMN_NAME_SONG + " = ?";
+			String[] selectionArgs = {mArtist.trim(), mSong.trim()};
+			String sortOrder = null;
+			Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
+			if (cursor.getCount() > 0)
+			{
+				liked = true;
+			}
+		}
+		return liked;
 	}
 	
 	private boolean isSongDisliked()
 	{
-		//check mSong and mArtist (lowercased) against dislike table
-		return false;
+		//check mSong and mArtist (trimmed) against dislike table
+		boolean disliked = false;
+		if (this.isSongValidForOpinion())
+		{
+			Uri uri = ContentProviderRadio.CONTENT_URI_DISLIKES;
+			String[] projection = {DbContractRadio.EntryDislike._ID};  
+			String selection = DbContractRadio.EntryDislike.COLUMN_NAME_ARTIST + " = ? and " + DbContractRadio.EntryDislike.COLUMN_NAME_SONG + " = ?";
+			String[] selectionArgs = {mArtist.trim(), mSong.trim()};
+			String sortOrder = null;
+			Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
+			if (cursor.getCount() > 0)
+			{
+				disliked = true;
+			}
+		}
+		return disliked;
+	}
+	
+	/**
+	 * Indicate that the current song should be marked as 'liked'. 
+	 * @return Whether the like was successful. should return false when nothing playing or unknown song and artist
+	 */
+	public boolean like()
+	{
+		log("like()", "v");
+		boolean success = false;
+		if (isSongDisliked())
+		{
+			this.undislike();
+		}
+		if (!isSongLiked())
+		{
+			if (this.isSongValidForOpinion())
+			{
+				Uri uri = ContentProviderRadio.CONTENT_URI_LIKES;
+				ContentValues values = new ContentValues();
+		        values.put(DbContractRadio.EntryLike.COLUMN_NAME_ARTIST, mArtist.trim());
+		        values.put(DbContractRadio.EntryLike.COLUMN_NAME_SONG, mSong.trim());
+		        values.put(DbContractRadio.EntryLike.COLUMN_NAME_STATION_TITLE, mTitle.trim());
+		        values.put(DbContractRadio.EntryLike.COLUMN_NAME_STATION_URL, mUrl.trim());
+				Uri insertedUri = getContentResolver().insert(uri, values);
+				long id = ContentUris.parseId(insertedUri);
+				if (id > 0)
+				{
+					log("like success", "v");
+					success = true;
+				}
+			}
+		}
+		else
+		{
+			//already liked
+			log("already liked", "d");
+			success = true;
+		}
+		return success;
+	}
+	
+	public boolean unlike()
+	{
+		log("unlike()", "v");
+		boolean success = false;
+		if (!isSongLiked()) //already not liked
+		{
+			log("already unliked", "d");
+			success = true;
+		}
+		else
+		{
+			if (this.isSongValidForOpinion())
+			{
+				Uri uri = ContentProviderRadio.CONTENT_URI_LIKES;
+				String selection = DbContractRadio.EntryLike.COLUMN_NAME_ARTIST + " = ? and " + DbContractRadio.EntryLike.COLUMN_NAME_SONG + " = ?";
+				String[] selectionArgs = {mArtist.trim(), mSong.trim()};
+		        int deleted = getContentResolver().delete(uri, selection, selectionArgs);
+		        if (deleted > 0)
+		        {
+		        	log("deleted like(s)", "v");
+		        	success = true;
+		        }
+			}
+		}
+		return success;
+	}
+	
+	/**
+	 * Indicate that the current song should be marked as 'disliked'. 
+	 * @return Whether the dislike was successful. should return false when nothing playing or unknown song and artist
+	 */
+	public boolean dislike()
+	{
+		log("dislike()", "v");
+		boolean success = false;
+		if (isSongLiked())
+		{
+			this.unlike();
+		}
+		if (!isSongDisliked())
+		{
+			//blank song and artist
+			if (this.isSongValidForOpinion())
+			{
+				Uri uri = ContentProviderRadio.CONTENT_URI_DISLIKES;
+				ContentValues values = new ContentValues();
+		        values.put(DbContractRadio.EntryDislike.COLUMN_NAME_ARTIST, mArtist);
+		        values.put(DbContractRadio.EntryDislike.COLUMN_NAME_SONG, mSong);
+		        values.put(DbContractRadio.EntryDislike.COLUMN_NAME_STATION_TITLE, mTitle);
+		        values.put(DbContractRadio.EntryDislike.COLUMN_NAME_STATION_URL, mUrl);
+				Uri insertedUri = getContentResolver().insert(uri, values);
+				long id = ContentUris.parseId(insertedUri);
+				if (id > 0)
+				{
+					log("dislike success", "v");
+					success = true;
+				}
+			}
+		}
+		else
+		{
+			//already disliked
+			log("already disliked", "d");
+			success = true;
+		}
+		return success;
+	}
+	
+	public boolean undislike()
+	{
+		log("undislike()", "v");
+		boolean success = false;
+		if (!isSongDisliked()) //already not liked
+		{
+			log("already not disliked", "d");
+			success = true;
+		}
+		else
+		{
+			if (this.isSongValidForOpinion())
+			{
+				Uri uri = ContentProviderRadio.CONTENT_URI_DISLIKES;
+				String selection = DbContractRadio.EntryDislike.COLUMN_NAME_ARTIST + " = ? and " + DbContractRadio.EntryDislike.COLUMN_NAME_SONG + " = ?";
+				String[] selectionArgs = {mArtist.trim(), mSong.trim()};
+		        int deleted = getContentResolver().delete(uri, selection, selectionArgs);
+		        if (deleted > 0)
+		        {
+		        	log("deleted dislike(s)", "v");
+		        	success = true;
+		        }
+			}
+		}
+		return success;
+	}
+	
+	/**
+	 * @return whether current song, artist, url and title can be used for 'like' or similar action
+	 */
+	private boolean isSongValidForOpinion()
+	{
+		boolean valid;
+		if ((mSong == null || mSong.equals("")) && (mArtist == null || mArtist.equals("")))
+		{
+			log("blank song and artist", "d");
+			valid = false;
+		}
+		else if ( //unknown song and artist
+				(
+					mSong.equals(getResources().getString(R.string.unknown_song)) || 
+					mSong.equals(getResources().getString(R.string.loading_song))
+				)
+				&&
+				(
+					mArtist.equals(getResources().getString(R.string.unknown_artist)) || 
+					mArtist.equals(getResources().getString(R.string.loading_artist))
+				)
+			)
+		{
+			log("unknown song and artist", "d");
+			valid = false;
+		}
+		else if (mSong == null || mArtist == null 
+				//|| mTitle == null || mUrl == null //not that important
+				)
+		{
+			log("something is null", "d");
+			valid = false;
+		}
+		else
+		{
+			valid = true;
+		}
+		return valid;
 	}
 	
 	

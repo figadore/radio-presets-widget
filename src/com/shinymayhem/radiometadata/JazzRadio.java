@@ -77,11 +77,11 @@ public class JazzRadio implements Parser {
 			//put values in map if the keys exist
 			if (tagMap.containsKey("chanteur"))
 			{
-				map.put(KEY_ARTIST, tagMap.get("chanteur"));
+				map.put(KEY_ARTIST, tagMap.get("chanteur").trim());
 			}
 			if (tagMap.containsKey("chanson"))
 			{
-				map.put(KEY_SONG, tagMap.get("chanson"));
+				map.put(KEY_SONG, tagMap.get("chanson").trim());
 			}
 		} catch (MalformedURLException e) {
 			//fail silently

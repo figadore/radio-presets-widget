@@ -67,8 +67,8 @@ public class ShoutcastV1 implements Parser {
 			map.put(Parser.KEY_SONG, info); //default song to whole info string if no dash
 			String artist = info.substring(0, info.indexOf("-"));
 			String song = info.substring(info.indexOf("-") + 1);
-			map.put(Parser.KEY_ARTIST, artist);
-			map.put(Parser.KEY_SONG, song);
+			map.put(Parser.KEY_ARTIST, artist.trim());
+			map.put(Parser.KEY_SONG, song.trim());
 		}
 		catch (StringIndexOutOfBoundsException e)
 		{
