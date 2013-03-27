@@ -40,7 +40,6 @@ public class ServiceAudioFormat extends IntentService {
 	
 	public ServiceAudioFormat() {
 		super("ServiceAudioFormatName");
-		// TODO Auto-generated constructor stub
 	}
 	
 	@Override

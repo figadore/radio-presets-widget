@@ -74,7 +74,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	public final static String ACTION_LIKE = "com.shinymayhem.radiopresets.ACTION_LIKE";
 	public final static String ACTION_DISLIKE = "com.shinymayhem.radiopresets.ACTION_DISLIKE";
 	public final static String ACTION_MEDIA_BUTTON = "com.shinymayhem.radiopresets.MEDIA_BUTTON";
-	public final static String ACTION_UPDATE_WIDGET = "com.shinymayhem.radiopresets.ACTION_UPDATE_WIDGET";
+	public final static String ACTION_PULL_WIDGET_INFO = "com.shinymayhem.radiopresets.ACTION_UPDATE_WIDGET";
 	public final static String ACTION_STREAM_ERROR = "com.shinymayhem.radiopresets.ACTION_STREAM_ERROR";
 	public final static String ACTION_FORMAT_ERROR = "com.shinymayhem.radiopresets.ACTION_FORMAT_ERROR";
 	public final static String ACTION_UNSUPPORTED_FORMAT_ERROR = "com.shinymayhem.radiopresets.ACTION_UNSUPPORTED_FORMAT_ERROR";
@@ -327,7 +327,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 				}
 				return START_NOT_STICKY;
 			}
-			else if (action.equals(ACTION_UPDATE_WIDGET.toString())) //Stop intent
+			else if (action.equals(ACTION_PULL_WIDGET_INFO.toString()))
 			{
 				log("UPDATE_WIDGET action in intent", "v");	
 				updateDetails();
@@ -844,11 +844,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			//begin listen for phone call
 			registerPhoneReceiver();
 			
-			this.stopAndReleasePlayer(mMediaPlayer);
 			
-			log("creating new media player", "v");
-			this.mMediaPlayer = new MediaPlayer();
-			mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);	
 			
 			this.startForegroundNotification(getResources().getString(R.string.status_preparing), getResources().getString(R.string.cancel), true);
 			
@@ -863,7 +859,13 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 	
 	private void playUrl(String url)
 	{
+	    log("playUrl()", "v");
+	    
+	    this.stopAndReleasePlayer(mMediaPlayer);
+        this.mMediaPlayer = new MediaPlayer();
+        mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC); 
 		mCurrentPlayerState = ServiceRadioPlayer.STATE_PREPARING;
+		
 		//get playlist data
 		AsyncTaskPlaylist playlist = new AsyncTaskPlaylist();
 		playlist.execute(mUrl);
@@ -882,20 +884,20 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 			
 		} catch (IllegalArgumentException e) {
 			// TODO Auto-generated catch block
-			log("setting data source failed", "e");
+			log("IllegalArgumentException, setting data source failed", "e");
 			e.printStackTrace();
 		} catch (SecurityException e) {
 			// TODO Auto-generated catch block
-			log("setting data source failed", "e");
+			log("SecurityException, setting data source failed", "e");
 			e.printStackTrace();
 		} catch (IllegalStateException e) {
 			// TODO Auto-generated catch block
-			log("setting data source failed", "e");
+			log("IllegalStateException, setting data source failed", "e");
 			e.printStackTrace();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			//TODO handle this somehow, let user know
-			log("setting data source failed", "e");
+			log("IOException, setting data source failed", "e");
 			e.printStackTrace();
 		}
 		
@@ -1223,6 +1225,8 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 		//TODO async task? possibly causing slow responses
 		Intent intent = this.getDetailsUpdateIntent(station, status);
 		this.sendBroadcast(intent);
+		intent.setClass(this, ServiceWidgetUpdate.class);
+		startService(intent);
 		log("sent update details broadcast", "v");
 	}
 	

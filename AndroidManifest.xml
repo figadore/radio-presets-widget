@@ -47,6 +47,16 @@
             android:exported="false" >
         </service>
         
+        <service
+            android:name="com.shinymayhem.radiopresets.ServiceWidgetUpdate"
+            android:enabled="true"
+            android:permission="android.permission.INTERNET"
+            android:exported="false" >
+            <intent-filter>
+		    	<action android:name="com.shinymayhem.radiopresets.mainactivity.ACTION_UPDATE_INFO" />
+		    </intent-filter>
+        </service>
+        
         <provider
 		        android:authorities="com.shinymayhem.radiopresets.contentprovider"
 		        android:name="com.shinymayhem.radiopresets.ContentProviderRadio"
@@ -62,9 +72,7 @@
 		    <intent-filter>
 		        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />    
 		    </intent-filter>
-		    <intent-filter>
-		    	<action android:name="com.shinymayhem.radiopresets.mainactivity.ACTION_UPDATE_INFO" />
-		    </intent-filter>
+		    
 		    <meta-data android:name="android.appwidget.provider"
 		               android:resource="@xml/preset_buttons_widget_info" />
 		</receiver>
