@@ -25,39 +25,39 @@ import android.view.LayoutInflater;
 
 public class DialogFragmentEvent extends DialogFragment {
 
-	
-	@Override
-	public void onCreate(Bundle savedInstanceState)
-	{
-		super.onCreate(savedInstanceState);
-	}
-	
-	public interface ListenerEventDialog
-	{
-		public void onDialogEventPositiveClick(DialogFragment dialog);
-		public void onDialogEventNegativeClick(DialogFragment dialog);
-	}
-	
-	ListenerEventDialog mListener;
-	
-	@Override
-	public void onAttach(Activity activity)
-	{
-		super.onAttach(activity);
-		try
-		{
-			// Instantiate the ListenerAddDialog so we can send events to the host
-			mListener = (ListenerEventDialog) activity;
-		}
-		catch (ClassCastException e)
-		{
-			// The activity doesn't implement the interface, throw exception
+    
+    @Override
+    public void onCreate(Bundle savedInstanceState)
+    {
+        super.onCreate(savedInstanceState);
+    }
+    
+    public interface ListenerEventDialog
+    {
+        public void onDialogEventPositiveClick(DialogFragment dialog);
+        public void onDialogEventNegativeClick(DialogFragment dialog);
+    }
+    
+    ListenerEventDialog mListener;
+    
+    @Override
+    public void onAttach(Activity activity)
+    {
+        super.onAttach(activity);
+        try
+        {
+            // Instantiate the ListenerAddDialog so we can send events to the host
+            mListener = (ListenerEventDialog) activity;
+        }
+        catch (ClassCastException e)
+        {
+            // The activity doesn't implement the interface, throw exception
             throw new ClassCastException(activity.toString()
                     + " must implement ListenerAddDialog");
-		}
-	}
-	
-	@Override
+        }
+    }
+    
+    @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         // Build the dialog and set up the button click handlers
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());

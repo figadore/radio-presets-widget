@@ -1,52 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-	android:orientation="vertical"
-	android:layout_width="match_parent"
-	android:layout_height="match_parent"
-	android:id="@+id/player_fragment"
-	android:background="@color/player_background"
-	>
-	<LinearLayout
-	    android:id="@+id/player_playing"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/player_fragment"
+    android:background="@color/player_background"
+    >
+    <LinearLayout
+        android:id="@+id/player_playing"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
         >
-    	<TextView
-    	    android:id="@+id/player_song_details" 
-    	    android:layout_width="match_parent"
-        	android:layout_height="wrap_content"
-        	android:marqueeRepeatLimit="marquee_forever"
-        	android:scrollHorizontally="true"
-        	android:ellipsize="marquee"
-        	android:focusable="true"
-        	android:focusableInTouchMode="true"
-        	android:text="@string/player_initial_song_details"
-        	android:textSize="18sp"
+        <TextView
+            android:id="@+id/player_song_details" 
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:scrollHorizontally="true"
+            android:ellipsize="marquee"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:text="@string/player_initial_song_details"
+            android:textSize="18sp"
         />
-    	<TextView
-    	    android:id="@+id/player_station_details" 
-    	    android:layout_width="match_parent"
-        	android:layout_height="wrap_content"
-        	android:marqueeRepeatLimit="marquee_forever"
-        	android:scrollHorizontally="true"
-        	android:ellipsize="marquee"
-        	android:focusable="true"
-        	android:focusableInTouchMode="true"
-        	android:text="@string/player_initial_station_details"
-        	android:textSize="14sp"
+        <TextView
+            android:id="@+id/player_station_details" 
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:scrollHorizontally="true"
+            android:ellipsize="marquee"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:text="@string/player_initial_station_details"
+            android:textSize="14sp"
         />
     </LinearLayout>         
-	<ImageButton
+    <ImageButton
         android:id="@+id/stop_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_below="@id/player_playing"
         android:paddingBottom="@dimen/player_vertical_padding"
-	    android:paddingTop="@dimen/player_vertical_padding"
+        android:paddingTop="@dimen/player_vertical_padding"
         android:paddingLeft="@dimen/player_horizontal_padding"
         android:paddingRight="@dimen/player_horizontal_padding"
         android:contentDescription="@string/stop"
@@ -60,7 +60,7 @@
         android:layout_toLeftOf="@id/stop_button"
         android:layout_below="@id/player_playing"
         android:paddingBottom="@dimen/player_vertical_padding"
-	    android:paddingTop="@dimen/player_vertical_padding"
+        android:paddingTop="@dimen/player_vertical_padding"
         android:paddingLeft="@dimen/player_horizontal_padding"
         android:paddingRight="@dimen/player_horizontal_padding"
         android:contentDescription="@string/previous"
@@ -74,7 +74,7 @@
         android:layout_toRightOf="@id/stop_button"
         android:layout_below="@id/player_playing"
         android:paddingBottom="@dimen/player_vertical_padding"
-	    android:paddingTop="@dimen/player_vertical_padding"
+        android:paddingTop="@dimen/player_vertical_padding"
         android:paddingLeft="@dimen/player_horizontal_padding"
         android:paddingRight="@dimen/player_horizontal_padding"
         android:contentDescription="@string/next"
@@ -89,7 +89,7 @@
         android:layout_toLeftOf="@id/prev_button"
         android:layout_below="@id/player_playing"
         android:paddingBottom="@dimen/player_vertical_padding"
-	    android:paddingTop="@dimen/player_vertical_padding"
+        android:paddingTop="@dimen/player_vertical_padding"
         android:paddingLeft="@dimen/player_horizontal_padding"
         android:paddingRight="@dimen/player_horizontal_padding"
         android:contentDescription="@string/previous"
@@ -105,7 +105,7 @@
         android:layout_toRightOf="@id/next_button"
         android:layout_below="@id/player_playing"
         android:paddingBottom="@dimen/player_vertical_padding"
-	    android:paddingTop="@dimen/player_vertical_padding"
+        android:paddingTop="@dimen/player_vertical_padding"
         android:paddingLeft="@dimen/player_horizontal_padding"
         android:paddingRight="@dimen/player_horizontal_padding"
         android:contentDescription="@string/next"
@@ -119,14 +119,14 @@
         android:layout_below="@id/stop_button"
         android:paddingTop="5dp"
         android:paddingBottom="10dp"
-	    android:paddingLeft="20dp"
-	    android:paddingRight="20dp"
-	    >
-	    <SeekBar
-	        android:id="@+id/volume_slider"
-	        android:layout_width="fill_parent"
-		    android:layout_height="wrap_content"
-	        />
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp"
+        >
+        <SeekBar
+            android:id="@+id/volume_slider"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            />
     </FrameLayout>
     
 </RelativeLayout>

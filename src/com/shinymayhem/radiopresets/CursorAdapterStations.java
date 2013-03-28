@@ -31,54 +31,54 @@ import android.widget.TextView;
 
 public class CursorAdapterStations extends CursorAdapter {
 
-	protected Activity mContext;
+    protected Activity mContext;
 
-	public CursorAdapterStations(Activity context, Cursor c, int flags) {
-		super(context, c, flags);
-		this.mContext = context;
-		
-	}
+    public CursorAdapterStations(Activity context, Cursor c, int flags) {
+        super(context, c, flags);
+        this.mContext = context;
+        
+    }
 
-	@SuppressLint("NewApi")
-	@SuppressWarnings("deprecation")
-	@Override
-	public void bindView(View view, Context context, Cursor cursor) {
-		TextView titleView = (TextView)view.findViewById(R.id.station_title);
-		int preset = (int)cursor.getLong(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER));
-		String station = cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_TITLE));
-		String text =  String.valueOf(preset) + ". " + station;
-		titleView.setText(text);
-		int drawable;
-		if (((ActivityMain) mContext).getPlayingPreset() == preset)
-		{
-			drawable = R.drawable.list_item_background_playing;
-		}
-		else
-		{
-			drawable = R.drawable.list_item_background;
-		}
-		if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.JELLY_BEAN) {
-			view.setBackground(mContext.getResources().getDrawable(drawable));
-		}
-		else
-		{
-			view.setBackgroundDrawable(mContext.getResources().getDrawable(drawable));	
-		}
-	}
+    @SuppressLint("NewApi")
+    @SuppressWarnings("deprecation")
+    @Override
+    public void bindView(View view, Context context, Cursor cursor) {
+        TextView titleView = (TextView)view.findViewById(R.id.station_title);
+        int preset = (int)cursor.getLong(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER));
+        String station = cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_TITLE));
+        String text =  String.valueOf(preset) + ". " + station;
+        titleView.setText(text);
+        int drawable;
+        if (((ActivityMain) mContext).getPlayingPreset() == preset)
+        {
+            drawable = R.drawable.list_item_background_playing;
+        }
+        else
+        {
+            drawable = R.drawable.list_item_background;
+        }
+        if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.JELLY_BEAN) {
+            view.setBackground(mContext.getResources().getDrawable(drawable));
+        }
+        else
+        {
+            view.setBackgroundDrawable(mContext.getResources().getDrawable(drawable));  
+        }
+    }
 
-	@Override
-	public View newView(Context context, Cursor cursor, ViewGroup parent) {
-		final LayoutInflater inflater = LayoutInflater.from(mContext);
-		View v = inflater.inflate(R.layout.station_entry, null);
-		//View v = inflater.inflate(R.layout.station_entry, parent, true);
-		return v;
-	}
-	
-	@Override
-	public void onContentChanged()
-	{
-		//called if flag is set
-		Log.v("CursorAdapter", "onContentChanged()");
-	}
+    @Override
+    public View newView(Context context, Cursor cursor, ViewGroup parent) {
+        final LayoutInflater inflater = LayoutInflater.from(mContext);
+        View v = inflater.inflate(R.layout.station_entry, null);
+        //View v = inflater.inflate(R.layout.station_entry, parent, true);
+        return v;
+    }
+    
+    @Override
+    public void onContentChanged()
+    {
+        //called if flag is set
+        Log.v("CursorAdapter", "onContentChanged()");
+    }
 
 }

@@ -6,34 +6,34 @@
     android:orientation="horizontal"
     android:background="@drawable/list_item_background"
     android:descendantFocusability="blocksDescendants"
-    android:id="@+id/station_entry" >	
+    android:id="@+id/station_entry" >   
     <ImageView
-		    android:src="@drawable/content_import_export"
-		    android:layout_width="wrap_content"
-		    android:layout_height="wrap_content"
-		    android:layout_alignParentLeft="true"
-		    android:layout_centerVertical="true"
-		    android:contentDescription="@string/drag"
-		    android:importantForAccessibility="no"
-		    android:paddingLeft="7dp"
-		    android:paddingRight="7dp"
-		    android:paddingBottom="7dp"
-		    android:paddingTop="7dp" 
-		    android:clickable="false"
-		    android:id="@+id/station_drag" />
+            android:src="@drawable/content_import_export"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_centerVertical="true"
+            android:contentDescription="@string/drag"
+            android:importantForAccessibility="no"
+            android:paddingLeft="7dp"
+            android:paddingRight="7dp"
+            android:paddingBottom="7dp"
+            android:paddingTop="7dp" 
+            android:clickable="false"
+            android:id="@+id/station_drag" />
 
-	<Button 
-	    android:layout_width="fill_parent"
-	    android:layout_height="wrap_content"
-	    android:layout_centerVertical="true"
-		android:layout_toRightOf="@id/station_drag"
-	    android:padding="15dp"
-	    android:textSize="22sp"
-	    android:gravity="left"
-	    android:clickable="false"
-	    style="@style/stationEntryButton"
-	    android:id="@+id/station_title" >
-	    
-	
-	</Button>
+    <Button 
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_toRightOf="@id/station_drag"
+        android:padding="15dp"
+        android:textSize="22sp"
+        android:gravity="left"
+        android:clickable="false"
+        style="@style/stationEntryButton"
+        android:id="@+id/station_title" >
+        
+    
+    </Button>
 </RelativeLayout>

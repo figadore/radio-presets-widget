@@ -29,13 +29,13 @@ import java.util.regex.Pattern;
 import android.util.Log;
 
 public class ShoutcastV1 implements Parser {
-	
-	//protected ActivityLogger mLogger = new ActivityLogger();
-	
-	@Override
-	public boolean parsesUrl(String url) {
-		
-		try {
+    
+    //protected ActivityLogger mLogger = new ActivityLogger();
+    
+    @Override
+    public boolean parsesUrl(String url) {
+        
+        try {
             URL metadataUrl = new URL(url + "/7.html");
             HttpURLConnection urlc = (HttpURLConnection) metadataUrl.openConnection();
             urlc.setRequestProperty("User-Agent", "Mozilla/5.0");
@@ -48,93 +48,93 @@ public class ShoutcastV1 implements Parser {
         } catch (IOException e) {
             //fail silently
         }
-//		if (url.equals("http://streamplus17.leonex.de:39060"))
-//		{
-//			return true;
-//		}
-		return false;
-	}
-	
-	@Override
-	public HashMap<String, String> getMetadata(String url)
-	{
-		
-		String info;
-		HashMap<String, String> map = new HashMap<String, String>();
-		try
-		{
-			info = this.getInfo(url);
-			map.put(Parser.KEY_SONG, info); //default song to whole info string if no dash
-			String artist = info.substring(0, info.indexOf("-"));
-			String song = info.substring(info.indexOf("-") + 1);
-			map.put(Parser.KEY_ARTIST, artist.trim());
-			map.put(Parser.KEY_SONG, song.trim());
-		}
-		catch (StringIndexOutOfBoundsException e)
-		{
-			//no "-" found in info string
-			
-			log("Not a valid metadata string", "v");
-		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
-			log("Malformed URL", "v");
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			log("IO Exception", "v");
-			e.printStackTrace();
-		}
-		
-		return map;
-	}
+//      if (url.equals("http://streamplus17.leonex.de:39060"))
+//      {
+//          return true;
+//      }
+        return false;
+    }
+    
+    @Override
+    public HashMap<String, String> getMetadata(String url)
+    {
+        
+        String info;
+        HashMap<String, String> map = new HashMap<String, String>();
+        try
+        {
+            info = this.getInfo(url);
+            map.put(Parser.KEY_SONG, info); //default song to whole info string if no dash
+            String artist = info.substring(0, info.indexOf("-"));
+            String song = info.substring(info.indexOf("-") + 1);
+            map.put(Parser.KEY_ARTIST, artist.trim());
+            map.put(Parser.KEY_SONG, song.trim());
+        }
+        catch (StringIndexOutOfBoundsException e)
+        {
+            //no "-" found in info string
+            
+            log("Not a valid metadata string", "v");
+        } catch (MalformedURLException e) {
+            // TODO Auto-generated catch block
+            log("Malformed URL", "v");
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            log("IO Exception", "v");
+            e.printStackTrace();
+        }
+        
+        return map;
+    }
 
-	private String getInfo(String url) throws MalformedURLException, IOException
-	{
-		String response = "";
-		
-		URL metadataUrl;
-		
-		metadataUrl = new URL(url + "/7.html");
-		URLConnection connection = metadataUrl.openConnection();
-		connection.setRequestProperty("User-Agent", "Mozilla/5.0");
+    private String getInfo(String url) throws MalformedURLException, IOException
+    {
+        String response = "";
+        
+        URL metadataUrl;
+        
+        metadataUrl = new URL(url + "/7.html");
+        URLConnection connection = metadataUrl.openConnection();
+        connection.setRequestProperty("User-Agent", "Mozilla/5.0");
 
-		Reader streamReader = new InputStreamReader(connection.getInputStream());
-		StringBuilder stringBuffer = new StringBuilder();
-		int ch;
-		while (true) {
-		    ch = streamReader.read();
+        Reader streamReader = new InputStreamReader(connection.getInputStream());
+        StringBuilder stringBuffer = new StringBuilder();
+        int ch;
+        while (true) {
+            ch = streamReader.read();
 
-		    if (ch < 0)
-		        break;
+            if (ch < 0)
+                break;
 
-		    stringBuffer.append((char) ch);
-		}
+            stringBuffer.append((char) ch);
+        }
 
-		response = stringBuffer.toString();
-		log("7.html:" + response, "v");
-		
-		String info = "";
-		Pattern pattern = Pattern.compile("^.*<body>(.*)</body>.*$");
-		Matcher matcher;
-		matcher = pattern.matcher(response);
-		if (matcher.find())
-		{
-			String content = matcher.group(1).trim();
-			String[] fields = content.split(",", 7);
-			info = fields[fields.length-1];
-			log("content:" + content, "v");	
-		}
-		else
-		{
-			log("body pattern not found", "v");
-		}
-		return info;
-	}
-	
-	public void log(String text, String level)
-	{
-		Log.v("ShoutcastV1", text);
-	}
-	
-	
+        response = stringBuffer.toString();
+        log("7.html:" + response, "v");
+        
+        String info = "";
+        Pattern pattern = Pattern.compile("^.*<body>(.*)</body>.*$");
+        Matcher matcher;
+        matcher = pattern.matcher(response);
+        if (matcher.find())
+        {
+            String content = matcher.group(1).trim();
+            String[] fields = content.split(",", 7);
+            info = fields[fields.length-1];
+            log("content:" + content, "v"); 
+        }
+        else
+        {
+            log("body pattern not found", "v");
+        }
+        return info;
+    }
+    
+    public void log(String text, String level)
+    {
+        Log.v("ShoutcastV1", text);
+    }
+    
+    
 }
