@@ -866,7 +866,11 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     private void playUrl(String url)
     {
         log("playUrl()", "v");
-        
+        if (!mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_INITIALIZING))
+        {
+            log("incorrect state to play url", "v");
+            return;
+        }
         this.stopAndReleasePlayer(mMediaPlayer);
         this.mMediaPlayer = new MediaPlayer();
         mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC); 
