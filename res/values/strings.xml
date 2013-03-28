@@ -53,6 +53,7 @@
     <string name="status_playing">Playing</string>
     <string name="status_buffering">Buffering</string>
     <string name="status_error">Error</string>
+    <string name="status_skipping">Skipping disliked song</string>
     <string name="status_waiting_for_network">Waiting for network</string>
     <string name="status_network_updated">Network updated, reconnecting</string>
     <string name="delete_station_confirmation_title">Delete Station</string>
