@@ -364,7 +364,7 @@ public class ContentProviderRadio extends ContentProvider {
             cursor.moveToFirst();
             id = cursor.getLong(cursor.getColumnIndex(DbContractRadio.EntryLike._ID));
         }
-        //cursor.close();
+        cursor.close();
         return id;
     }
     
@@ -383,7 +383,7 @@ public class ContentProviderRadio extends ContentProvider {
             cursor.moveToFirst();
             id = cursor.getLong(cursor.getColumnIndex(DbContractRadio.EntryDislike._ID));
         }
-        //cursor.close();
+        cursor.close();
         return id;
     }
     

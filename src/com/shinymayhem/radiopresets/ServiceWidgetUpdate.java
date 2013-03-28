@@ -40,7 +40,7 @@ public class ServiceWidgetUpdate extends IntentService {
             updateWidget();
         }
         //AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(this);
-        stopSelf();
+        //stopSelf();
     }
     
     @SuppressLint("NewApi")

@@ -1056,6 +1056,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
             log("incremented preset, playing " + String.valueOf(mPreset), "v");
             play(); 
         }
+        cursor.close();
     }
     
 
@@ -1098,6 +1099,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
             log("decremented preset, playing " + String.valueOf(mPreset), "v");
             play(); 
         }
+        cursor.close();
     }
     
     
@@ -1399,6 +1401,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
             {
                 liked = true;
             }
+            cursor.close();
         }
         return liked;
     }
@@ -1419,6 +1422,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
             {
                 disliked = true;
             }
+            cursor.close();
         }
         return disliked;
     }
@@ -1636,6 +1640,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
             mArtist = getResources().getString(R.string.loading_artist);
             mSong = getResources().getString(R.string.loading_song);
         }
+        cursor.close();
     }
     
     protected void initializePlayer(MediaPlayer player)

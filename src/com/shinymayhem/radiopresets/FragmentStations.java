@@ -340,6 +340,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
         Cursor cursor = (Cursor)listView.getItemAtPosition(position);
         //final String url = cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_URL));
         final int preset = Integer.valueOf(cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER)));
+        cursor.close();
         String str= "list item clicked, play preset " + preset + ". view position:";
         str += Integer.toString(position);
         str += ", row id:";
@@ -491,6 +492,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
         LayoutInflater inflater = LayoutInflater.from(mContext);
         final View editView = inflater.inflate(R.layout.dialog_station_details, null);
         final long id = cursor.getLong(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation._ID));
+        cursor.close();
         ((EditText)editView.findViewById(R.id.station_title)).setText(title);
         ((EditText)editView.findViewById(R.id.station_url)).setText(url);
         AlertDialog.Builder builder = new AlertDialog.Builder(this.getContext());

@@ -125,21 +125,23 @@ public class DbContractRadio {
 
         @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            if (oldVersion == 3 && newVersion == 4)
+            if (oldVersion != newVersion) 
             {
-                String sql = "alter table " + DbContractRadio.EntryStation.TABLE_NAME + 
-                        " add column " + DbContractRadio.EntryStation.COLUMN_NAME_FORMAT + TEXT_TYPE + ";";
-                db.execSQL(sql);
-                db.execSQL(SQL_CREATE_LIKES);
-                db.execSQL(SQL_CREATE_DISLIKES);
+                switch (oldVersion) //no breaks until end, so that it upgrades incrementally
+                {
+                case 3:
+                    String sql = "alter table " + DbContractRadio.EntryStation.TABLE_NAME + 
+                            " add column " + DbContractRadio.EntryStation.COLUMN_NAME_FORMAT + TEXT_TYPE + ";";
+                    db.execSQL(sql);
+                    db.execSQL(SQL_CREATE_LIKES);
+                    db.execSQL(SQL_CREATE_DISLIKES);
+                    break; //make sure there is only one break, right before default
+                default:
+                    //unhandled upgrade case, discard the data and start over
+                    db.execSQL(SQL_DELETE_STATIONS);
+                    onCreate(db); 
+                }
             }
-            else
-            {
-                // discard the data and start over
-                db.execSQL(SQL_DELETE_STATIONS);
-                onCreate(db);
-            }
-
         }
 
     }

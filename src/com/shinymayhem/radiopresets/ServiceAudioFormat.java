@@ -87,7 +87,7 @@ public class ServiceAudioFormat extends IntentService {
         }
         
         startService(updateIntent);
-        stopSelf();
+        //stopSelf();
         
     }
 
