@@ -26,6 +26,8 @@ import android.widget.ListView;
 
 @TargetApi(Build.VERSION_CODES.HONEYCOMB)
 public class MultiChoiceModeListenerStation implements MultiChoiceModeListener {
+    private static final boolean LOCAL_LOGV = ActivityMain.LOCAL_LOGV;
+
     protected ActionMode mActionMode;
     protected int mSelectedCount;
     protected ListView mListView;
@@ -86,21 +88,24 @@ public class MultiChoiceModeListenerStation implements MultiChoiceModeListener {
         mode.setTitle(String.valueOf(count) + " selected");
         //mode.setSubtitle("Subtitle");
 
-        String str = "Position " + String.valueOf(position) + " ";
         //RelativeLayout item = (RelativeLayout) mListView.getChildAt(position);
-        //item.setActivated(checked);
-        if (checked)
+            //item.setActivated(checked);
+        if (LOCAL_LOGV) 
         {
-            //Object item = mListView.getItemAtPosition(position);
+            String str = "Position " + String.valueOf(position) + " ";
             
-            //item.setBackgroundColor("android:attr/activatedBackgroundColor");
-            str += "checked";
+            if (checked)
+            {
+                //Object item = mListView.getItemAtPosition(position);
+                //item.setBackgroundColor("android:attr/activatedBackgroundColor");
+                str += "checked";
+            }
+            else
+            {
+                str += "unchecked";
+            }
+            mHost.log(str, "i");
         }
-        else
-        {
-            str += "unchecked";
-        }
-        mHost.log(str, "i");
         mode.invalidate();
     }
     

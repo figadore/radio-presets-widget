@@ -10,11 +10,14 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.RemoteViews;
 
 public class ServiceWidgetUpdate extends IntentService {
-
+    private static final boolean LOCAL_LOGV = ActivityMain.LOCAL_LOGV;
+    private static final String TAG = "ServiceWidgetUpdate";
+    
+    protected ActivityLogger mLogger = new ActivityLogger(this);
+    
     public static final String ACTION_UPDATE_WIDGET = "com.shinymayhem.radiopresets.servicewidgetupdate.ACTION_UPDATE_WIDGET";
     protected Intent mMainIntent;
     private final int[] layoutIds = {R.layout.preset1, R.layout.preset2, R.layout.preset3, R.layout.preset4, R.layout.preset5, R.layout.preset6, R.layout.preset7, R.layout.preset8};
@@ -53,7 +56,7 @@ public class ServiceWidgetUpdate extends IntentService {
         RemoteViews views;
         // Perform this loop procedure for each App Widget that belongs to this provider
         for (int i=0; i<N; i++) {
-            log("updateWidget looping through widgets. on " + String.valueOf(i) + " of " + String.valueOf(N), "v");
+            if (LOCAL_LOGV) log("updateWidget looping through widgets. on " + String.valueOf(i) + " of " + String.valueOf(N), "v");
             int appWidgetId = appWidgetIds[i];
             if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.JELLY_BEAN)
             {
@@ -75,7 +78,7 @@ public class ServiceWidgetUpdate extends IntentService {
         String station = extras.getString(ActivityMain.EXTRA_STATION);
         String artist = extras.getString(ActivityMain.EXTRA_ARTIST);
         String song = extras.getString(ActivityMain.EXTRA_SONG);
-        log("updating widget info:" + station + "," + status, "v");
+        if (LOCAL_LOGV) log("updating widget info:" + station + "," + status, "v");
         //boolean stopped = status.equals(getResources().getString(R.string.status_stopped)); 
         
         //mContext = context;
@@ -89,7 +92,7 @@ public class ServiceWidgetUpdate extends IntentService {
         // Perform this loop procedure for each App Widget that belongs to this provider
         RemoteViews views;
         for (int i=0; i<N; i++) {
-            log("updateInfo looping through widgets. on " + String.valueOf(i) + " of " + String.valueOf(N), "v");
+            if (LOCAL_LOGV) log("updateInfo looping through widgets. on " + String.valueOf(i) + " of " + String.valueOf(N), "v");
             int appWidgetId = appWidgetIds[i];
             
             if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.JELLY_BEAN)
@@ -130,12 +133,12 @@ public class ServiceWidgetUpdate extends IntentService {
         int height = getHeight(options); 
         if (height >= tallWidgetHeight)
         {
-            log("tall widget", "v");
+            if (LOCAL_LOGV) log("tall widget", "v");
             views = this.getTallWidgetViews(options, extras);
         }
         else
         {
-            log("short widget", "v");
+            if (LOCAL_LOGV) log("short widget", "v");
             views = this.getShortWidgetViews(options, extras);
         }
         //return mViews;
@@ -156,7 +159,7 @@ public class ServiceWidgetUpdate extends IntentService {
         if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.JELLY_BEAN && options.containsKey(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT))
         {
             minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);   
-            log("got height:" + String.valueOf(minHeight), "v");
+            if (LOCAL_LOGV) log("got height:" + String.valueOf(minHeight), "v");
         }
         return minHeight;
     }
@@ -216,12 +219,12 @@ public class ServiceWidgetUpdate extends IntentService {
         
         if (liked)
         {
-            //log("liked", "v");
+            //if (LOCAL_LOGV) log("liked", "v");
             views.setImageViewResource(R.id.widget_like_button, R.drawable.song_like_selected);
         }
         else
         {
-            //log("not liked", "v");
+            //if (LOCAL_LOGV) log("not liked", "v");
             views.setImageViewResource(R.id.widget_like_button, R.drawable.song_like);
         }
         PendingIntent nextIntent = this.getNextIntent();
@@ -247,7 +250,7 @@ public class ServiceWidgetUpdate extends IntentService {
     
     private void setPresets(Bundle options, Bundle extras, RemoteViews views)
     {
-        log("setPresets()", "v");
+        if (LOCAL_LOGV) log("setPresets()", "v");
         views.removeAllViews(R.id.preset_buttons);
         
         RemoteViews presetButton;
@@ -390,6 +393,6 @@ public class ServiceWidgetUpdate extends IntentService {
     
     private void log(String text, String level)
     {
-        Log.v("ServiceWidgetUpdate", text);
+        mLogger.log(TAG, text, level);
     }
 }

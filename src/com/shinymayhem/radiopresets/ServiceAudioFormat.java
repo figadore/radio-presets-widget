@@ -33,9 +33,12 @@ import android.os.IBinder;
 import android.webkit.URLUtil;
 
 public class ServiceAudioFormat extends IntentService {
+    private static final boolean LOCAL_LOGV = ActivityMain.LOCAL_LOGV;
+    private static final boolean LOCAL_LOGD = ActivityMain.LOCAL_LOGD;
+    private static final String TAG = "ServiceAudioFormat";
     
     private enum AudioType {MP3, M3U, PLS, XSPF, AAC, AACP, UNKNOWN};
-    protected ActivityLogger mLogger = new ActivityLogger();
+    protected ActivityLogger mLogger = new ActivityLogger(this);
     protected InputStream mStream;
     
     public ServiceAudioFormat() {
@@ -45,12 +48,21 @@ public class ServiceAudioFormat extends IntentService {
     @Override
     protected void onHandleIntent(Intent intent)
     {
-        log("onHandleIntent()", "v");
+        if (LOCAL_LOGV) log("onHandleIntent()", "v");
         String url = intent.getStringExtra(ServiceRadioPlayer.EXTRA_URL);
         Intent updateIntent = new Intent(this, ServiceRadioPlayer.class);
         try {
             AudioType type = this.processUrl(url);
             String newUrl = this.getUrlByType(type, url);
+            if (!url.equals(newUrl))
+            {
+                if (LOCAL_LOGD) log("New URL: " + newUrl, "d");    
+            }
+            else
+            {
+                if (LOCAL_LOGV) log("New URL same as old URL: " + newUrl, "v");
+            }
+            
             updateIntent.setAction(ServiceRadioPlayer.ACTION_PLAY_STREAM);
             updateIntent.putExtra(ServiceRadioPlayer.EXTRA_URL, newUrl);
             boolean updateUrl;
@@ -73,17 +85,18 @@ public class ServiceAudioFormat extends IntentService {
             updateIntent.putExtra(ServiceRadioPlayer.EXTRA_FORMAT, type.toString());
             updateIntent.putExtra(ServiceRadioPlayer.EXTRA_UPDATE_URL, updateUrl);
         } catch (StreamHttpException e) {
+            if (LOCAL_LOGD) log("StreamHttpException for " + url, "d");
             updateIntent.setAction(ServiceRadioPlayer.ACTION_STREAM_ERROR);
             updateIntent.putExtra(ServiceRadioPlayer.EXTRA_RESPONSE_CODE, e.getResponseCode());
             updateIntent.putExtra(ServiceRadioPlayer.EXTRA_RESPONSE_MESSAGE, e.getResponseMessage());
         } catch (MalformedURLException e) {
+            if (LOCAL_LOGD) log("MalformedURLException for " + url, "d");
             updateIntent.setAction(ServiceRadioPlayer.ACTION_FORMAT_ERROR);
             updateIntent.putExtra(ServiceRadioPlayer.EXTRA_ERROR_MESSAGE, getResources().getString(R.string.error_url));
         } catch (IOException e) {
+            if (LOCAL_LOGD) log("IOException for " + url, "d");
             updateIntent.setAction(ServiceRadioPlayer.ACTION_FORMAT_ERROR);
             updateIntent.putExtra(ServiceRadioPlayer.EXTRA_ERROR_MESSAGE, getResources().getString(R.string.error_unknown));
-            log("IOException", "d");
-            e.printStackTrace();
         }
         
         startService(updateIntent);
@@ -94,7 +107,7 @@ public class ServiceAudioFormat extends IntentService {
     protected void handleHttpResponse(int responseCode, String message) throws IOException, StreamHttpException
     {
         //String message = con.getResponseMessage();
-        log("Server response code:" + String.valueOf(responseCode) + ", message:" +  message, "v");
+        if (LOCAL_LOGD) log("Server response code:" + String.valueOf(responseCode) + ", message:" +  message, "d");
         if (responseCode < 200 || responseCode >= 300)
         {
             throw new StreamHttpException(responseCode, message);   
@@ -127,7 +140,7 @@ public class ServiceAudioFormat extends IntentService {
                 List<String> contentTypes = headers.get("Content-Type");
                 for (String contentType : contentTypes)
                 {
-                    log("contentType:" + contentType, "d");
+                    if (LOCAL_LOGD) log("Content-Type:" + contentType, "d");
                     type = this.getTypeFromContentType(contentType);
                     if (!type.equals(AudioType.UNKNOWN)) //found type
                     {
@@ -138,7 +151,7 @@ public class ServiceAudioFormat extends IntentService {
             }
             else
             {
-                log("no content type", "d");
+                if (LOCAL_LOGD) log("No content type", "d");
             }
             //if it still can't find it, try one last time in the disposition
             if (type.equals(AudioType.UNKNOWN) && headers.containsKey("Content-Disposition"))
@@ -146,7 +159,7 @@ public class ServiceAudioFormat extends IntentService {
                 List<String> dispositions = headers.get("Content-Disposition");
                 for (String disposition : dispositions)
                 {
-                    log("disposition:" + disposition, "d");
+                    if (LOCAL_LOGD) log("Disposition:" + disposition, "d");
                     type = this.getTypeFromString(disposition);
                     if (!type.equals(AudioType.UNKNOWN)) //found type
                     {
@@ -223,7 +236,7 @@ public class ServiceAudioFormat extends IntentService {
     
     private String getUrlByType(AudioType type, String url) throws IOException, StreamHttpException
     {
-        log("getting url by type:" + type.toString(), "d");
+        if (LOCAL_LOGD) log("Getting url by type:" + type.toString(), "d");
         String newUrl = url;
         switch(type)
         {
@@ -254,7 +267,7 @@ public class ServiceAudioFormat extends IntentService {
     
     private String getUrlFromM3u(String url) throws IOException, StreamHttpException
     {
-        log("getUrlFromM3u()", "d");
+        if (LOCAL_LOGD) log("Get URL from M3U", "d");
         if (mStream == null)
         {
             getInputStream(url);
@@ -264,7 +277,7 @@ public class ServiceAudioFormat extends IntentService {
         String line;
         while ((line = reader.readLine()) != null)
         {
-            log("read line:" + line, "d");
+            if (LOCAL_LOGV) log("read line:" + line, "v");
             if (!line.startsWith("#") && URLUtil.isHttpUrl(line) || URLUtil.isHttpsUrl(line))
             {
                 newUrl = line;
@@ -276,7 +289,7 @@ public class ServiceAudioFormat extends IntentService {
     
     private String getUrlFromPls(String url) throws IOException, StreamHttpException
     {
-        log("getUrlFromPls()", "d");
+        if (LOCAL_LOGD) log("Get URL from PLS", "d");
         if (mStream == null)
         {
             getInputStream(url);
@@ -286,7 +299,7 @@ public class ServiceAudioFormat extends IntentService {
         String line;
         while ((line = reader.readLine()) != null)
         {
-            log("read line:" + line, "d");
+            if (LOCAL_LOGV) log("read line:" + line, "v");
             if (line.startsWith("File"))
             {
                 newUrl = line.substring(line.indexOf("=") + 1);
@@ -296,9 +309,10 @@ public class ServiceAudioFormat extends IntentService {
         return newUrl;
     }
     
+    //TODO
     private String getUrlFromXspf(String url) throws IOException, StreamHttpException
     {
-        log("getUrlFromXspf()", "d");
+        if (LOCAL_LOGD) log("Get URL from XSPF", "d");
         if (mStream == null)
         {
             getInputStream(url);
@@ -308,7 +322,7 @@ public class ServiceAudioFormat extends IntentService {
         String line;
         while ((line = reader.readLine()) != null)
         {
-            log("read line:" + line, "d");
+            if (LOCAL_LOGV) log("read line:" + line, "v");
         }
         return newUrl;
     }
@@ -359,11 +373,6 @@ public class ServiceAudioFormat extends IntentService {
         return headers;
     }
     
-    private void log(String text, String level)
-    {
-        mLogger.log(this, text, level);
-    }
-    
     @Override
     public IBinder onBind(Intent intent) {
         // TODO Auto-generated method stub
@@ -389,5 +398,11 @@ public class ServiceAudioFormat extends IntentService {
             return mResponseMessage;
         }
     }
+    
+    private void log(String text, String level)
+    {
+        mLogger.log(TAG, text, level);
+    }
+    
     
 }

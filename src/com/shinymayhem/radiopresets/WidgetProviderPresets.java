@@ -27,7 +27,6 @@ import android.os.Bundle;
 
 public class WidgetProviderPresets extends AppWidgetProvider {
     
-    protected ActivityLogger mLogger = new ActivityLogger();
     protected Context mContext;
     public static final int MIN_BUTTON_WIDTH = 65; //TODO get from preferences
 
@@ -35,7 +34,6 @@ public class WidgetProviderPresets extends AppWidgetProvider {
     {
         
         mContext = context;
-        log("onEnabled()", "v");
         super.onEnabled(context);
         pullInfo(context);
     }
@@ -44,7 +42,6 @@ public class WidgetProviderPresets extends AppWidgetProvider {
     {
         
         mContext = context;
-        log("widget onReceive(" + String.valueOf(intent.getAction()) + ")", "v");
         super.onReceive(context, intent);   
         
     }
@@ -54,7 +51,6 @@ public class WidgetProviderPresets extends AppWidgetProvider {
     public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager, int appWidgetId, Bundle newOptions)
     {
         mContext = context;
-        log("onAppWidgetOptionsChanged()", "v");
         this.updateWidget(context, newOptions);
         this.pullInfo(context);
         //super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions);
@@ -89,16 +85,11 @@ public class WidgetProviderPresets extends AppWidgetProvider {
      */
     private void pullInfo(Context context)
     {
-        log("updateDetails()", "v");
         Intent intent = new Intent(context, ServiceRadioPlayer.class);
         intent.setAction(ServiceRadioPlayer.ACTION_PULL_WIDGET_INFO);
         context.startService(intent);
     }
     
     
-    private void log(String text, String level)
-    {
-        mLogger.log(mContext, text, level);
-    }
     
 }

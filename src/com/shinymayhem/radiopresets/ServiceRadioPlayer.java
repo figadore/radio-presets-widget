@@ -63,6 +63,9 @@ import android.widget.Toast;
 import com.shinymayhem.radiometadata.Parser;
 
 public class ServiceRadioPlayer extends Service implements OnPreparedListener, OnInfoListener, OnCompletionListener, OnErrorListener, OnAudioFocusChangeListener {
+    private static final boolean LOCAL_LOGV = ActivityMain.LOCAL_LOGV;
+    private static final boolean LOCAL_LOGD = ActivityMain.LOCAL_LOGD;
+    private static final String TAG = "ServiceRadioPlayer";
     
     public final static int ONGOING_NOTIFICATION = 1;
     //public final static String ACTION = "com.shinymayhem.radiopresets.ACTION";
@@ -125,7 +128,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     protected boolean mInterrupted = false;
     private final IBinder mBinder = new LocalBinder();
     protected boolean mBound = false;
-    protected ActivityLogger mLogger = new ActivityLogger();
+    protected ActivityLogger mLogger = new ActivityLogger(this);
     protected Intent mIntent;
     protected NotificationManager mNotificationManager;
     protected Handler mMetadataHandler = new Handler();
@@ -144,7 +147,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     @Override
     public void onCreate()
     {
-        log("onCreate()", "v");
+        if (LOCAL_LOGV) log("onCreate()", "v");
         
         //initialize managers
         if (mNotificationManager == null)
@@ -166,47 +169,47 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        log("onStartCommand()", "v");
+        if (LOCAL_LOGV) log("onStartCommand()", "v");
 
         //check if resuming after close for memory, or other crash
         if ((flags & Service.START_FLAG_REDELIVERY) != 0)
         {
-            log("investigate: intent redelivery, restarting. maybe handle this with dialog? notification with resume action?", "d");
+            //maybe handle this with dialog and tap to resume
+            if (LOCAL_LOGD) log("Intent redelivery, restarting", "d");
         }
         
         mIntent = intent;
         if (intent == null)
         {
-            log("no intent", "w");
+            if (LOCAL_LOGD) log("No intent", "w");
         }
         else
         {
             String action = intent.getAction();
             if (action == null)
             {
-                log("no action specified, not sure why", "w");
+                if (LOCAL_LOGD) log("No action specified", "w"); //why?
                 //return flag indicating no further action needed if service is stopped by system and later resumes
                 return START_NOT_STICKY;
             }
             else if (action.equals(Intent.ACTION_RUN)) //called when service is being bound by player activity
             {
-                log("service being started probably so it can be bound", "v");
+                if (LOCAL_LOGV) log("service being started probably so it can be bound", "v");
                 return START_NOT_STICKY;
             }
             else if (action.equals(ACTION_PLAY.toString())) //Play intent
             {
-                log("PLAY action in intent", "v");
                 int preset = Integer.valueOf(intent.getIntExtra(ActivityMain.EXTRA_STATION_PRESET, 0)); 
-                log("preset in action:" + String.valueOf(preset), "v");
+                if (LOCAL_LOGD) log("PLAY action in intent. Preset in extra:" + String.valueOf(preset), "d");
                 play(preset);
                 //return START_REDELIVER_INTENT;
                 return START_NOT_STICKY; 
             }
             else if (action.equals(ACTION_PLAY_STREAM.toString())) //Play intent
             {
-                log("PLAY_STREAM action in intent", "v");
+                if (LOCAL_LOGV) log("PLAY_STREAM action in intent", "v");
                 String url = intent.getStringExtra(EXTRA_URL);  
-                log("url in action:" + url, "v");
+                if (LOCAL_LOGD) log("URL in extra:" + url, "d");
                 //check whether the url should be updated (for metadata retrieval purposes)
                 boolean updateUrl = intent.getBooleanExtra(EXTRA_UPDATE_URL, false);
                 if (updateUrl)
@@ -219,8 +222,9 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
             }
             else if (action.equals(ACTION_UNSUPPORTED_FORMAT_ERROR.toString()))
             {
-                log("Known unsupported format", "d");
+                
                 String format = intent.getStringExtra(EXTRA_FORMAT);
+                if (LOCAL_LOGD) log("Known unsupported format: " + format, "d");
                 String title = getResources().getString(R.string.error_title);
                 String message = getResources().getString(R.string.error_format) + ":" + format;
                 mCurrentPlayerState = ServiceRadioPlayer.STATE_ERROR;
@@ -231,8 +235,8 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
             }
             else if (action.equals(ACTION_FORMAT_ERROR.toString()))
             {
-                log("Url was unable to play", "d");
                 String message = intent.getStringExtra(EXTRA_ERROR_MESSAGE);
+                if (LOCAL_LOGD) log("URL was unable to play:" + message, "d");
                 String title = getResources().getString(R.string.error_title);
                 mCurrentPlayerState = ServiceRadioPlayer.STATE_ERROR;
                 //set 'now playing' to error
@@ -245,7 +249,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
                 
                 int responseCode = intent.getIntExtra(EXTRA_RESPONSE_CODE, 0);
                 String responseMessage = intent.getStringExtra(EXTRA_RESPONSE_MESSAGE);
-                log("Stream error. Code:" + String.valueOf(responseCode) + ", Message:" + responseMessage, "d");
+                if (LOCAL_LOGD) log("Stream error. Code:" + String.valueOf(responseCode) + ", Message:" + responseMessage, "d");
                 String title = getResources().getString(R.string.error_title);
                 String message;
                 switch (responseCode)
@@ -261,12 +265,10 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
                         else
                         {
                             message = getResources().getString(R.string.error_unknown);
-                            log("Stream error. Code:" + String.valueOf(responseCode) + ", Message:" + responseMessage, "w");
                         }
                         break;
                     default:
                         message = getResources().getString(R.string.error_unknown);
-                        log("Stream error. Code:" + String.valueOf(responseCode) + ", Message:" + responseMessage, "w");
                 }
                 mCurrentPlayerState = ServiceRadioPlayer.STATE_ERROR;
                 //set 'now playing' to error
@@ -276,19 +278,19 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
             }
             else if (action.equals(ACTION_NEXT.toString())) //Next preset intent
             {
-                log("NEXT action in intent", "v");  
+                if (LOCAL_LOGD) log("NEXT action in intent", "d");  
                 nextPreset();
                 return START_NOT_STICKY;
             }
             else if (action.equals(ACTION_PREVIOUS.toString())) //Previous preset intent
             {
-                log("PREVIOUS action in intent", "v");  
+                if (LOCAL_LOGD) log("PREVIOUS action in intent", "d");  
                 previousPreset();
                 return START_NOT_STICKY;
             }
             else if (action.equals(ACTION_STOP.toString())) //Stop intent
             {
-                log("STOP action in intent", "v");  
+                if (LOCAL_LOGD) log("STOP action in intent", "d");  
                 end();
                 return START_NOT_STICKY;
             }
@@ -299,12 +301,12 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
                     boolean set = intent.getBooleanExtra(EXTRA_SET_TRUE, false);
                     if (set)
                     {
-                        log("LIKE action in intent with true", "v");    
+                        if (LOCAL_LOGD) log("LIKE action in intent with true", "d");    
                         this.like();
                     }
                     else
                     {
-                        log("LIKE action in intent with false", "v");
+                        if (LOCAL_LOGD) log("LIKE action in intent with false", "d");
                         this.unlike();
                     }
                 }
@@ -318,12 +320,12 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
                     boolean set = intent.getBooleanExtra(EXTRA_SET_TRUE, true);
                     if (set)
                     {
-                        log("DISLIKE action in intent with true", "v"); 
+                        if (LOCAL_LOGD) log("DISLIKE action in intent with true", "d"); 
                         this.dislike();
                     }
                     else
                     {
-                        log("DISLIKE action in intent with false", "v");
+                        if (LOCAL_LOGD) log("DISLIKE action in intent with false", "d");
                         this.undislike();
                     }
                 }
@@ -331,7 +333,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
             }
             else if (action.equals(ACTION_PULL_WIDGET_INFO.toString()))
             {
-                log("UPDATE_WIDGET action in intent", "v"); 
+                if (LOCAL_LOGV) log("UPDATE_WIDGET action in intent", "v"); 
                 updateDetails();
                 endIfNotNeeded();
                 
@@ -339,11 +341,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
             }
             else
             {
-                String str = "Unknown Action:";
-                str += action;
-                log(str, "w");
-                //Log.i(getPackageName(), str);
-            
+                log("Unknown Action:" + action, "w");
             }
         }
         
@@ -356,10 +354,10 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     @SuppressLint("NewApi")
     public void onPrepared(MediaPlayer mediaPlayer)
     {
-        log("onPrepared()", "v");
+        if (LOCAL_LOGV) log("onPrepared()", "v");
         if (mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_RESTARTING) || mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_COMPLETE))
         {
-            log("newPlayer ready", "i");
+            if (LOCAL_LOGD) log("newPlayer ready", "d");
         }
         else
         {
@@ -368,12 +366,12 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
             {
                 mAudioFocused = true;
                 
-                log("mediaPlayer.start()", "v");
+                if (LOCAL_LOGV) log("mediaPlayer.start()", "v");
                 mediaPlayer.start();
                 mCurrentPlayerState = ServiceRadioPlayer.STATE_PLAYING;
                 if (mInterrupted)
                 {
-                    log("set interrupted = false", "v");
+                    if (LOCAL_LOGV) log("set interrupted = false", "v");
                 }
                 mInterrupted = false;
 
@@ -381,15 +379,17 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
                 this.updateNotification(getResources().getString(R.string.status_playing), getResources().getString(R.string.stop), true);
                 
                 
-                log("start foreground notification: playing", "v");
+                if (LOCAL_LOGV) log("start foreground notification: playing", "v");
                 //Toast.makeText(this, "Playing", Toast.LENGTH_SHORT).show();
             }
             else if (result == AudioManager.AUDIOFOCUS_REQUEST_FAILED)
             {
                 mAudioFocused = false;
-                log("audio focus failed", "w");
-                //TODO find a better way to deal with this
-                Toast.makeText(this, "Could not gain audio focus", Toast.LENGTH_SHORT).show();
+                
+                String title = getResources().getString(R.string.error_title);
+                String text = getResources().getString(R.string.error_audio_focus);
+                log(text, "w");
+                this.getErrorNotification(title, text);
             }
             
             
@@ -398,10 +398,10 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     
     public boolean onInfo(MediaPlayer mediaPlayer, int what, int extra)
     {
-        log("onInfo()", "v");
+        if (LOCAL_LOGV) log("onInfo()", "v");
         if (what == MediaPlayer.MEDIA_INFO_BUFFERING_END)
         {
-            log("done buffering", "v");
+            if (LOCAL_LOGV) log("done buffering", "v");
             
             updateNotification(getResources().getString(R.string.status_playing), getResources().getString(R.string.stop), true);
             mCurrentPlayerState = ServiceRadioPlayer.STATE_PLAYING;
@@ -411,7 +411,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         else if (what == MediaPlayer.MEDIA_INFO_BUFFERING_START)
         {
             
-            log("start buffering", "v");
+            if (LOCAL_LOGV) log("start buffering", "v");
             //Log.i(getPackageName(), "start buffering");
             //status.setText("Buffering...");
             
@@ -423,15 +423,13 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         }
         else if (what == 703)
         {
-            String str = "bandwidth:";
-            str += extra;
-            log(str, "v");
+            if (LOCAL_LOGV) log("bandwidth:" + extra, "v");
             
             //Log.i(getPackageName(), str);
         }
         else
         {
-            log("media player info", "v");
+            if (LOCAL_LOGV) log("media player info", "v");
             //Log.i(getPackageName(), "media player info");
         }
         /*String statusString = "\nInfo: ";
@@ -446,19 +444,19 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     {
         //mediaPlayer.reset();
         //mediaPlayer.release();
-        log("onCompletion()", "v");
+        if (LOCAL_LOGV) log("onCompletion()", "v");
         mCurrentPlayerState = ServiceRadioPlayer.STATE_COMPLETE;
         //TODO update notification?
         if (mInterrupted)
         {
             Toast.makeText(this, "Playback completed after interruption", Toast.LENGTH_SHORT).show();   
-            log("Playback completed after interruption, should restart when network connects again", "v");
+            if (LOCAL_LOGV) log("Playback completed after interruption, should restart when network connects again", "v");
         }
         else
         {
             //still an interruption, streaming shouldn't complete
             Toast.makeText(this, "Playback completed, no interruption reported", Toast.LENGTH_SHORT).show();
-            log("Playback completed, no network interruption reported, restart", "v");
+            if (LOCAL_LOGV) log("Playback completed, no network interruption reported, restart", "v");
             //restart();
             play();
         }
@@ -466,7 +464,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         //TODO: get nextmediaplayer working 
         if (mNextPlayer != null)
         {
-            log("swapping players", "v");
+            if (LOCAL_LOGV) log("swapping players", "v");
             mediaPlayer.release();
             mediaPlayer = mNextPlayer;
             mNextPlayer = null;
@@ -475,20 +473,20 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
                 mCurrentPlayerState = ServiceRadioPlayer.STATE_PLAYING;
                 if (mInterrupted)
                 {
-                    log("set interrupted = false", "v");
+                    if (LOCAL_LOGV) log("set interrupted = false", "v");
                 }
                 mInterrupted = false;
-                log("new player playing", "i");
+                if (LOCAL_LOGV) log("new player playing", "i");
                 //TODO update notification to indicate resumed playback
             }
             else
             {
-                log("new player not playing", "w");
+                if (LOCAL_LOGV) log("new player not playing", "w");
             }
         }
         else
         {
-            log("no next player specified", "w");
+            if (LOCAL_LOGV) log("no next player specified", "w");
         }
         */
         //stopForeground(true);
@@ -499,7 +497,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     
     public boolean onError(MediaPlayer mediaPlayer, int what, int extra)
     {
-        log("onError()", "e");
+        if (LOCAL_LOGV) log("onError()", "e");
         //check if mediaPlayer is or needs to be released
         
         if (mediaPlayer != null)
@@ -545,7 +543,8 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         {
             text += ", " + String.valueOf(what) + ":" + String.valueOf(extra);
         }
-        log("Previous:" + oldState + "-" + text, "e");
+        if (LOCAL_LOGD) log("Previous:" + oldState, "e");
+        log(text, "e");
         
         return false;
         
@@ -557,12 +556,12 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT)
         {
             mAudioFocused = false;
-            log("AUDIOFOCUS_LOSS_TRANSIENT", "v");
+            if (LOCAL_LOGD) log("AUDIOFOCUS_LOSS_TRANSIENT", "d");
             // Pause playback
             pause();
         } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
             mAudioFocused = true;
-            log("AUDIOFOCUS_GAIN", "v");
+            if (LOCAL_LOGD) log("AUDIOFOCUS_GAIN", "d");
             // Resume playback or unduck
             if (shouldResumeOnAudioFocus())
             {
@@ -573,12 +572,12 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
                 else
                 {
                     //find out which states this is run into from. change shouldResumeOnAudioFocus() accordingly (only resume when paused?)
-                    log("investigate: focus gained,  but not resumed?", "d");
+                    if (LOCAL_LOGD) log("Focus gained,  but playback not resumed", "d"); //investigate
                 }
             }
             else
             {
-                log("investigate: focused gained but should not try to resume", "d");
+                if (LOCAL_LOGD) log("Focused gained but playback should not try to resume", "d");
                 if (mPreset == 0)
                 {
                     
@@ -589,16 +588,16 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
             
         } else if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
             
-            log("AUDIOFOCUS_LOSS", "v");
+            if (LOCAL_LOGD) log("AUDIOFOCUS_LOSS", "d");
             if (mMediaButtonEventReceiverRegistered)
             {
-                log("unregister button receiver", "v");
+                if (LOCAL_LOGV) log("unregister button receiver", "v");
                 mAudioManager.unregisterMediaButtonEventReceiver(new ComponentName(getPackageName(), ReceiverRemoteControl.class.getName()));
                 mMediaButtonEventReceiverRegistered = false;    
             }
             else
             {
-                log("button receiver already unregistered", "v");
+                if (LOCAL_LOGV) log("button receiver already unregistered", "v");
             }
             //this.abandonAudioFocus(); //already done in stop()->pause()
             // Stop playback
@@ -607,7 +606,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         }
         else if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
             // Lower the volume
-            log("AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK", "v");
+            if (LOCAL_LOGV) log("AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK", "v");
             duck();
         } 
         
@@ -616,14 +615,14 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     //reduce player volume for notifications or other transient audio focus
     private void duck()
     {
-        log("duck()", "v");
+        if (LOCAL_LOGD) log("Duck audio", "d");
         //mDucked = true;
         if (mMediaPlayer != null)
         {
             
             int volume = 20;
             float log1=(float)(Math.log(100-volume)/Math.log(100));
-            log("lowering volume to " +  String.valueOf(log1), "v");
+            if (LOCAL_LOGV) log("lowering volume to " +  String.valueOf(log1), "v");
             mMediaPlayer.setVolume(1-log1, 1-log1);
             //mMediaPlayer.setVolume(leftVolume, rightVolume)
         }
@@ -631,7 +630,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     
     private void unduck()
     {
-        log("unduck()", "v");
+        if (LOCAL_LOGD) log("Unduck audio", "d");
         //mDucked = false;
         if (mMediaPlayer != null)
         {
@@ -667,12 +666,12 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         if (mReceiver != null)
         {
-            log("investigate: network receiver already registered, find out why", "d"); 
+            if (LOCAL_LOGD) log("Metwork receiver already registered", "d"); //why? 
             this.unregisterReceiver(mReceiver);
             mReceiver = null;
         }
         mReceiver = new ReceiverNetwork();
-        log("registering network change broadcast receiver", "v");
+        if (LOCAL_LOGV) log("registering network change broadcast receiver", "v");
         this.registerReceiver(mReceiver, filter);
     }
     
@@ -680,11 +679,11 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     {
         if (mReceiver == null)
         {
-            log("network receiver null, probably already unregistered", "v");
+            if (LOCAL_LOGV) log("network receiver null, probably already unregistered", "v");
         }
         else
         {
-            log("unregistering network receiver", "v");
+            if (LOCAL_LOGV) log("unregistering network receiver", "v");
             this.unregisterReceiver(mReceiver);
             mReceiver = null;
         }
@@ -695,18 +694,18 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         //register media button receiver
         if (mButtonReceiver != null)
         {
-            log("investigate: media button listener already registered", "v");
+            if (LOCAL_LOGD) log("Media button listener already registered", "d"); //why?
             this.unregisterReceiver(mButtonReceiver);
             mButtonReceiver = null; 
         }
-        log("register media button listener", "v");
+        if (LOCAL_LOGV) log("register media button listener", "v");
         mButtonReceiver = new ReceiverMediaButton();
         registerReceiver(mButtonReceiver, new IntentFilter(ACTION_MEDIA_BUTTON));
         
         //set ReceiverRemoteControl to be the sole receiver of media button actions
         if (mMediaButtonEventReceiverRegistered == false)
         {
-            log("registering media button listener", "v");
+            if (LOCAL_LOGV) log("registering media button listener", "v");
             mAudioManager.registerMediaButtonEventReceiver(new ComponentName(getPackageName(), ReceiverRemoteControl.class.getName()));
             mMediaButtonEventReceiverRegistered = true;
         }
@@ -715,11 +714,11 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     private void unregisterButtonReceiver()
     {
         if (mButtonReceiver == null) {
-            log("media button receiver null, probably already unregistered", "v");
+            if (LOCAL_LOGV) log("media button receiver null, probably already unregistered", "v");
         }
         else
         {
-            log("unregister media button receiver", "v");
+            if (LOCAL_LOGV) log("unregister media button receiver", "v");
             this.unregisterReceiver(mButtonReceiver);
             mButtonReceiver = null;
         }
@@ -732,11 +731,11 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
             mNoisyReceiver = new ReceiverNoisyAudioStream();
             IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
             registerReceiver(mNoisyReceiver, intentFilter);
-            log("register noisy receiver", "v");    
+            if (LOCAL_LOGV) log("register noisy receiver", "v");    
         }
         else
         {
-            log("noisy receiver already registered", "v");
+            if (LOCAL_LOGV) log("noisy receiver already registered", "v");
         }
     }
     
@@ -744,18 +743,18 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     {
         if (mNoisyReceiver == null)
         {
-            log("noisy receiver null, probably already unregistered", "v");
+            if (LOCAL_LOGV) log("noisy receiver null, probably already unregistered", "v");
         }
         else
         {
             try
             {
                 unregisterReceiver(mNoisyReceiver);
-                log("unregistering noisyReceiver", "v");
+                if (LOCAL_LOGV) log("unregistering noisyReceiver", "v");
             }
             catch (IllegalArgumentException e)
             {
-                log("noisyReceiver already unregistered", "w");
+                if (LOCAL_LOGV) log("NoisyReceiver already unregistered", "w"); //is this ok?
             }
             mNoisyReceiver = null;
         }
@@ -770,11 +769,11 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
             mPhoneReceiver = new ReceiverPhoneCall();
             IntentFilter intentFilter = new IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
             registerReceiver(mPhoneReceiver, intentFilter);
-            log("register phone receiver", "v");    
+            if (LOCAL_LOGV) log("register phone receiver", "v");    
         }
         else
         {
-            log("phone receiver already registered", "v");
+            if (LOCAL_LOGV) log("phone receiver already registered", "v");
         }
     }
     
@@ -782,18 +781,18 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     {
         if (mPhoneReceiver == null)
         {
-            log("mPhoneReceiver null, probably already unregistered", "v");
+            if (LOCAL_LOGV) log("mPhoneReceiver null, probably already unregistered", "v");
         }
         else
         {
             try
             {
                 unregisterReceiver(mPhoneReceiver);
-                log("unregistering phoneReceiver", "v");
+                if (LOCAL_LOGV) log("unregistering phoneReceiver", "v");
             }
             catch (IllegalArgumentException e)
             {
-                log("phoneReceiver already unregistered", "w");
+                if (LOCAL_LOGV) log("phoneReceiver already unregistered", "w"); //is this ok?
             }
             mPhoneReceiver = null;
         }
@@ -802,10 +801,10 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     //convenience method, play instance variable stored preset
     protected void play()
     {
-        log("play()", "v");
+        if (LOCAL_LOGV) log("play()", "v");
         if (mPreset == 0)
         {
-            log("preset = 0", "e");
+            log("Tried to play when preset is 0", "e");
         }
         play(mPreset);
     }
@@ -814,10 +813,10 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     //sets required listeners for broadcast events like headphones unplugged, network change, phone call
     protected void play(int preset)
     {
-        log("play(preset)", "v");
+        if (LOCAL_LOGV) log("play(preset)", "v");
         if (preset == 0)
         {
-            log("preset = 0", "e");
+            log("Tried to play preset 0", "e");
             throw new IllegalArgumentException("Preset = 0");
         }
         
@@ -835,7 +834,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         {
             mCurrentPlayerState = ServiceRadioPlayer.STATE_INITIALIZING;
             
-            log("setting network type", "v");
+            if (LOCAL_LOGV) log("setting network type", "v");
             mNetworkState = this.getConnectionType();
             this.mPreset = preset;
 
@@ -865,10 +864,10 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
      */
     private void playUrl(String url)
     {
-        log("playUrl()", "v");
+        if (LOCAL_LOGD) log("playUrl " + url, "d");
         if (!mCurrentPlayerState.equals(ServiceRadioPlayer.STATE_INITIALIZING))
         {
-            log("incorrect state to play url", "v");
+            if (LOCAL_LOGV) log("incorrect state to play url", "v");
             return;
         }
         this.stopAndReleasePlayer(mMediaPlayer);
@@ -879,7 +878,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         //get playlist data
         AsyncTaskPlaylist playlist = new AsyncTaskPlaylist();
         playlist.execute(mUrl);
-        log("get metadata", "v");
+        if (LOCAL_LOGV) log("get metadata", "v");
         if (!mMetadataRunnable.isRunning())
         {
             mMetadataRunnable.init();   
@@ -888,31 +887,31 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         //play url
         try {
             //str += mUrl;
-            log("setting datasource for '" + mTitle + "' at '" + url + "'", "v");
+            if (LOCAL_LOGV) log("setting datasource for '" + mTitle + "' at '" + url + "'", "v");
             mMediaPlayer.setDataSource(url);
             initializePlayer(mMediaPlayer); 
             
         } catch (IllegalArgumentException e) {
             // TODO Auto-generated catch block
             log("IllegalArgumentException, setting data source failed", "e");
-            e.printStackTrace();
+            if (LOCAL_LOGV) e.printStackTrace();
         } catch (SecurityException e) {
             // TODO Auto-generated catch block
             log("SecurityException, setting data source failed", "e");
-            e.printStackTrace();
+            if (LOCAL_LOGV) e.printStackTrace();
         } catch (IllegalStateException e) {
             // TODO Auto-generated catch block
             log("IllegalStateException, setting data source failed", "e");
-            e.printStackTrace();
+            if (LOCAL_LOGV) e.printStackTrace();
         } catch (IOException e) {
             // TODO Auto-generated catch block
             //TODO handle this somehow, let user know
             log("IOException, setting data source failed", "e");
-            e.printStackTrace();
+            if (LOCAL_LOGV) e.printStackTrace();
         }
         
         mMediaPlayer.prepareAsync(); // might take long! (for buffering, etc)
-        log("preparing async", "v");
+        if (LOCAL_LOGV) log("preparing async", "v");
         
     }
     
@@ -920,7 +919,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     //stop music but keep notification and mPreset
     protected void pause()
     {
-        log("pause()", "v");
+        if (LOCAL_LOGV) log("pause()", "v");
         mCurrentPlayerState = STATE_PAUSING;
         stopPlayer();
         updateNotification(getResources().getString(R.string.status_paused), getResources().getString(R.string.cancel), false);
@@ -930,7 +929,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     
     protected void resume()
     {
-        log("resume()", "v");
+        if (LOCAL_LOGV) log("resume()", "v");
         play(); 
     }
     
@@ -938,7 +937,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     protected void stopAndReleasePlayer(MediaPlayer player)
     {
         //TODO need to release looping background metadata task here somehow too
-        log("stopAndReleasePlayer()", "v");
+        if (LOCAL_LOGV) log("stopAndReleasePlayer()", "v");
         if (player != null)
         {
             try
@@ -946,22 +945,22 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
                 if (player.isPlaying())
                 {
                     player.stop();
-                    log("stopped mediaPlayer", "v");
+                    if (LOCAL_LOGV) log("stopped mediaPlayer", "v");
                 }
-                log("mediaPlayer not playing", "v");
+                if (LOCAL_LOGV) log("mediaPlayer not playing", "v");
             }
             catch (IllegalStateException e)
             {
-                log("player in wrong state to stop", "v");
+                if (LOCAL_LOGV) log("player in wrong state to stop", "v");
             }
             try
             {
                 player.reset();
-                log("reset mediaPlayer", "v");
+                if (LOCAL_LOGV) log("reset mediaPlayer", "v");
             }
             catch (IllegalStateException e)
             {
-                log("player in wrong state to reset", "v");
+                if (LOCAL_LOGV) log("player in wrong state to reset", "v");
             }
             player.release();
         }
@@ -975,7 +974,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         this.unregisterNoisyReceiver();
         if (mInterrupted)
         {
-            log("set interrupted = false", "v");
+            if (LOCAL_LOGV) log("set interrupted = false", "v");
         }
         mInterrupted = false;
     }
@@ -983,7 +982,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     //stop music, notifications, and put in stopped state
     protected void stop()
     {
-        log("stop()", "v");
+        if (LOCAL_LOGV) log("stop()", "v");
         mCurrentPlayerState = ServiceRadioPlayer.STATE_STOPPING;
         this.stopPlayer();
         this.stopInfo();
@@ -996,18 +995,18 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     //end service if not bound, do any cleanup necessary
     protected void end()
     {
-        log("end()", "v");
+        if (LOCAL_LOGV) log("end()", "v");
         stop();
         if (!mBound)
         {
-            log("not bound, stopping service with stopself", "v");
+            if (LOCAL_LOGV) log("not bound, stopping service with stopself", "v");
             stopSelf();
             mCurrentPlayerState = ServiceRadioPlayer.STATE_END;
         } 
         else
         {
             String str = "still bound";
-            log(str, "v");
+            if (LOCAL_LOGV) log(str, "v");
         }
         
     }
@@ -1017,19 +1016,19 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     {
         if (!couldPlay())
         {
-            log("no reason to keep service alive", "v");
+            if (LOCAL_LOGV) log("no reason to keep service alive", "v");
             end();  
         }
         else
         {
-            log("could play, don't destroy service","v");
+            if (LOCAL_LOGV) log("could play, don't destroy service","v");
         }
     }
     
     
     protected void nextPreset()
     {
-        log("nextPreset()", "v");
+        if (LOCAL_LOGV) log("nextPreset()", "v");
         mPreset++;
         Uri uri = Uri.parse(ContentProviderRadio.CONTENT_URI_PRESETS.toString() + "/" + String.valueOf(mPreset));
         String[] projection = {DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER};  
@@ -1040,20 +1039,20 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         int count = cursor.getCount();
         if (count < 1 && mPreset == 1)
         {
-            log("no stations, unless db integrity lost", "w");
+            log("No stations to play", "w");
             return; //TODO notify user?
         }
         else if (count < 1)
         {
             mPreset = 0; 
-            log("incremented preset but nothing found, must be at end, start at 1", "v");
+            if (LOCAL_LOGV) log("incremented preset but nothing found, must be at end, start at 1", "v");
             this.nextPreset(); //try again, starting at 0
         }
         else
         {
             cursor.moveToFirst();
             mPreset = (int)cursor.getLong(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER));
-            log("incremented preset, playing " + String.valueOf(mPreset), "v");
+            if (LOCAL_LOGV) log("incremented preset, playing " + String.valueOf(mPreset), "v");
             play(); 
         }
         cursor.close();
@@ -1062,7 +1061,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 
     protected void previousPreset()
     {
-        log("previousPreset()", "v");
+        if (LOCAL_LOGV) log("previousPreset()", "v");
         mPreset--;
         if (mPreset <= 0)
         {
@@ -1073,7 +1072,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
             mPreset = getMaxPresetNumber();
             if (mPreset == 0) //no stations? 
             {
-                log("no stations, unless getMaxPresetNumber doesn't work", "w");
+                log("No stations found to play", "w");
                 return; //TODO notify user?
             }
             //play();
@@ -1089,14 +1088,14 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         int count = cursor.getCount();
         if (count < 1)
         {
-            log("no station found below current, but not 0", "e");
+            log("No station found below current, but not at 0", "e");
             throw new SQLiteException("No station found below current, but not 0"); //TODO find correct exception to throw, or handle this some other way
         }
         else
         {
             cursor.moveToFirst();
             mPreset = (int)cursor.getLong(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER));
-            log("decremented preset, playing " + String.valueOf(mPreset), "v");
+            if (LOCAL_LOGV) log("decremented preset, playing " + String.valueOf(mPreset), "v");
             play(); 
         }
         cursor.close();
@@ -1145,7 +1144,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     {
         AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         audio.setStreamVolume(AudioManager.STREAM_MUSIC, newVolume, 0);
-        log("volume set:" + String.valueOf(audio.getStreamVolume(AudioManager.STREAM_MUSIC)), "v");
+        if (LOCAL_LOGV) log("volume set:" + String.valueOf(audio.getStreamVolume(AudioManager.STREAM_MUSIC)), "v");
     }
     
     //convenience method
@@ -1189,7 +1188,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         this.sendBroadcast(intent);
         intent.setClass(this, ServiceWidgetUpdate.class);
         startService(intent);
-        log("sent update details broadcast", "v");
+        if (LOCAL_LOGV) log("sent update details broadcast", "v");
     }
     
     /*
@@ -1286,7 +1285,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     //start foreground notification 
     protected void startForegroundNotification(String status, String stopText, boolean updateTicker)
     {
-        log("startForegroundNotification()", "v");
+        if (LOCAL_LOGV) log("startForegroundNotification()", "v");
         NotificationCompat.Builder builder = this.getUpdateNotification(status, stopText, updateTicker);
         startForeground(ONGOING_NOTIFICATION, builder.build());
     }
@@ -1294,7 +1293,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     //update existing foreground notification (or create new non-foreground notification if it doesn't exist)
     protected void updateNotification(String status, String stopText, boolean updateTicker)
     {
-        log("updateNotification()", "v");
+        if (LOCAL_LOGV) log("updateNotification()", "v");
         NotificationCompat.Builder builder = this.getUpdateNotification(status, stopText, updateTicker);
         mNotificationManager.notify(ONGOING_NOTIFICATION, builder.build());
         
@@ -1433,7 +1432,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
      */
     public boolean like()
     {
-        log("like()", "v");
+        if (LOCAL_LOGV) log("like()", "v");
         boolean success = false;
         if (isSongDisliked())
         {
@@ -1453,7 +1452,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
                 long id = ContentUris.parseId(insertedUri);
                 if (id > 0)
                 {
-                    log("like success", "v");
+                    if (LOCAL_LOGV) log("like success", "v");
                     success = true;
                     this.updateDetails();
                 }
@@ -1462,7 +1461,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         else
         {
             //already liked
-            log("already liked", "d");
+            if (LOCAL_LOGV) log("already liked", "v");
             success = true;
         }
         
@@ -1471,11 +1470,11 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     
     public boolean unlike()
     {
-        log("unlike()", "v");
+        if (LOCAL_LOGV) log("unlike()", "v");
         boolean success = false;
         if (!isSongLiked()) //already not liked
         {
-            log("already unliked", "d");
+            if (LOCAL_LOGV) log("already unliked", "v");
             success = true;
         }
         else
@@ -1488,7 +1487,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
                 int deleted = getContentResolver().delete(uri, selection, selectionArgs);
                 if (deleted > 0)
                 {
-                    log("deleted like(s)", "v");
+                    if (LOCAL_LOGV) log("deleted like(s)", "v");
                     success = true;
                     this.updateDetails();
                 }
@@ -1504,7 +1503,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
      */
     public boolean dislike()
     {
-        log("dislike()", "v");
+        if (LOCAL_LOGV) log("dislike()", "v");
         boolean success = false;
         if (isSongLiked())
         {
@@ -1525,7 +1524,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
                 long id = ContentUris.parseId(insertedUri);
                 if (id > 0)
                 {
-                    log("dislike success", "v");
+                    if (LOCAL_LOGV) log("dislike success", "v");
                     success = true;
                     this.updateDetails();
                 }
@@ -1534,7 +1533,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         else
         {
             //already disliked
-            log("already disliked", "d");
+            if (LOCAL_LOGV) log("already disliked", "v");
             success = true;
         }
         if (success && SKIP_DISLIKES)
@@ -1546,11 +1545,11 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     
     public boolean undislike()
     {
-        log("undislike()", "v");
+        if (LOCAL_LOGV) log("undislike()", "v");
         boolean success = false;
         if (!isSongDisliked()) //already not liked
         {
-            log("already not disliked", "d");
+            if (LOCAL_LOGV) log("already not disliked", "v");
             success = true;
         }
         else
@@ -1563,7 +1562,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
                 int deleted = getContentResolver().delete(uri, selection, selectionArgs);
                 if (deleted > 0)
                 {
-                    log("deleted dislike(s)", "v");
+                    if (LOCAL_LOGV) log("deleted dislike(s)", "v");
                     success = true;
                     this.updateDetails();
                 }
@@ -1580,7 +1579,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         boolean valid;
         if ((mSong == null || mSong.equals("")) && (mArtist == null || mArtist.equals("")))
         {
-            log("blank song and artist", "d");
+            if (LOCAL_LOGV) log("blank song and artist", "v");
             valid = false;
         }
         else if ( //unknown song and artist
@@ -1595,14 +1594,14 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
                 )
             )
         {
-            log("unknown song and artist", "d");
+            if (LOCAL_LOGV) log("unknown song and artist", "v");
             valid = false;
         }
         else if (mSong == null || mArtist == null 
                 //|| mTitle == null || mUrl == null //not that important
                 )
         {
-            log("something is null", "d");
+            if (LOCAL_LOGV) log("something is null", "v");
             valid = false;
         }
         else
@@ -1628,7 +1627,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         }
         if (count < 1)
         {
-            log("no results found", "e");
+            log("Selected preset not found", "e");
             throw new SQLiteException("Selected preset not found"); //TODO find correct exception to throw, or handle this some other way
         }
         else
@@ -1645,7 +1644,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     
     protected void initializePlayer(MediaPlayer player)
     {
-        log("initializePlayer()", "v");
+        if (LOCAL_LOGV) log("initializePlayer()", "v");
         player.setOnPreparedListener(this);     
         player.setOnInfoListener(this);
         player.setOnCompletionListener(this);
@@ -1658,13 +1657,13 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     {
         if (mAudioFocused)
         {
-            log("abandon audio focus", "v");
+            if (LOCAL_LOGV) log("abandon audio focus", "v");
             mAudioManager.abandonAudioFocus(this);
             mAudioFocused = false;
         }
         else
         {
-            log("audio focus already abandoned", "v");
+            if (LOCAL_LOGV) log("audio focus already abandoned", "v");
         }
     }
     
@@ -1672,7 +1671,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     /*
     protected void restart()
     {
-        log("restart()", "v");
+        if (LOCAL_LOGV) log("restart()", "v");
         mCurrentPlayerState = ServiceRadioPlayer.STATE_RESTARTING;
         
         if (mNextPlayer != null)
@@ -1688,7 +1687,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         
         String str = "setting nextPlayer data source: ";
         str += mUrl;
-        log(str, "v");
+        if (LOCAL_LOGV) log(str, "v");
         try
         {
             mNextPlayer.setDataSource(mUrl);
@@ -1698,7 +1697,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
             //TODO handle this somehow
             log("setting nextPlayer data source failed", "e");
             Toast.makeText(this, "Setting data source failed", Toast.LENGTH_SHORT).show();
-            e.printStackTrace();
+            if (LOCAL_LOGV) e.printStackTrace();
         }
         initializePlayer(mNextPlayer); 
         //TODO handle older versions
@@ -1709,7 +1708,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         }
         catch (IllegalStateException e)
         {
-            log("old player in wrong state to stop", "e");
+            if (LOCAL_LOGV) log("old player in wrong state to stop", "e");
         }
         
         try
@@ -1717,7 +1716,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
             boolean playing = mMediaPlayer.isPlaying();
             if (playing)
             {
-                log("old player playing, new player ready to set", "v");
+                if (LOCAL_LOGV) log("old player playing, new player ready to set", "v");
             }
             else
             {
@@ -1738,7 +1737,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         try
         {
             mMediaPlayer.setNextMediaPlayer(mNextPlayer);
-            log("nextplayer set", "v");
+            if (LOCAL_LOGV) log("nextplayer set", "v");
         }
         catch (IllegalStateException e)
         {
@@ -1749,16 +1748,16 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         
         //if (mediaPlayer.isPlaying())
         //{
-        //  log("was still playing, stopping", "v");
+        //  if (LOCAL_LOGV) log("was still playing, stopping", "v");
         //  mediaPlayer.stop(); 
         //}
-        //log("restarting/preparing", "v");
+        //if (LOCAL_LOGV) log("restarting/preparing", "v");
         //mediaPlayer.prepareAsync();
         
         
         
         
-        //Log.i(getPackageName(), "restarting playback");
+        //if (LOCAL_LOGV) Log.i(getPackageName(), "restarting playback");
     
         //if (playing)
         //{
@@ -1855,43 +1854,47 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     
     protected int getConnectionType()
     {
-        String str = "";
         int newState = mNetworkInfo.getType();
-        switch (newState)
+        if (LOCAL_LOGV) 
         {
-            case ConnectivityManager.TYPE_WIFI:
-                str += "wifi";
-                break;
-            case ConnectivityManager.TYPE_MOBILE:
-                str += "mobile";
-                break;
-            case ConnectivityManager.TYPE_MOBILE_DUN:
-                str += "mobile-dun";
-                break;
-            case ConnectivityManager.TYPE_MOBILE_HIPRI:
-                str += "moblie-hipri";
-                break;
-            case ConnectivityManager.TYPE_MOBILE_MMS:
-                str += "mobile-mms";
-                break;
-            case ConnectivityManager.TYPE_MOBILE_SUPL:
-                str += "mobile-supl";
-                break;
-            case ConnectivityManager.TYPE_WIMAX:
-                str += "wimax";
-                break;
-            case ConnectivityManager.TYPE_ETHERNET:
-                str += "ethernet";
-                break;
-            case ConnectivityManager.TYPE_BLUETOOTH:
-                str += "bluetooth";
-                break;
-            case ConnectivityManager.TYPE_DUMMY:
-                str += "dummy";
-                break;
+            String str = "";
+            
+            switch (newState)
+            {
+                case ConnectivityManager.TYPE_WIFI:
+                    str += "wifi";
+                    break;
+                case ConnectivityManager.TYPE_MOBILE:
+                    str += "mobile";
+                    break;
+                case ConnectivityManager.TYPE_MOBILE_DUN:
+                    str += "mobile-dun";
+                    break;
+                case ConnectivityManager.TYPE_MOBILE_HIPRI:
+                    str += "moblie-hipri";
+                    break;
+                case ConnectivityManager.TYPE_MOBILE_MMS:
+                    str += "mobile-mms";
+                    break;
+                case ConnectivityManager.TYPE_MOBILE_SUPL:
+                    str += "mobile-supl";
+                    break;
+                case ConnectivityManager.TYPE_WIMAX:
+                    str += "wimax";
+                    break;
+                case ConnectivityManager.TYPE_ETHERNET:
+                    str += "ethernet";
+                    break;
+                case ConnectivityManager.TYPE_BLUETOOTH:
+                    str += "bluetooth";
+                    break;
+                case ConnectivityManager.TYPE_DUMMY:
+                    str += "dummy";
+                    break;
+            }
+            str += " detected";
+            log(str, "v");
         }
-        str += " detected";
-        log(str, "v");
         return newState;
     }
     
@@ -1900,7 +1903,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         
         if (!URLUtil.isHttpUrl(url) && !URLUtil.isHttpsUrl(url))
         {
-            //log("not a valid http or https url", "v");
+            //if (LOCAL_LOGV) log("not a valid http or https url", "v");
             return false;
         }
         //check for empty after prefix
@@ -1926,8 +1929,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 
     @Override
     public IBinder onBind(Intent intent) {
-        log("onBind()", "v");
-        //Log.i(getPackageName(), "binding service");
+        if (LOCAL_LOGV) log("onBind()", "v");
         mBound=true;
         return mBinder;
     }
@@ -1935,20 +1937,18 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     @Override
     public void onRebind(Intent intent)
     {
-        log("onRebind()", "v");
+        if (LOCAL_LOGV) log("onRebind()", "v");
         if (!mBound)
         {
-            log("investigate: this hopefully shouldn't happen", "d");
+            log("Rebind called when mBound = false", "w"); //this could cause problems
         }
         mBound = true;
-        //Log.i(getPackageName(), "rebinding service");
     }
     
     @Override
     public boolean onUnbind(Intent intent)
     {
-        log("onUnbind()", "v");
-        //Log.i(getPackageName(), "unbinding service");
+        if (LOCAL_LOGV) log("onUnbind()", "v");
         mBound = false;
         if (shouldEndOnUnbind())
         {
@@ -1959,7 +1959,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     
     @Override
     public void onDestroy() {
-        log("onDestroy()", "v");
+        if (LOCAL_LOGV) log("onDestroy()", "v");
         this.stop();
         unregisterNetworkReceiver();
         unregisterButtonReceiver();
@@ -1970,7 +1970,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     public class ReceiverMediaButton extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            log("received remote control action", "v");
+            if (LOCAL_LOGV) log("received remote control action", "v");
             if (ACTION_MEDIA_BUTTON.equals(intent.getAction())) {
                 KeyEvent event = (KeyEvent)intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
                 switch (event.getKeyCode())
@@ -2008,13 +2008,13 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
                             
                         }
                     default:
-                        log("other button:" + String.valueOf(event.getKeyCode()), "v");
+                        if (LOCAL_LOGV) log("other button:" + String.valueOf(event.getKeyCode()), "v");
                 }
                
             }
             else
             {
-                log("other remote action?", "v");
+                if (LOCAL_LOGV) log("other remote action?", "v");
             }
         }
     }
@@ -2022,13 +2022,14 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     private class ReceiverNoisyAudioStream extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
+            //TODO look into using should/could function here
             if (!mCurrentPlayerState.equals(STATE_PHONE) && !mCurrentPlayerState.equals(STATE_PAUSED) && AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
-                log("headphones unplugged", "v");
+                if (LOCAL_LOGV) log("headphones unplugged", "v");
                 end();
             }
             else
             {
-                log("headphones unplugged, but it is paused", "v");
+                if (LOCAL_LOGV) log("headphones unplugged, but it is paused", "v");
             }
         }
     }
@@ -2036,11 +2037,11 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     private class ReceiverPhoneCall extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            log("phone call receiver onReceive()", "v");
+            if (LOCAL_LOGV) log("phone call receiver onReceive()", "v");
             String phoneState = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
             if (phoneState.equals(TelephonyManager.EXTRA_STATE_RINGING))
             {
-                log("phone ringing", "v");
+                if (LOCAL_LOGV) log("phone ringing", "v");
                 if (shouldPauseOnPhone())
                 {
                     pause();
@@ -2050,12 +2051,12 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
             }
             else if (phoneState.equals(TelephonyManager.EXTRA_STATE_IDLE) && mCurrentPlayerState.equals(STATE_PHONE))
             {
-                log("resuming after phone call", "v");
+                if (LOCAL_LOGV) log("resuming after phone call", "v");
                 resume();
             }
             else
             {
-                log("outgoing phone call?", "v");
+                if (LOCAL_LOGV) log("outgoing phone call?", "v");
                 if (shouldPauseOnPhone())
                 {
                     pause();
@@ -2071,7 +2072,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
           
         @Override
         public void onReceive(Context context, Intent intent) {
-            log("received network change broadcast", "v");
+            if (LOCAL_LOGV) log("received network change broadcast", "v");
             
             if (shouldStartOnReconnect())
             {
@@ -2082,32 +2083,32 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
                     int newNetworkState = getConnectionType();
                     if (mNetworkState != newNetworkState) 
                     {
-                        log("connected or reconnected. new network type:" + String.valueOf(newNetworkState) + ", old network type:" + String.valueOf(mNetworkState) + ". try to play", "v");
+                        if (LOCAL_LOGD) log("Network type changed to " + String.valueOf(newNetworkState) + " from " + String.valueOf(mNetworkState) + ". Attempting to restart playback", "d");
                         mInterrupted = true;
                         play(); 
                     }
                     else
                     {
-                        log("same network type", "v");
+                        if (LOCAL_LOGV) log("same network type", "v");
                     }
                 }
                 else //disconnected
                 {
                     if (oldNetworkState == ServiceRadioPlayer.NETWORK_STATE_DISCONNECTED)
                     {
-                        log("still disconnected", "v");
+                        if (LOCAL_LOGV) log("still disconnected", "v");
                     }
                     else 
                     {
                         mInterrupted = true;
                         getWaitingForNetworkNotification();
-                        log("interrupted disconnected while playing. should resume when network does", "v");
+                        if (LOCAL_LOGD) log("Disconnected while playing. Should resume when network does", "d");
                     }   
                 }
             }
             else
             {
-                log("doesn't need to start on reconnect", "v");
+                if (LOCAL_LOGV) log("doesn't need to start on reconnect", "v");
             }
         }
     }
@@ -2116,9 +2117,10 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     public void clearLog()
     {
         //File file = getFileStreamPath(LOG_FILENAME);
-        deleteFile(ActivityMain.LOG_FILENAME);
+        deleteFile(ActivityLogger.LOG_FILENAME);
         //logging something should recreate the log file
-        log("log file deleted", "i");
+        String fileName = getFileStreamPath(ActivityLogger.LOG_FILENAME).getAbsolutePath();
+        if (LOCAL_LOGD) log("log file deleted: " + fileName, "d");
     }
     
     public void copyLog()
@@ -2126,16 +2128,16 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         //String path = Environment.getExternalStorageDirectory().getAbsolutePath();
         String path = getExternalFilesDir(null).getAbsolutePath();
         
-        File src = getFileStreamPath(ActivityMain.LOG_FILENAME); 
-        File dst = new File(path + File.separator + ActivityMain.LOG_FILENAME);
+        File src = getFileStreamPath(ActivityLogger.LOG_FILENAME); 
+        File dst = new File(path + File.separator + ActivityLogger.LOG_FILENAME);
         try {
             if (dst.createNewFile())
             {
-                log("sd file created", "v");
+                if (LOCAL_LOGV) log("sd file created", "v");
             }
             else
             {
-                log("sd file exists?", "v");
+                if (LOCAL_LOGV) log("sd file exists?", "v");
             }
         } catch (IOException e2) {
             log("sd file error", "e");
@@ -2163,9 +2165,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         try
         {
             in.transferTo(0, in.size(), out);
-            String str = "log file copied to ";
-            str += path + File.separator + ActivityMain.LOG_FILENAME;
-            log(str, "i");
+            if (LOCAL_LOGD) log("log file copied to " + path + File.separator + ActivityLogger.LOG_FILENAME, "d");
             if (in != null)
             {
                 in.close();
@@ -2178,7 +2178,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         } catch (IOException e) {
             log("error copying log file", "e");
             Toast.makeText(this, "error copying log file", Toast.LENGTH_SHORT).show();
-            e.printStackTrace();
+            if (LOCAL_LOGV) e.printStackTrace();
         }
         finally
         {
@@ -2209,7 +2209,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         
         public void init()
         {
-            log("init metadata runnable", "v");
+            if (LOCAL_LOGV) log("init metadata runnable", "v");
             run = true;
             run();
         }
@@ -2229,13 +2229,13 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
                 }
                 else
                 {
-                    log("no network or not playing, stop collecting metadata", "v");
+                    if (LOCAL_LOGV) log("no network or not playing, stop collecting metadata", "v");
                     run = false;
                 }
             }
             else
             {
-                log("don't run", "v");
+                if (LOCAL_LOGV) log("don't run", "v");
             }
         }
     }
@@ -2250,7 +2250,12 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         protected HashMap<String, String> doInBackground(String... urls) {
             String url = urls[0];
             MetadataParser parser = new MetadataParser();
-            return parser.getMetadata(url); 
+            HashMap<String, String> result = parser.getMetadata(url);
+            if (result.isEmpty())
+            {
+                if (LOCAL_LOGD) log("No parsers available", "d");
+            }
+            return result;
         }
         
         
@@ -2268,7 +2273,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
             }
             else
             {
-                log("same metadata", "v");
+                if (LOCAL_LOGV) log("same metadata", "v");
             }
             if (isSongDisliked() && SKIP_DISLIKES)
             {
@@ -2287,7 +2292,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
 
     private void log(String text, String level)
     {
-        mLogger.log(this, "State:" + mCurrentPlayerState + ":\t\t\t\t" + text, level);
+        mLogger.log(TAG, "State:" + mCurrentPlayerState + ":\t\t\t\t" + text, level);
     }
     
     

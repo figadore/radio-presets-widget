@@ -29,7 +29,9 @@ import java.util.regex.Pattern;
 import android.util.Log;
 
 public class ShoutcastV1 implements Parser {
-    
+    public static final boolean LOCAL_LOGV = true;
+    public static final boolean LOCAL_LOGD = true;
+    private static final String TAG = "ShoutcastV1";
     //protected ActivityLogger mLogger = new ActivityLogger();
     
     @Override
@@ -74,15 +76,11 @@ public class ShoutcastV1 implements Parser {
         {
             //no "-" found in info string
             
-            log("Not a valid metadata string", "v");
+            if (LOCAL_LOGD) Log.d(TAG, "No dash found in metadata string");
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
-            log("Malformed URL", "v");
-            e.printStackTrace();
+            Log.i(TAG, "Malformed URL: " + url);
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            log("IO Exception", "v");
-            e.printStackTrace();
+            Log.i(TAG, "IO Exception: " + url);
         }
         
         return map;
@@ -111,7 +109,7 @@ public class ShoutcastV1 implements Parser {
         }
 
         response = stringBuffer.toString();
-        log("7.html:" + response, "v");
+        if (LOCAL_LOGD) Log.d(TAG, "7.html:" + response);
         
         String info = "";
         Pattern pattern = Pattern.compile("^.*<body>(.*)</body>.*$");
@@ -122,19 +120,15 @@ public class ShoutcastV1 implements Parser {
             String content = matcher.group(1).trim();
             String[] fields = content.split(",", 7);
             info = fields[fields.length-1];
-            log("content:" + content, "v"); 
+            if (LOCAL_LOGV) Log.v(TAG, "content:" + content); 
         }
         else
         {
-            log("body pattern not found", "v");
+            if (LOCAL_LOGV) Log.v(TAG, "body pattern not found");
         }
         return info;
     }
     
-    public void log(String text, String level)
-    {
-        Log.v("ShoutcastV1", text);
-    }
     
     
 }

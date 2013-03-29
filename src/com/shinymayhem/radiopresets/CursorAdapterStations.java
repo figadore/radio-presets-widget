@@ -21,7 +21,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.os.Build;
 import android.support.v4.widget.CursorAdapter;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,7 +29,7 @@ import android.widget.TextView;
 
 
 public class CursorAdapterStations extends CursorAdapter {
-
+    
     protected Activity mContext;
 
     public CursorAdapterStations(Activity context, Cursor c, int flags) {
@@ -78,7 +77,7 @@ public class CursorAdapterStations extends CursorAdapter {
     public void onContentChanged()
     {
         //called if flag is set
-        Log.v("CursorAdapter", "onContentChanged()");
+        //Log.v("CursorAdapter", "onContentChanged()");
     }
 
 }

@@ -27,8 +27,10 @@ import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 
 public class FragmentPlayer extends Fragment {
+    private static final boolean LOCAL_LOGV = ActivityMain.LOCAL_LOGV;
+    private static final String TAG = "FragmentPlayer";
     
-    protected ActivityLogger mLogger = new ActivityLogger();
+    protected ActivityLogger mLogger;
     public static final String FRAGMENT_TAG = "com.shinymayhem.radiopresets.PlayerFragmentTag";
     
     //define functions that this class depends on for communication with the rest of the app
@@ -60,9 +62,15 @@ public class FragmentPlayer extends Fragment {
     }
     
     @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        mLogger = new ActivityLogger(getActivity().getApplicationContext());
+    }
+    
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
     {
-        log("onCreateView()", "v");
+        if (LOCAL_LOGV) log("onCreateView()", "v");
         //inflate view from layout
         View view = inflater.inflate(R.layout.player_fragment, container, false);
         
@@ -79,7 +87,7 @@ public class FragmentPlayer extends Fragment {
             //update volume as slider is moved
             @Override
             public void onProgressChanged(SeekBar slider, int progress, boolean fromUser) {
-                log("onProgressChanged(): " + String.valueOf(progress), "v");
+                if (LOCAL_LOGV) log("onProgressChanged(): " + String.valueOf(progress), "v");
                 if (fromUser) //responding to touch slide event
                 {
                     mListener.setVolume(progress);
@@ -127,7 +135,7 @@ public class FragmentPlayer extends Fragment {
     
     public void log(String text, String level)
     {
-        mLogger.log(this.getActivity(), "FragmentPlayer:\t\t"+text, level);
+        mLogger.log(TAG, text, level);
     }
 
 }

@@ -22,6 +22,7 @@ import java.util.List;
 import android.content.ContentProvider;
 import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -34,8 +35,11 @@ import com.shinymayhem.radiopresets.DbContractRadio.DbHelperRadio;
  *
  */
 public class ContentProviderRadio extends ContentProvider {
-
-    protected ActivityLogger mLogger = new ActivityLogger();
+    private static final boolean LOCAL_LOGV = ActivityMain.LOCAL_LOGV;
+    private static final boolean LOCAL_LOGD = ActivityMain.LOCAL_LOGD;
+    private static final String TAG = "ContentProviderRadio";
+    
+    protected ActivityLogger mLogger;
     private DbHelperRadio mStationsHelper; 
     
     private static final String AUTHORITY = "com.shinymayhem.radiopresets.contentprovider";
@@ -84,7 +88,9 @@ public class ContentProviderRadio extends ContentProvider {
 
     @Override
     public boolean onCreate() {
-        mStationsHelper = new DbHelperRadio(getContext());
+        Context context = getContext();
+        mStationsHelper = new DbHelperRadio(context);
+        mLogger = new ActivityLogger(context);
         return true;
     }
 
@@ -208,7 +214,7 @@ public class ContentProviderRadio extends ContentProvider {
         }
         //notify content resolver of data change
         getContext().getContentResolver().notifyChange(uri, null);
-        log("delete uri:" + uri + ". " + String.valueOf(deletedCount) + " deleted", "v");
+        if (LOCAL_LOGV) log("delete uri:" + uri + ". " + String.valueOf(deletedCount) + " deleted", "v");
         return deletedCount;
         
     }
@@ -270,7 +276,7 @@ public class ContentProviderRadio extends ContentProvider {
         long id = db.insert(table, null, values);
         //notify content resolver of data change
         getContext().getContentResolver().notifyChange(uri, null);
-        log("insert uri:" + uri + ". id of insert:" + String.valueOf(id), "v");
+        if (LOCAL_LOGV) log("insert uri:" + uri + ". id of insert:" + String.valueOf(id), "v");
         return Uri.parse(SEGMENT_STATIONS_BASE + "/" + id);
         
         
@@ -327,7 +333,7 @@ public class ContentProviderRadio extends ContentProvider {
         int updatedCount = db.update(table, values, selection, selectionArgs);
         //notify content resolver of data change
         getContext().getContentResolver().notifyChange(uri, null);
-        log("update uri:" + uri + ". " + String.valueOf(updatedCount) + " updated", "v");
+        if (LOCAL_LOGV) log("update uri:" + uri + ". " + String.valueOf(updatedCount) + " updated", "v");
         return updatedCount;
         
     }
@@ -413,7 +419,7 @@ public class ContentProviderRadio extends ContentProvider {
     private void collapsePresetNumbers()
     {
         //SQLiteDatabase db = mStationsHelper.getReadableDatabase();    
-        log("collapsePresetNumbers()", "v");
+        if (LOCAL_LOGV) log("collapsePresetNumbers()", "v");
         Uri uri = CONTENT_URI_STATIONS;
         String[] projection = {DbContractRadio.EntryStation._ID, DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER};
         String selection = null;
@@ -431,7 +437,7 @@ public class ContentProviderRadio extends ContentProvider {
                 uri = Uri.parse(CONTENT_URI_STATIONS.toString() + "/" + String.valueOf(id));
                 ContentValues values = new ContentValues();
                 values.put(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER, i+1);
-                log("setting preset number for " + String.valueOf(id) + " from " + String.valueOf(preset) + " to " + String.valueOf(i+1), "v");
+                if (LOCAL_LOGV) log("setting preset number for " + String.valueOf(id) + " from " + String.valueOf(preset) + " to " + String.valueOf(i+1), "v");
                 this.update(uri, values, selection, selectionArgs);
                 cursor.moveToNext();
             }
@@ -448,7 +454,7 @@ public class ContentProviderRadio extends ContentProvider {
      */
     private int makeRoomForPreset(int preset, int id)
     {
-        log("making room for preset:" + preset, "v");
+        if (LOCAL_LOGV) log("making room for preset:" + preset, "v");
         //check for existing entry with same preset but different id (because update() could be called with same id)
         Uri uri = CONTENT_URI_STATIONS;
         String[] projection = {DbContractRadio.EntryStation._ID};
@@ -460,7 +466,7 @@ public class ContentProviderRadio extends ContentProvider {
         //if existing entry exists, increment all presets equal to or above current
         if (cursor.getCount() > 0)
         {
-            log("preset exists, increment it and all above", "v");
+            if (LOCAL_LOGV) log("preset exists, increment it and all above", "v");
             SQLiteDatabase db;
             db = mStationsHelper.getWritableDatabase();
             String column = DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER;
@@ -474,7 +480,7 @@ public class ContentProviderRadio extends ContentProvider {
                     " where " + column + ">= ? ";
             Cursor newCursor = db.rawQuery(sql, newSelectionArgs);
             updatedCount = newCursor.getCount();
-            log("incrementing " + String.valueOf(updatedCount) + " presets", "v");
+            if (LOCAL_LOGD) log("Incrementing " + String.valueOf(updatedCount) + " presets", "v");
                     //(int)newCursor.getLong(newCursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER));
             newCursor.close();
             if (updatedCount > 0)
@@ -507,7 +513,7 @@ public class ContentProviderRadio extends ContentProvider {
         }
         else
         {
-            log("preset doesn't exists yet, ok to add", "v");
+            if (LOCAL_LOGV) log("preset doesn't exists yet, ok to add", "v");
         }
         cursor.close();
         return updatedCount;
@@ -558,7 +564,7 @@ public class ContentProviderRadio extends ContentProvider {
 
     private void log(String text, String level)
     {
-        mLogger.log(getContext(), "ContentProviderRadio", "ContentProviderRadio:\t\t"+text, level);
+        mLogger.log(TAG, "ContentProviderRadio:\t\t"+text, level);
     }
     
 

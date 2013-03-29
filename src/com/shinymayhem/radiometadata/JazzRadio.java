@@ -85,13 +85,13 @@ public class JazzRadio implements Parser {
             }
         } catch (MalformedURLException e) {
             //fail silently
-            e.printStackTrace();
+            //e.printStackTrace();
         } catch (IOException e) {
             //fail silently
-            e.printStackTrace();
+            //e.printStackTrace();
         } catch (XmlPullParserException e) {
             //fail silently
-            e.printStackTrace();
+            //e.printStackTrace();
         }
         return map;
     }

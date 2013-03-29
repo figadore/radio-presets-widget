@@ -21,12 +21,18 @@ import android.content.Intent;
 import android.util.Log;
 import android.view.KeyEvent;
 
-//this class is mostly just a wrapper, receiving remote control broadcasts and passing them on to ServiceRadioPlayer.ReceiverMediaButton, if registered
+/**
+ * this class is mostly just a wrapper, receiving remote control broadcasts and passing them on to ServiceRadioPlayer.ReceiverMediaButton, if registered
+ * @author Reese Wilson
+ *
+ */
 public class ReceiverRemoteControl extends BroadcastReceiver {
-
+    private static final boolean LOCAL_LOGV = ActivityMain.LOCAL_LOGV;
+    private static final String TAG = "ReceiverRemoteControl";
+    
     @Override
     public void onReceive(Context context, Intent intent) {
-        Log.i("ReceiverRemoteControl", "onReceive()");
+        if (LOCAL_LOGV) Log.v(TAG, "onReceive()");
         
         KeyEvent event = (KeyEvent)intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
         if (event.getAction() == KeyEvent.ACTION_UP)
@@ -35,7 +41,7 @@ public class ReceiverRemoteControl extends BroadcastReceiver {
             //ComponentName component = new ComponentName(intent.getComponent().getPackageName(), ServiceRadioPlayer.ReceiverMediaButton.class.getName());
             newIntent.setComponent(null);
             newIntent.setAction(ServiceRadioPlayer.ACTION_MEDIA_BUTTON);
-            Log.i("ReceiverRemoteControl", "cloned");
+            if (LOCAL_LOGV) Log.v(TAG, "cloned");
             // Rebroadcasts to radio player inner class receiver. 
             // This receiver is not exported; it'll only be received if the receiver is currently registered.
             context.sendBroadcast(newIntent);   

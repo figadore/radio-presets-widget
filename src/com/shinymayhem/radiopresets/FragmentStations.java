@@ -49,10 +49,13 @@ import com.shinymayhem.radiopresets.DbContractRadio.DbHelperRadio;
 
 public class FragmentStations extends ListFragment implements LoaderCallbacks<Cursor> /*, 
         OnItemClickListener, OnItemLongClickListener, MultiChoiceModeListener */ {
-
+    private static final boolean LOCAL_LOGV = ActivityMain.LOCAL_LOGV;
+    private static final boolean LOCAL_LOGD = ActivityMain.LOCAL_LOGD;
+    private static final String TAG = "FragmentStations";
+    
     protected DbHelperRadio mDbHelper;
     protected Context mContext;
-    protected ActivityLogger mLogger = new ActivityLogger();
+    protected ActivityLogger mLogger;
     protected ListView mListView;
     public static final String FRAGMENT_TAG = "com.shinymayhem.radiopresets.StationsFragmentTag";
     
@@ -93,6 +96,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
+        mLogger = new ActivityLogger(getActivity().getApplicationContext());
         getLoaderManager().initLoader(ActivityMain.LOADER_STATIONS, null, this);
         
     }
@@ -100,7 +104,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
     public void refresh()
     {
         //async task? possibly responsible for slow response times
-        log("refresh()", "v");
+        if (LOCAL_LOGV) log("refresh()", "v");
         getLoaderManager().restartLoader(ActivityMain.LOADER_STATIONS, null, this);
         getListView().refreshDrawableState();
     }
@@ -154,7 +158,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
     {
         if (item.getItemId() == R.id.add_station)
         {
-            log("add station button clicked", "v");
+            if (LOCAL_LOGV) log("add station button clicked", "v");
             DialogFragment dialog = new DialogFragmentAdd();
             dialog.show(this.getFragmentManager(), "DialogFragmentAdd");
             return true;    
@@ -167,7 +171,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
     {
-        log("onCreateView()", "v");
+        if (LOCAL_LOGV) log("onCreateView()", "v");
 
         //FLAG_REGISTER_CONTENT_OBSERVER makes CursorAdapterStations.onContentChanged method get called
         mAdapter = new CursorAdapterStations(this.getActivity(), null, CursorAdapterStations.FLAG_REGISTER_CONTENT_OBSERVER);
@@ -193,7 +197,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
     public void onViewCreated(View view, Bundle savedInstanceState)
     { 
         
-        log("onViewCreated()", "v");
+        if (LOCAL_LOGV) log("onViewCreated()", "v");
         super.onViewCreated(view, savedInstanceState);
         //this.registerForContextMenu(this.getListView());
         
@@ -205,7 +209,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
     @Override 
     public void onActivityCreated(Bundle savedInstanceState)
     {
-        log("onActivityCreated()", "v");
+        if (LOCAL_LOGV) log("onActivityCreated()", "v");
         super.onActivityCreated(savedInstanceState);
         mListView = (ListView)getListView(); 
         
@@ -240,7 +244,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
     /*public boolean onItemLongClick(AdapterView<?> adapterView, View view,
             int position, long id) {
         String str= "list item longclicked";
-        log(str, "v");
+        if (LOCAL_LOGV) log(str, "v");
         
         boolean checked = true;
         ListView listView = (ListView) adapterView;
@@ -263,7 +267,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
     @Override
     public void onItemClick(AdapterView<?> adapterView, View item, int position, long id) {
 
-        log("onItemClick()", "v");
+        if (LOCAL_LOGV) log("onItemClick()", "v");
         
         if (mActionMode != null) //in multi-select mode. click = check
         {
@@ -292,7 +296,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
                 //item.setBackgroundColor(getResources().getColor(android.R.color.transparent));
                 item.setBackgroundColor(getResources().getColor(R.color.white));
             }
-            log(str, "i");
+            if (LOCAL_LOGV) log(str, "v");
             
             if (count < 1)
             {
@@ -314,7 +318,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
             str += Integer.toString(position);
             str += ", row id:";
             str += Long.toString(id);
-            log(str, "v");
+            if (LOCAL_LOGV) log(str, "v");
             mListener.play(preset);
         }
         
@@ -336,16 +340,20 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
     @Override
     public void onListItemClick(ListView listView, View view, int position, long id)
     {
-        log("onListItemClick()", "v");
+        if (LOCAL_LOGV) log("onListItemClick()", "v");
         Cursor cursor = (Cursor)listView.getItemAtPosition(position);
         //final String url = cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_URL));
         final int preset = Integer.valueOf(cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER)));
         cursor.close();
-        String str= "list item clicked, play preset " + preset + ". view position:";
-        str += Integer.toString(position);
-        str += ", row id:";
-        str += Long.toString(id);
-        log(str, "v");
+        
+        if (LOCAL_LOGV)
+        {
+            String str= "list item clicked, play preset " + preset + ". view position:";
+            str += Integer.toString(position);
+            str += ", row id:";
+            str += Long.toString(id);
+            log(str, "v");
+        }
         //TODO decide whether to do this, or wait for details update intent to refresh the cursorloader and listfragment 
         //(when highlighting immediately, two could be highlighted at once if old highlight isn't cleared first)
         //highlightPosition(position);
@@ -380,7 +388,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
         str += Integer.toString(position);
         str += ", row id:";
         str += Long.toString(id);
-        log(str, "v");
+        if (LOCAL_LOGV) log(str, "v");
         mListener.play(preset);
         */
     }
@@ -391,7 +399,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         //async task? possibly responsible for slow response times
-        log("onCreateLoader()", "v");
+        if (LOCAL_LOGV) log("onCreateLoader()", "v");
         String[] projection = {
                 DbContractRadio.EntryStation._ID,
                 DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER,
@@ -406,7 +414,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-        log("onLoadFinished()", "v");
+        if (LOCAL_LOGV) log("onLoadFinished()", "v");
         switch(loader.getId())
         {
             case ActivityMain.LOADER_STATIONS:
@@ -418,7 +426,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-        log("onLoaderReset()", "v");
+        if (LOCAL_LOGV) log("onLoaderReset()", "v");
         switch(loader.getId())
         {
             case ActivityMain.LOADER_STATIONS:
@@ -457,7 +465,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
                 where += "'') ";
                 //where= "_id in (?, ?, '')"
                 int deletedCount = getActivity().getContentResolver().delete(ContentProviderRadio.CONTENT_URI_STATIONS, where, values);//(ContentProviderRadio.CONTENT_URI_STATIONS, selected);
-                log("deleted " + String.valueOf(deletedCount), "v");
+                if (LOCAL_LOGV) log("deleted " + String.valueOf(deletedCount), "v");
                 //TODO handle case where delete affects (above or includes) currently playing station
                 mListener.updateDetails();
                 dialog.dismiss();
@@ -477,7 +485,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
     //called from multichoicemodelistenerstation
     public void deleteSelected()
     {
-        log("deleting selected", "i");
+        if (LOCAL_LOGD) log("Deleting selected stations", "d");
         long[] selected = mListView.getCheckedItemIds();
         delete(selected);
         
@@ -508,7 +516,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
             
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                log("edit station cancelled", "i");
+                if (LOCAL_LOGV) log("edit station cancelled", "v");
                 
             }
         });
@@ -518,7 +526,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
     
     public void editSelected()
     {
-        log("editing selected", "i");
+        if (LOCAL_LOGV) log("Editing selected station", "d");
         int position = getSelectedPosition();
         if (position == -1) //should never happen
         {
@@ -530,9 +538,9 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
     
     private void editStation(final long id, View view)
     {
-        log("id:" + String.valueOf(id), "i"); 
+        if (LOCAL_LOGV) log("id:" + String.valueOf(id), "v"); 
         // User touched the dialog's positive button
-        log("edit station confirmed", "i");
+        if (LOCAL_LOGV) log("edit station confirmed", "v");
         EditText titleView = (EditText)view.findViewById(R.id.station_title);
         EditText urlView = (EditText)view.findViewById(R.id.station_url);
         
@@ -547,18 +555,17 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
             //values.put(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER, preset);
             values.put(DbContractRadio.EntryStation.COLUMN_NAME_TITLE, title);
             values.put(DbContractRadio.EntryStation.COLUMN_NAME_URL, url);
-            //CursorLoader var = getLoaderManager().getLoader(ActivityMain.LOADER_STATIONS);
             //TODO see if there is a better way to do this, like addId or something
             Uri uri = Uri.parse(ContentProviderRadio.CONTENT_URI_STATIONS.toString() + "/" + String.valueOf(id));
             int updatedCount = this.getActivity().getContentResolver().update(uri, values, null, null);
-            log("updated " + updatedCount + " rows.", "v");
+            if (LOCAL_LOGV) log("updated " + updatedCount + " rows.", "v");
             //TODO handle case where edited currently playing station
             mListener.updateDetails();
         }
         else
         {
             //code duplication in ActivityMain
-            log("URL " + url + " not valid", "v");
+            if (LOCAL_LOGV) log("URL " + url + " not valid", "v");
             LayoutInflater inflater = LayoutInflater.from(mContext);
             final View editView = inflater.inflate(R.layout.dialog_station_details, null);
             titleView = ((EditText)editView.findViewById(R.id.station_title));
@@ -579,7 +586,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
                 
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    log("edit station cancelled", "i");
+                    if (LOCAL_LOGV) log("edit station cancelled", "v");
                     
                 }
             });
@@ -641,7 +648,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
     
     public void log(String text, String level)
     {
-        mLogger.log(this.getActivity(), "FragmentStations:\t\t"+text, level);
+        mLogger.log(TAG, "FragmentStations:\t\t"+text, level);
     }
     
 

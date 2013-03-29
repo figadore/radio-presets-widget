@@ -20,8 +20,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import android.util.Log;
-
 import com.shinymayhem.radiometadata.JazzRadio;
 import com.shinymayhem.radiometadata.Parser;
 import com.shinymayhem.radiometadata.ShoutcastV1;
@@ -63,7 +61,6 @@ public class MetadataParser {
         }
         else
         {
-            Log.d("MetadataParser", "No parsers available");
             map = new HashMap<String, String>();
         }
         return map;

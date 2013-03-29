@@ -53,12 +53,14 @@ import com.shinymayhem.radiopresets.FragmentStations.PresetListener;
 import com.shinymayhem.radiopresets.ServiceRadioPlayer.LocalBinder;
 
 public class ActivityMain extends FragmentActivity implements ListenerAddDialog, ListenerEventDialog, PresetListener, PlayerListener {
-
-    //string-extra key for intent
-    //public final static String URL = "com.shinymayhem.radiopresets.URL";
-    public final static String EXTRA_STATION_PRESET = "com.shinymayhem.radiopresets.STATION_ID";
     
+    public static final boolean LOCAL_LOGV = true; //also change for other packages (metadata)
+    public static final boolean LOCAL_LOGD = true;
+    private static final String TAG = "ActivityMain";
+    //actions
     public final static String ACTION_UPDATE_INFO = "com.shinymayhem.radiopresets.mainactivity.ACTION_UPDATE_INFO";
+    //extras
+    public final static String EXTRA_STATION_PRESET = "com.shinymayhem.radiopresets.mainactivity.STATION_ID";
     public final static String EXTRA_STATION = "com.shinymayhem.radiopresets.mainactivity.EXTRA_STATION";
     public final static String EXTRA_STATUS = "com.shinymayhem.radiopresets.mainactivity.EXTRA_STATUS";
     public final static String EXTRA_ARTIST = "com.shinymayhem.radiopresets.mainactivity.EXTRA_ARTIST";
@@ -66,16 +68,13 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
     public final static String EXTRA_PRESET = "com.shinymayhem.radiopresets.mainactivity.EXTRA_PRESET";
     public final static String EXTRA_LIKED = "com.shinymayhem.radiopresets.mainactivity.EXTRA_LIKED";
     public final static String EXTRA_DISLIKED = "com.shinymayhem.radiopresets.mainactivity.EXTRA_DISLIKED";
-    
-    //public static final int BUTTON_LIMIT = 25;
+    //loader manager
     public static final int LOADER_STATIONS = 0;
-    public final static String LOG_FILENAME = "log.txt";
     
     protected boolean mBound = false;
-    //protected DbHelperRadio mDbHelper;
     protected ServiceRadioPlayer mService;
     protected DbHelperRadio mDbHelper;
-    protected ActivityLogger mLogger = new ActivityLogger();
+    protected ActivityLogger mLogger;
     protected ReceiverDetails mDetailsReceiver;
     
     private ServiceConnection mConnection = new ServiceConnection()
@@ -83,7 +82,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
         @Override
         public void onServiceConnected(ComponentName className, IBinder service)
         {
-            log("service connected", "d");
+            if (LOCAL_LOGV) log("service connected", "v");
             LocalBinder binder = (LocalBinder) service;
             mService = binder.getService();
             mBound = true;
@@ -92,7 +91,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
         @Override
         public void onServiceDisconnected(ComponentName arg0)
         {
-            log("service disconnected", "d");
+            if (LOCAL_LOGV) log("service disconnected", "v");
             mBound = false;
         }
     };
@@ -106,8 +105,9 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        mLogger = new ActivityLogger(this);
         super.onCreate(savedInstanceState);
-        log("creating main activity", "v");
+        if (LOCAL_LOGV) log("creating main activity", "v");
         
         //set content view first so findViewById works
         setContentView(R.layout.activity_main);
@@ -136,13 +136,13 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
     protected void onStart()
     {
         super.onStart();
-        log("starting main activity", "v");
+        if (LOCAL_LOGV) log("starting main activity", "v");
         bindRadioPlayer();
     }
     
     protected void bindRadioPlayer()
     {
-        log("binding radio player", "d");
+        if (LOCAL_LOGV) log("binding radio player", "v");
         Intent intent = new Intent(this, ServiceRadioPlayer.class);
         intent.setAction(Intent.ACTION_RUN);
         startService(intent);
@@ -157,15 +157,15 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
     protected void onRestart()
     {
         super.onRestart();
-        log("restarting main activity", "v");
+        if (LOCAL_LOGV) log("restarting main activity", "v");
     }
     
     protected void onResume()
     {
         super.onResume();
-        log("resuming main activity", "v");
+        if (LOCAL_LOGV) log("resuming main activity", "v");
         //while app is visible, volume buttons should adjust music stream volume
-        log("setting volume control stream", "v");
+        if (LOCAL_LOGV) log("setting volume control stream", "v");
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
         
         registerDetailsReceiver();
@@ -173,7 +173,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
         //update player details
         //if (mService == null)
         //{
-//          log("Service not bound yet", "e");
+//          if (LOCAL_LOGV) log("Service not bound yet", "e");
     //  }
         //mService.updateDetails();
     }
@@ -185,16 +185,16 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
         IntentFilter filter = new IntentFilter(ActivityMain.ACTION_UPDATE_INFO);
         if (mDetailsReceiver != null)
         {
-            log("------------------------------------------", "v");
-            log("details receiver already registered, find out why", "w"); 
-            log("------------------------------------------", "v");
+            if (LOCAL_LOGV) log("------------------------------------------", "v");
+            if (LOCAL_LOGV) log("details receiver already registered, find out why", "w"); 
+            if (LOCAL_LOGV) log("------------------------------------------", "v");
             //widget doesn't accept localbroadcasts
             //LocalBroadcastManager.getInstance(this).unregisterReceiver(mDetailsReceiver);
             this.unregisterReceiver(mDetailsReceiver);
             mDetailsReceiver = null;
         }
         mDetailsReceiver = new ReceiverDetails();
-        log("registering details broadcast receiver", "i");
+        if (LOCAL_LOGV) log("registering details broadcast receiver", "v");
         //widget doesn't accept localbroadcasts
         //LocalBroadcastManager.getInstance(this).registerReceiver(mDetailsReceiver, filter); 
         this.registerReceiver(mDetailsReceiver, filter);
@@ -204,7 +204,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
     {
         if (mDetailsReceiver == null)
         {
-            log("mDetailsReceiver null, probably already unregistered", "v");
+            if (LOCAL_LOGV) log("mDetailsReceiver null, probably already unregistered", "v");
         }
         else
         {
@@ -213,11 +213,11 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
                 //widget doesn't accept localbroadcasts
                 //LocalBroadcastManager.getInstance(this).unregisterReceiver(mDetailsReceiver);
                 this.unregisterReceiver(mDetailsReceiver);
-                log("unregistering details receiver", "v");
+                if (LOCAL_LOGV) log("unregistering details receiver", "v");
             }
             catch (IllegalArgumentException e)
             {
-                log("details receiver already unregistered", "w");
+                if (LOCAL_LOGV) log("details receiver already unregistered", "w");
             }
             mDetailsReceiver = null;    
         }
@@ -226,7 +226,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
     @Override
     protected void onStop()
     {
-        log("stopping main activity", "v");
+        if (LOCAL_LOGV) log("stopping main activity", "v");
         
         if (mBound)
         {
@@ -241,7 +241,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
     @Override
     public void onPause()
     {
-        log("pausing main activity", "v");
+        if (LOCAL_LOGV) log("pausing main activity", "v");
         super.onPause();
         unregisterDetailsReceiver();
         
@@ -249,7 +249,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
     
     public void onDestroy()
     {
-        log("onDestroy()", "v");
+        if (LOCAL_LOGV) log("onDestroy()", "v");
         super.onDestroy();
     }
 
@@ -257,7 +257,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
     @Override
     public void onDialogPositiveClick(View view) {
         // User touched the dialog's positive button
-        log("add station confirmed", "i");
+        if (LOCAL_LOGD) log("Add station confirmed", "d");
         EditText titleView = (EditText)view.findViewById(R.id.station_title);
         EditText urlView = (EditText)view.findViewById(R.id.station_url);
         
@@ -271,20 +271,19 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
             //values.put(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER, preset);
             values.put(DbContractRadio.EntryStation.COLUMN_NAME_TITLE, title);
             values.put(DbContractRadio.EntryStation.COLUMN_NAME_URL, url);
-            //CursorLoader var = getLoaderManager().getLoader(ActivityMain.LOADER_STATIONS);
             Uri uri = getContentResolver().insert(ContentProviderRadio.CONTENT_URI_STATIONS, values);
             int id = (int) ContentUris.parseId(uri);
             if (id == -1)
             {
                 throw new SQLiteException("Insert failed");
             }
-            log("uri of addition:" + uri, "v");
+            if (LOCAL_LOGV) log("uri of addition:" + uri, "v");
             this.updateDetails();
         }
         else
         {
             //FIXME code duplication in FragmentStations
-            log("URL " + url + " not valid", "v");
+            if (LOCAL_LOGV) log("URL " + url + " not valid", "v");
             LayoutInflater inflater = LayoutInflater.from(this);
             final View editView = inflater.inflate(R.layout.dialog_station_details, null);
             titleView = ((EditText)editView.findViewById(R.id.station_title));
@@ -318,24 +317,24 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
     @Override
     public void onDialogNegativeClick() {
         // User touched the dialog's negative button
-        log("add station cancelled", "i");
+        if (LOCAL_LOGD) log("add station cancelled", "d");
     }
     
     @Override
     public void onDialogEventPositiveClick(DialogFragment dialogFragment) {
         log("event details", "i");
         EditText detailsView = (EditText)dialogFragment.getDialog().findViewById(R.id.event_details);
-        log("--------------------{-----------------", "i");
-        log(detailsView.getText().toString(), "i");
-        log("--------------------}-----------------", "i");
+        if (LOCAL_LOGV) log("--------------------{-----------------", "i");
+        if (LOCAL_LOGV) log(detailsView.getText().toString(), "i");
+        if (LOCAL_LOGV) log("--------------------}-----------------", "i");
     }
 
 
     @Override
     public void onDialogEventNegativeClick(DialogFragment dialogFragment) {
-        log("--------------------{-----------------", "i");
-        log("event details cancelled", "i");
-        log("--------------------}-----------------", "i");
+        if (LOCAL_LOGV) log("--------------------{-----------------", "i");
+        if (LOCAL_LOGV)  log("event details cancelled", "i");
+        if (LOCAL_LOGV) log("--------------------}-----------------", "i");
     }   
 
 
@@ -351,9 +350,9 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
     {
         if (item.getItemId() == R.id.mark_event)
         {
-            log("--------------------------------------", "i");
-            log("Event button pressed", "i");
-            log("--------------------------------------", "i");
+            if (LOCAL_LOGV) log("--------------------------------------", "i");
+            if (LOCAL_LOGV) log("Event button pressed", "i");
+            if (LOCAL_LOGV) log("--------------------------------------", "i");
             DialogFragment dialog = new DialogFragmentEvent();
             dialog.show(this.getSupportFragmentManager(), "DialogFragmentEvent");
             return true;    
@@ -374,7 +373,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
     
     public void play(int id)
     {
-        log("Play button received, sending play intent", "d");
+        if (LOCAL_LOGD) log("Play button received, sending play intent", "d");
         Intent intent = new Intent(this, ServiceRadioPlayer.class);
         intent.setAction(ServiceRadioPlayer.ACTION_PLAY);
         intent.putExtra(EXTRA_STATION_PRESET, id);
@@ -384,26 +383,26 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
     
     public void setVolume(int volume)
     {
-        log("setVolume()", "v");
+        if (LOCAL_LOGV) log("setVolume()", "v");
         mService.setVolume(volume);
     }
     
 
     public void stop(View view)
     {
-        log("stop()", "v");
+        if (LOCAL_LOGV) log("stop()", "v");
         mService.stop();
     }
     
     public void next(View view)
     {
-        log("next()", "v");
+        if (LOCAL_LOGV) log("next()", "v");
         mService.nextPreset();
     }
     
     public void prev(View view)
     {
-        log("prev()", "v");
+        if (LOCAL_LOGV) log("prev()", "v");
         mService.previousPreset();
     }
     
@@ -600,7 +599,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
         int preset;
         if (mService == null)
         {
-            log("service not bound", "w");
+            //if (LOCAL_LOGV) log("service not bound", "w");
             preset = 0;
         }
         else
@@ -615,10 +614,10 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
     //calls service's method which sends a broadcast to widget and activity player with current details
     public void updateDetails()
     {
-        log("updateDetails()", "v");
+        if (LOCAL_LOGV) log("updateDetails()", "v");
         if (mService == null)
         {
-            log("service not bound", "e");
+            if (LOCAL_LOGV) log("service not bound", "e");
         }
         else
         {
@@ -630,7 +629,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
 
     private void log(String text, String level)
     {
-        mLogger.log(this, text, level);
+        mLogger.log(TAG, text, level);
     }
     
     public class ReceiverDetails extends BroadcastReceiver {
@@ -638,7 +637,7 @@ public class ActivityMain extends FragmentActivity implements ListenerAddDialog,
         public void onReceive(Context context, Intent intent) {
             if (intent.getAction().equals(ActivityMain.ACTION_UPDATE_INFO))
             {
-                log("activity onreceive(), updating main activity text", "v");
+                if (LOCAL_LOGV) log("activity onreceive(), updating main activity text", "v");
                 Bundle extras = intent.getExtras();
                 String station = extras.getString(ActivityMain.EXTRA_STATION);
                 String status = extras.getString(ActivityMain.EXTRA_STATUS);
