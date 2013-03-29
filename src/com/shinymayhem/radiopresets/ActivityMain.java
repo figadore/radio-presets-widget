@@ -54,7 +54,7 @@ import com.shinymayhem.radiopresets.ServiceRadioPlayer.LocalBinder;
 
 public class ActivityMain extends FragmentActivity implements ListenerAddDialog, ListenerEventDialog, PresetListener, PlayerListener {
     
-    public static final boolean LOCAL_LOGV = false; //also change for other packages (metadata)
+    public static final boolean LOCAL_LOGV = true; //also change for other packages (metadata)
     public static final boolean LOCAL_LOGD = true;
     private static final String TAG = "ActivityMain";
     //actions

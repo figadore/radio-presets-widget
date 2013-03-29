@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 import android.util.Log;
 
 public class ShoutcastV1 implements Parser {
-    public static final boolean LOCAL_LOGV = false;
+    public static final boolean LOCAL_LOGV = true;
     public static final boolean LOCAL_LOGD = true;
     private static final String TAG = "ShoutcastV1";
     //protected ActivityLogger mLogger = new ActivityLogger();
