@@ -1392,7 +1392,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         {
             Uri uri = ContentProviderRadio.CONTENT_URI_LIKES;
             String[] projection = {DbContractRadio.EntryLike._ID};  
-            String selection = DbContractRadio.EntryLike.COLUMN_NAME_ARTIST + " = ? and " + DbContractRadio.EntryLike.COLUMN_NAME_SONG + " = ?";
+            String selection = "upper(" + DbContractRadio.EntryLike.COLUMN_NAME_ARTIST + ") = upper(?) and upper(" + DbContractRadio.EntryLike.COLUMN_NAME_SONG + ") = upper(?)";
             String[] selectionArgs = {mArtist.trim(), mSong.trim()};
             String sortOrder = null;
             Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
@@ -1413,7 +1413,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         {
             Uri uri = ContentProviderRadio.CONTENT_URI_DISLIKES;
             String[] projection = {DbContractRadio.EntryDislike._ID};  
-            String selection = DbContractRadio.EntryDislike.COLUMN_NAME_ARTIST + " = ? and " + DbContractRadio.EntryDislike.COLUMN_NAME_SONG + " = ?";
+            String selection = "upper(" + DbContractRadio.EntryDislike.COLUMN_NAME_ARTIST + ") = upper(?) and upper(" + DbContractRadio.EntryDislike.COLUMN_NAME_SONG + ") = upper(?)";
             String[] selectionArgs = {mArtist.trim(), mSong.trim()};
             String sortOrder = null;
             Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
