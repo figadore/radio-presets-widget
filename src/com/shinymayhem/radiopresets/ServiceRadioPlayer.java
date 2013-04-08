@@ -2277,7 +2277,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
             }
             if (isSongDisliked() && SKIP_DISLIKES)
             {
-                updateNotification(getResources().getString(R.string.status_skipping), getResources().getString(R.string.cancel), true);
+                updateNotification(getResources().getString(R.string.status_skipping) + ": " + newArtist + "-" + newSong, getResources().getString(R.string.cancel), true);
                 nextPreset();
             }
             else if (update) //don't update yet if skipping

@@ -327,6 +327,7 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
     @SuppressLint("NewApi")
     public void highlightPosition(int position)
     {
+        if (LOCAL_LOGV) log("highlightPosition()", "v");
         View view = (View) mListView.getChildAt(position);
         if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.JELLY_BEAN) {
             view.setBackground(getResources().getDrawable(R.drawable.list_item_background_playing));
@@ -344,7 +345,6 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
         Cursor cursor = (Cursor)listView.getItemAtPosition(position);
         //final String url = cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_URL));
         final int preset = Integer.valueOf(cursor.getString(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation.COLUMN_NAME_PRESET_NUMBER)));
-        cursor.close();
         
         if (LOCAL_LOGV)
         {
@@ -500,7 +500,6 @@ public class FragmentStations extends ListFragment implements LoaderCallbacks<Cu
         LayoutInflater inflater = LayoutInflater.from(mContext);
         final View editView = inflater.inflate(R.layout.dialog_station_details, null);
         final long id = cursor.getLong(cursor.getColumnIndexOrThrow(DbContractRadio.EntryStation._ID));
-        cursor.close();
         ((EditText)editView.findViewById(R.id.station_title)).setText(title);
         ((EditText)editView.findViewById(R.id.station_url)).setText(url);
         AlertDialog.Builder builder = new AlertDialog.Builder(this.getContext());
