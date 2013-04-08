@@ -27,6 +27,7 @@ public class DbContractRadio {
     
     private static final String TEXT_TYPE = " TEXT";
     private static final String DATE_TYPE = " DATE";
+    private static final String CASE_INSENSITIVE = " COLLATE NOCASE";
     private static final String COMMA_SEP = ",";
     private static final String SQL_CREATE_STATIONS =
         "CREATE TABLE " + DbContractRadio.EntryStation.TABLE_NAME + " (" +
@@ -40,8 +41,8 @@ public class DbContractRadio {
     private static final String SQL_CREATE_LIKES = 
             "CREATE TABLE " + DbContractRadio.EntryLike.TABLE_NAME + " (" +
             DbContractRadio.EntryLike._ID + " INTEGER PRIMARY KEY AUTOINCREMENT" + COMMA_SEP +
-            DbContractRadio.EntryLike.COLUMN_NAME_ARTIST + TEXT_TYPE + COMMA_SEP +
-            DbContractRadio.EntryLike.COLUMN_NAME_SONG + TEXT_TYPE + COMMA_SEP +
+            DbContractRadio.EntryLike.COLUMN_NAME_ARTIST + TEXT_TYPE + CASE_INSENSITIVE + COMMA_SEP +
+            DbContractRadio.EntryLike.COLUMN_NAME_SONG + TEXT_TYPE + CASE_INSENSITIVE + COMMA_SEP +
             DbContractRadio.EntryLike.COLUMN_NAME_STATION_TITLE + TEXT_TYPE + COMMA_SEP +
             DbContractRadio.EntryLike.COLUMN_NAME_STATION_URL + TEXT_TYPE + COMMA_SEP +
             DbContractRadio.EntryLike.COLUMN_NAME_DATE_ADDED + DATE_TYPE + COMMA_SEP +
@@ -51,8 +52,8 @@ public class DbContractRadio {
     private static final String SQL_CREATE_DISLIKES = 
             "CREATE TABLE " + DbContractRadio.EntryDislike.TABLE_NAME + " (" +
             DbContractRadio.EntryDislike._ID + " INTEGER PRIMARY KEY AUTOINCREMENT" + COMMA_SEP +
-            DbContractRadio.EntryDislike.COLUMN_NAME_ARTIST + TEXT_TYPE + COMMA_SEP +
-            DbContractRadio.EntryDislike.COLUMN_NAME_SONG + TEXT_TYPE + COMMA_SEP +
+            DbContractRadio.EntryDislike.COLUMN_NAME_ARTIST + TEXT_TYPE + CASE_INSENSITIVE + COMMA_SEP +
+            DbContractRadio.EntryDislike.COLUMN_NAME_SONG + TEXT_TYPE + CASE_INSENSITIVE + COMMA_SEP +
             DbContractRadio.EntryDislike.COLUMN_NAME_STATION_TITLE + TEXT_TYPE + COMMA_SEP +
             DbContractRadio.EntryDislike.COLUMN_NAME_STATION_URL + TEXT_TYPE + COMMA_SEP +
             DbContractRadio.EntryDislike.COLUMN_NAME_DATE_ADDED + DATE_TYPE + COMMA_SEP +
@@ -108,7 +109,7 @@ public class DbContractRadio {
     public static class DbHelperRadio extends SQLiteOpenHelper {
 
         public static final String DATABASE_NAME = "Radio.db";
-        public static final int DATABASE_VERSION = 4; //if this is changed, update onUpgrade() to not delete data
+        public static final int DATABASE_VERSION = 5; //if this is changed, update onUpgrade() to not delete data
         
         public DbHelperRadio(Context context) {
             super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -127,15 +128,55 @@ public class DbContractRadio {
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
             if (oldVersion != newVersion) 
             {
+            	boolean skip4 = false;
                 switch (oldVersion) //no breaks until end, so that it upgrades incrementally
                 {
-                case 3:
-                    String sql = "alter table " + DbContractRadio.EntryStation.TABLE_NAME + 
+                case 3: //add format column to stations for caching (faster format detection)
+                    String upgradeTo4Sql = "alter table " + DbContractRadio.EntryStation.TABLE_NAME + 
                             " add column " + DbContractRadio.EntryStation.COLUMN_NAME_FORMAT + TEXT_TYPE + ";";
-                    db.execSQL(sql);
+                    db.execSQL(upgradeTo4Sql);
                     db.execSQL(SQL_CREATE_LIKES);
                     db.execSQL(SQL_CREATE_DISLIKES);
-                    break; //make sure there is only one break, right before default
+                    skip4 = true; //no need to upgrade likes/dislikes schema since they were just created
+                case 4: //schema updated to case insensitive song and artist in likes/dislikes
+                	if (!skip4)
+                	{
+                		//copy likes/dislikes tables, create again with new schema, copy old to new tables, drop old tables
+                    	String moveLikesSql = "alter table " + DbContractRadio.EntryLike.TABLE_NAME + 
+                    			" rename to old_" + DbContractRadio.EntryLike.TABLE_NAME;
+                    	String moveDislikesSql = "alter table " + DbContractRadio.EntryDislike.TABLE_NAME + 
+                    			" rename to old_" + DbContractRadio.EntryDislike.TABLE_NAME;
+                    	String upgradeLikesSql = "insert into " + DbContractRadio.EntryLike.TABLE_NAME + " (" +
+                                DbContractRadio.EntryLike._ID + COMMA_SEP +
+                                DbContractRadio.EntryLike.COLUMN_NAME_ARTIST + COMMA_SEP +
+                                DbContractRadio.EntryLike.COLUMN_NAME_SONG + COMMA_SEP +
+                                DbContractRadio.EntryLike.COLUMN_NAME_STATION_TITLE + COMMA_SEP +
+                                DbContractRadio.EntryLike.COLUMN_NAME_STATION_URL + COMMA_SEP +
+                                DbContractRadio.EntryLike.COLUMN_NAME_DATE_ADDED + COMMA_SEP +
+                                DbContractRadio.EntryLike.COLUMN_NAME_STATUS + 
+                                " ) select * from old_" + DbContractRadio.EntryLike.TABLE_NAME;
+                    	String upgradeDislikesSql = "insert into " + DbContractRadio.EntryDislike.TABLE_NAME + " (" +
+                                DbContractRadio.EntryDislike._ID + COMMA_SEP +
+                                DbContractRadio.EntryDislike.COLUMN_NAME_ARTIST + COMMA_SEP +
+                                DbContractRadio.EntryDislike.COLUMN_NAME_SONG + COMMA_SEP +
+                                DbContractRadio.EntryDislike.COLUMN_NAME_STATION_TITLE + COMMA_SEP +
+                                DbContractRadio.EntryDislike.COLUMN_NAME_STATION_URL + COMMA_SEP +
+                                DbContractRadio.EntryDislike.COLUMN_NAME_DATE_ADDED + COMMA_SEP +
+                                DbContractRadio.EntryDislike.COLUMN_NAME_STATUS + 
+                                " ) select * from old_" + DbContractRadio.EntryDislike.TABLE_NAME;
+                    	String deleteOldLikes = "drop table old_" + DbContractRadio.EntryLike.TABLE_NAME;
+                    	String deleteOldDislikes = "drop table old_" + DbContractRadio.EntryDislike.TABLE_NAME;
+                    	db.execSQL(moveLikesSql);
+                    	db.execSQL(moveDislikesSql);
+                    	db.execSQL(SQL_CREATE_LIKES);
+                        db.execSQL(SQL_CREATE_DISLIKES);
+                        db.execSQL(upgradeLikesSql);
+                        db.execSQL(upgradeDislikesSql);
+                        db.execSQL(deleteOldLikes);
+                        db.execSQL(deleteOldDislikes);
+                	}
+                case -1: //not a real case, but just catch the cascaded upgrade
+                	break; //make sure there is only one break, right before default
                 default:
                     //unhandled upgrade case, discard the data and start over
                     db.execSQL(SQL_DELETE_STATIONS);
