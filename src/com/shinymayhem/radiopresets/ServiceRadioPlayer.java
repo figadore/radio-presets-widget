@@ -133,6 +133,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
     protected NotificationManager mNotificationManager;
     protected Handler mMetadataHandler = new Handler();
     protected MetadataRunnable mMetadataRunnable = new MetadataRunnable();
+    protected boolean mSkipNextTickerUpdate = false;
     //TODO change to preference
     private final static boolean SKIP_DISLIKES = true;
     
@@ -1269,8 +1270,9 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         stackBuilder.addNextIntent(resultIntent);
         PendingIntent intent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_CANCEL_CURRENT);
         builder.setContentIntent(intent);
-        if (updateTicker)
+        if (updateTicker && !mSkipNextTickerUpdate)
         {
+            //if (LOCAL_LOGD) log("updateTicker to:" + status, "d");
             builder.setTicker(status);
             //startForeground(ONGOING_NOTIFICATION, builder.build());
         }
@@ -1278,6 +1280,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
         {
             //mNotificationManager.notify(ONGOING_NOTIFICATION, builder.build());
         }
+        mSkipNextTickerUpdate = false;
         this.updateDetails(status);
         return builder;
     }
@@ -2278,6 +2281,7 @@ public class ServiceRadioPlayer extends Service implements OnPreparedListener, O
             if (isSongDisliked() && SKIP_DISLIKES)
             {
                 updateNotification(getResources().getString(R.string.status_skipping) + ": " + newArtist + "-" + newSong, getResources().getString(R.string.cancel), true);
+                mSkipNextTickerUpdate = true;
                 nextPreset();
             }
             else if (update) //don't update yet if skipping
