@@ -172,20 +172,14 @@ public class IcyStreamMeta {
         this.isError = false;
     }
 
-    private static Map<String, String> parseMetadata(String metaString) {
-        Map<String, String> metadata = new HashMap<String, String>();
-        //metaString = "StreamTitle='Kid Kasino – I'm Evil'";
-        Log.v("IcyStreamMeta", metaString);
+    public static Map<String, String> parseMetadata(String metaString) {
+        Map<String, String> metadata = new HashMap();
+
         String[] metaParts = metaString.split(";");
-        Pattern p = Pattern.compile("^([a-zA-Z]+)=\\'(.*)\\'$"); //match pattern <characters>='<any>'
-        Matcher m;
         for (int i = 0; i < metaParts.length; i++) {
-            m = p.matcher(metaParts[i]);
-            if (m.find()) {
-            	String key = ((String) m.group(1)).trim();
-            	String value = ((String) m.group(2)).trim();
-                metadata.put(key, value);
-            }
+            String part = metaParts[i].substring(0, metaParts[i].indexOf("="));
+            String songname = metaParts[i].substring(metaParts[i].indexOf("'")+1, metaParts[i].lastIndexOf("'"));
+            metadata.put(part, songname);
         }
 
         return metadata;
